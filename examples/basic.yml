@@ -1,4 +1,4 @@
-# Minimal setup — analyzes PRs with Gemini, no auto-actions.
+# Minimal setup — deterministic heuristics only, no API keys needed.
 name: Slopper
 on:
   pull_request:
@@ -15,6 +15,4 @@ jobs:
     steps:
       - uses: malvads/slopper@v1
         with:
-          ai-provider: 'gemini'
-          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

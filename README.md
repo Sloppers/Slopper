@@ -6,20 +6,32 @@
   <a href="https://github.com/malvads/slopper/blob/main/LICENSE"><img src="https://img.shields.io/github/license/malvads/slopper" alt="License" /></a>
 </p>
 
+<p align="center"><strong>Very experimental</strong> — expect rough edges, false positives, and breaking changes.</p>
+
 ---
 
-GitHub Action that scores every pull request for AI slop. Catches spray-and-pray contributors, machine-generated boilerplate, and phantom fixes before they waste your review time. Scores 0–10, labels automatically, never blocks merging.
+Open source maintainers are drowning in AI-generated pull requests that look clean but add nothing. curl, the Linux kernel, Godot, Node.js — they've all been hit. Polished descriptions, passing CI, and zero real value.
 
-## What It Does
+Slopper is a GitHub Action that scores every PR using deterministic heuristics to answer one question: **does this PR actually add value?** No API keys, no cost, one workflow file.
 
-- **Scores PRs 0–10** with risk level and confidence, so you know where to spend review time
-- **Detects AI-generated code** using 6 heuristic signals (comment density, slop vocabulary, verbose identifiers, docstring bloat, boilerplate ratio, structural patterns) — no API calls needed
+## The Problem
+
+- Phantom fixes for bugs that don't exist
+- Unnecessary refactoring that touches critical paths
+- Documentation that restates the obvious
+- Spray-and-pray accounts submitting to dozens of unrelated repos
+- Reputation farming in critical infrastructure
+
+## What Slopper Does
+
+- **Scores PRs 0–10** — deterministic risk score from heuristic signals, so you know where to spend review time
+- **Detects AI-generated code** using 6 heuristic signals (comment density, slop vocabulary, verbose identifiers, docstring bloat, boilerplate ratio, structural patterns)
 - **Profiles contributors** across GitHub — account age, PR volume, merge ratio, spray score — to spot accounts that shotgun low-quality PRs across dozens of repos
-- **Flags risky accounts** from a community-maintained blocklist, updated in real time
+- **Flags risky accounts** from a [community-maintained blocklist](https://github.com/malvads/slopper/blob/main/.slopper_risky_users), updated in real time
 - **Auto-closes, auto-approves, or requests review** based on configurable thresholds
 - **Bans repeat offenders** — maintainers comment `/slopper report` to permanently block an account
 - **Vouches trusted contributors** — `/slopper vouch` skips all analysis for that author going forward
-- **Works with 5 AI providers** — OpenAI, Anthropic, Vertex AI, Groq, Gemini
+- **AI optional** — runs fully on deterministic heuristics by default. Add an AI provider (`openai`, `anthropic`, `vertex`, `groq`, `gemini`) for deeper analysis when you want it
 
 ## Quick Start
 
@@ -40,12 +52,37 @@ jobs:
     steps:
       - uses: malvads/slopper@v1
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+That's it. No API keys needed — Slopper scores PRs using deterministic heuristics out of the box.
+
+For deeper AI-powered analysis, add a provider:
+
+```yaml
+      - uses: malvads/slopper@v1
+        with:
           ai-provider: 'gemini'
           gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Swap `ai-provider` and the matching key for any supported provider: `openai`, `anthropic`, `vertex`, `groq`, or `gemini`. Override the default model with the `model` input. See [`examples/`](examples/) for more setups (strict mode, merge gating, multi-provider).
+See [`examples/`](examples/) for more setups (strict mode, merge gating, multi-provider).
+
+## How Scoring Works
+
+In deterministic mode (default), the risk score is derived from:
+
+| Signal | Max Points | What it measures |
+|--------|-----------|-----------------|
+| AI Fingerprint | 4 | 6 heuristic signals detecting machine-generated code patterns |
+| Spray Score | 3 | Cross-repo PR volume, distinct repos, merge ratio, account age |
+| New Account | 1 | Account younger than configurable threshold (default 30 days) |
+| Low Merge Ratio | 1 | Below configurable threshold (default 40%) |
+| Risky User | 1 | Listed in community blocklist |
+| **Total** | **10** | |
+
+When an AI provider is configured, the score comes from the AI analysis instead, with richer context from commit messages, code diffs, and behavioral signals.
 
 ## Configuration
 
@@ -61,15 +98,16 @@ banned:
 
 actions:
   auto_close:
-    enabled: false
+    enabled: true
     threshold: 9
   auto_approve:
     enabled: false
     threshold: 2
   auto_request_review:
-    enabled: false
+    enabled: true
     threshold: 6
-    reviewers: []
+    reviewers:
+      - senior-maintainer
 
 thresholds:
   low: 2
@@ -95,9 +133,10 @@ label_thresholds:
 ignore_paths:
   - "*.md"
   - "docs/**"
+  - "*.lock"
 
 rules:
-  require_description: false
+  require_description: true
   require_linked_issue: false
   max_files_changed: 0
 ```
@@ -111,16 +150,12 @@ Comment on any PR:
 | `/slopper vouch` | Maintainers / code owners | Permanently whitelists the PR author — future PRs skip analysis |
 | `/slopper report` | Maintainers / code owners | Bans the PR author, closes the PR, adds them to `.slopper` banned list |
 
-## Community Risky Users
-
-Slopper fetches a [community-maintained list](https://github.com/malvads/slopper/blob/main/.slopper_risky_users) of known slop accounts at runtime. PRs from listed users get the `slopper/risky-user` label. To add an account, open a PR against that file with evidence.
-
 ## Labels
 
 All labels are deterministic — the AI never picks them.
 
-| Label | Default Trigger | Config key |
-|-------|----------------|------------|
+| Label | Trigger | Config key |
+|-------|---------|------------|
 | `slopper/risk/low` ... `critical` | Score thresholds | `thresholds.low/medium/high` |
 | `slopper/likely-ai-generated` | Fingerprint >= 70 | `label_thresholds.ai_likely` |
 | `slopper/possibly-ai-generated` | Fingerprint >= 40 | `label_thresholds.ai_possibly` |
@@ -128,6 +163,7 @@ All labels are deterministic — the AI never picks them.
 | `slopper/new-account` | Account < 30 days | `label_thresholds.new_account_days` |
 | `slopper/activity-burst` | > 10 PRs in 7 days | `label_thresholds.activity_burst_prs` |
 | `slopper/risky-user` | On community list | — |
+| `slopper/mode/deterministic` | No AI provider set | — |
 | `slopper/banned` | Banned or reported | — |
 | `slopper/ci-modified` | CI/CD files changed | — |
 | `slopper/dependencies-modified` | Lockfiles changed | — |
@@ -138,9 +174,9 @@ Use in subsequent workflow steps:
 
 | Output | Description |
 |--------|-------------|
-| `risk-score` | 0–10 |
+| `risk-score` | 0–10 (deterministic or AI-derived) |
 | `risk-level` | `low`, `medium`, `high`, `critical` |
-| `confidence` | `low`, `medium`, `high` |
+| `confidence` | `low` (deterministic), `low`/`medium`/`high` (with AI) |
 | `labels` | Comma-separated list |
 
 ## Development

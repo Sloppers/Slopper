@@ -13,25 +13,38 @@ export class PostResultsStep extends PipelineStep {
     this.commentManager = new PrCommentManager(github)
   }
 
+  private riskLevel(score: number, thresholds = { low: 2, medium: 5, high: 8 }): string {
+    if (score <= thresholds.low) return 'low'
+    if (score <= thresholds.medium) return 'medium'
+    if (score <= thresholds.high) return 'high'
+    return 'critical'
+  }
+
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    if (!ctx.analysisResult || !ctx.labels || !ctx.prData) {
-      throw new Error('analysisResult, labels, and prData are required but missing from context')
+    if (!ctx.labels || !ctx.prData) {
+      throw new Error('labels and prData are required but missing from context')
     }
 
     const { analysisResult, labels, prNumber, prData } = ctx
 
-    core.setOutput('risk-score', String(analysisResult.risk_score))
-    core.setOutput('risk-level', analysisResult.risk_level)
-    core.setOutput('confidence', analysisResult.confidence)
+    const score = analysisResult?.risk_score ?? ctx.deterministicScore ?? 0
+    const level = analysisResult?.risk_level ?? this.riskLevel(score, ctx.config?.thresholds)
+    const confidence = analysisResult?.confidence ?? 'low'
+
+    core.setOutput('risk-score', String(score))
+    core.setOutput('risk-level', level)
+    core.setOutput('confidence', confidence)
     core.setOutput('labels', labels.join(','))
 
     const labelComputer = new LabelComputer()
-    const suggestVouch = labelComputer.shouldSuggestVouch(analysisResult, prData.author)
-      ? { author: prData.author.login }
+    const suggestVouch = analysisResult
+      ? (labelComputer.shouldSuggestVouch(analysisResult, prData.author) ? { author: prData.author.login } : undefined)
       : undefined
 
     const commentBody = this.commentManager.buildCommentBody({
       result: analysisResult,
+      deterministicScore: ctx.deterministicScore,
+      riskLevel: level,
       labels,
       suggestVouch,
       authorProfile: ctx.authorProfile,

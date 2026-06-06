@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { GitHubClient } from './clients/github'
-import { AnalysisPipeline } from './core/pipeline'
+import { AnalysisPipeline, PipelineStep } from './core/pipeline'
 import { AiProvider } from './ai/providers'
 import {
   LoadConfigStep,
@@ -25,23 +25,17 @@ function isValidProvider(value: string): value is AiProvider {
 }
 
 async function run(): Promise<void> {
-  const providerInput = core.getInput('ai-provider')
-  if (!isValidProvider(providerInput)) {
+  const providerInput = core.getInput('ai-provider') || ''
+  const useAi = providerInput !== '' && providerInput !== 'none'
+
+  if (useAi && !isValidProvider(providerInput)) {
     core.setFailed(
-      `Invalid ai-provider: ${providerInput}. Must be one of: ${VALID_PROVIDERS.join(', ')}`
+      `Invalid ai-provider: ${providerInput}. Must be one of: none, ${VALID_PROVIDERS.join(', ')}`
     )
     return
   }
 
-  const provider = providerInput
   const githubToken = core.getInput('github-token', { required: true })
-  const openaiApiKey = core.getInput('openai-api-key')
-  const anthropicApiKey = core.getInput('anthropic-api-key')
-  const vertexProjectId = core.getInput('vertex-project-id')
-  const vertexRegion = core.getInput('vertex-region') || 'global'
-  const groqApiKey = core.getInput('groq-api-key')
-  const geminiApiKey = core.getInput('gemini-api-key')
-  const model = core.getInput('model') || undefined
 
   const prNumber =
     github.context.payload.pull_request?.number ??
@@ -65,25 +59,35 @@ async function run(): Promise<void> {
 
   if (vouchResult.vouched || vouchResult.banned) return
 
-  const analysisPipeline = new AnalysisPipeline([
+  const steps: PipelineStep[] = [
     new CollectDataStep(gh),
     new ProfileAnalysisStep(gh),
-    new FingerprintStep(),
-    new AiAnalysisStep({
+    new FingerprintStep()
+  ]
+
+  if (useAi) {
+    const provider = providerInput as AiProvider
+    steps.push(new AiAnalysisStep({
       provider,
-      openaiApiKey,
-      anthropicApiKey,
-      vertexProjectId,
-      vertexRegion,
-      groqApiKey,
-      geminiApiKey,
-      model
-    }),
+      openaiApiKey: core.getInput('openai-api-key'),
+      anthropicApiKey: core.getInput('anthropic-api-key'),
+      vertexProjectId: core.getInput('vertex-project-id'),
+      vertexRegion: core.getInput('vertex-region') || 'global',
+      groqApiKey: core.getInput('groq-api-key'),
+      geminiApiKey: core.getInput('gemini-api-key'),
+      model: core.getInput('model') || undefined
+    }))
+  } else {
+    core.info('[main] Running in deterministic mode — no AI provider configured')
+  }
+
+  steps.push(
     new ComputeLabelsStep(),
     new PostResultsStep(gh),
     new AutoActionsStep(gh)
-  ])
-  await analysisPipeline.run({ prNumber, config: vouchResult.config })
+  )
+
+  await new AnalysisPipeline(steps).run({ prNumber, config: vouchResult.config })
 }
 
 run().catch((error: unknown) => {

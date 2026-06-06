@@ -34,12 +34,14 @@ Single entry point: `src/main.ts`. Source is organized into purpose-based folder
 
 **Vouch pipeline:** LoadConfig -> VouchCheck -> BannedCheck -> RiskyUserCheck -> VouchApply (short-circuits if vouched or banned)
 
-**Analysis pipeline:** CollectData -> ProfileAnalysis -> Fingerprint -> AiAnalysis -> ComputeLabels -> PostResults -> AutoActions
+**Analysis pipeline:** CollectData -> ProfileAnalysis -> Fingerprint -> [AiAnalysis] -> ComputeLabels -> PostResults -> AutoActions
+
+AiAnalysis is optional — when `ai-provider` is `'none'` (the default), the pipeline runs in deterministic mode using heuristic signals only (fingerprint score, spray score, profile data). `LabelComputer.computeDeterministicScore()` synthesizes a 0–10 risk score from these signals.
 
 ## Key Constraints
 
 - JSON schemas for structured AI tool calls must have `additionalProperties: false` on ALL nested objects (Groq compatibility).
-- Labels are computed deterministically in `src/labels.ts` — never by the AI provider.
-- `src/labels.ts` `compute()` takes an options object, not positional args.
-- `src/commenter.ts` `buildCommentBody()` takes an options object, not positional args.
+- Labels are computed deterministically in `src/output/labels.ts` — never by the AI provider.
+- `src/output/labels.ts` `compute()` takes an options object, not positional args.
+- `src/output/commenter.ts` `buildCommentBody()` takes an options object, not positional args.
 - Tests mock `GitHubClient` (e.g., `{ getFileContent: jest.fn() }`), not raw Octokit.

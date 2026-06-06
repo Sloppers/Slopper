@@ -28,11 +28,14 @@ const LABEL_COLORS: Record<string, string> = {
   'slopper/missing-description': 'e4e669',
   'slopper/no-linked-issue': 'e4e669',
   'slopper/too-many-files': 'e4e669',
-  'slopper/risky-user': 'b60205'
+  'slopper/risky-user': 'b60205',
+  'slopper/mode/deterministic': '1d76db'
 }
 
 export interface CommentOptions {
-  result: AnalysisResult
+  result?: AnalysisResult
+  deterministicScore?: number
+  riskLevel?: string
   labels: string[]
   suggestVouch?: { author: string }
   authorProfile?: {
@@ -57,24 +60,32 @@ export class PrCommentManager {
   }
 
   buildCommentBody(opts: CommentOptions): string {
-    const { result, labels, suggestVouch, authorProfile, aiFingerprint } = opts
+    const { result, deterministicScore, riskLevel, labels, suggestVouch, authorProfile, aiFingerprint } = opts
     const riskEmoji: Record<string, string> = {
       low: '🟢', medium: '🟡', high: '🟠', critical: '🔴', unknown: '⚪'
     }
-    const badge = riskEmoji[result.risk_level] ?? '⚪'
-    const confBadge: Record<string, string> = { high: '🟢', medium: '🟡', low: '🔴' }
+
+    const score = result?.risk_score ?? deterministicScore ?? 0
+    const level = result?.risk_level ?? riskLevel ?? 'unknown'
+    const badge = riskEmoji[level] ?? '⚪'
 
     let md = `${COMMENT_MARKER}\n`
     md += `## ${badge} Slopper — PR Trust Analysis\n\n`
-    md += `${result.summary}\n\n`
 
-    md += `> **Risk:** ${badge} **${result.risk_score}**/10 (${result.risk_level})`
-    md += ` · **Confidence:** ${confBadge[result.confidence] ?? '⚪'} ${result.confidence}`
-    md += ` · **Provider:** ${result.provider ?? 'unknown'}\n\n`
+    if (result) {
+      md += `${result.summary}\n\n`
+      const confBadge: Record<string, string> = { high: '🟢', medium: '🟡', low: '🔴' }
+      md += `> **Risk:** ${badge} **${score}**/10 (${level})`
+      md += ` · **Confidence:** ${confBadge[result.confidence] ?? '⚪'} ${result.confidence}`
+      md += ` · **Provider:** ${result.provider ?? 'unknown'}\n\n`
+    } else {
+      md += `> **Risk:** ${badge} **${score}**/10 (${level})`
+      md += ` · **Mode:** deterministic (no AI provider)\n\n`
+    }
 
     md += `<details>\n<summary>Walkthrough</summary>\n\n`
 
-    if (result.author_assessment) {
+    if (result?.author_assessment) {
       md += `#### 👤 Author\n`
       md += `**Trust level:** ${result.author_assessment.trust_level}\n\n`
       md += `${result.author_assessment.reasoning}\n\n`
@@ -90,13 +101,13 @@ export class PrCommentManager {
       md += `Spray score: **${authorProfile.spray_score}**/100\n\n`
     }
 
-    if (result.commit_assessment) {
+    if (result?.commit_assessment) {
       md += `#### 📝 Commits\n`
       md += `**Quality:** ${result.commit_assessment.quality}\n\n`
       md += `${result.commit_assessment.reasoning}\n\n`
     }
 
-    if (result.code_assessment) {
+    if (result?.code_assessment) {
       const cats = result.code_assessment.categories_flagged?.join(', ') || 'none'
       md += `#### 🔍 Code\n`
       md += `**Categories flagged:** ${cats}\n\n`
@@ -112,7 +123,7 @@ export class PrCommentManager {
       }
     }
 
-    if (result.behavioral_signals) {
+    if (result?.behavioral_signals) {
       const flags = result.behavioral_signals.flags?.join(', ') || 'none'
       md += `#### 🚩 Behavioral Signals\n`
       md += `**Flags:** ${flags}\n\n`
@@ -136,7 +147,7 @@ export class PrCommentManager {
 
     md += `</details>\n\n`
 
-    if (result.review_suggestions?.length > 0) {
+    if (result?.review_suggestions?.length && result.review_suggestions.length > 0) {
       md += `<details>\n<summary>📋 Review Suggestions</summary>\n\n`
       for (const s of result.review_suggestions) {
         md += `- [ ] ${s}\n`
@@ -156,7 +167,7 @@ export class PrCommentManager {
 
     md += `---\n`
     md += `<sub>Powered by [slopper](https://github.com/malvads/slopper) · `
-    md += `${result.provider ?? 'AI'} · `
+    md += `${result?.provider ?? 'deterministic'} · `
     md += `Never blocks merging</sub>\n`
 
     return md

@@ -8,9 +8,9 @@ branding:
 
 inputs:
   ai-provider:
-    description: 'AI provider to use: openai, anthropic, vertex, groq, or gemini'
+    description: 'AI provider: openai, anthropic, vertex, groq, gemini, or none (deterministic only)'
     required: false
-    default: 'openai'
+    default: 'none'
   model:
     description: 'Override the default model for the selected provider'
     required: false

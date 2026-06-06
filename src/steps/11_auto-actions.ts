@@ -12,10 +12,12 @@ export class AutoActionsStep extends PipelineStep {
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    if (!ctx.config || !ctx.analysisResult) return ctx
+    if (!ctx.config) return ctx
+
+    const score = ctx.analysisResult?.risk_score ?? ctx.deterministicScore
+    if (score === undefined) return ctx
 
     const { config, analysisResult, prNumber, prData } = ctx
-    const score = analysisResult.risk_score
 
     if (config.rules.block_first_time_contributors && prData?.author.first_time_contributor) {
       core.info(`[auto-actions] Closing PR — first-time contributor blocked by config`)
@@ -28,13 +30,16 @@ export class AutoActionsStep extends PipelineStep {
       await this.closePrWithComment(prNumber, config.actions.auto_close.comment)
     }
 
-    if (config.actions.auto_approve.enabled && score <= config.actions.auto_approve.threshold && analysisResult.confidence === 'high') {
-      core.info(`[auto-actions] Approving PR — risk score ${score} <= threshold ${config.actions.auto_approve.threshold}`)
-      try {
-        await this.github.approvePr(prNumber, 'Automatically approved by Slopper — low risk score with high confidence.')
-      } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error)
-        core.warning(`[auto-actions] Failed to approve PR: ${msg}`)
+    if (config.actions.auto_approve.enabled && score <= config.actions.auto_approve.threshold) {
+      const hasHighConfidence = analysisResult?.confidence === 'high'
+      if (hasHighConfidence) {
+        core.info(`[auto-actions] Approving PR — risk score ${score} <= threshold ${config.actions.auto_approve.threshold}`)
+        try {
+          await this.github.approvePr(prNumber, 'Automatically approved by Slopper — low risk score with high confidence.')
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : String(error)
+          core.warning(`[auto-actions] Failed to approve PR: ${msg}`)
+        }
       }
     }
 

@@ -28,7 +28,7 @@ const DEPENDENCY_FILES = new Set([
 ])
 
 export interface ComputeLabelsOptions {
-  analysis: AnalysisResult
+  analysis?: AnalysisResult
   files: FileInfo[]
   firstTimeContributor: boolean
   prData?: PrData
@@ -71,13 +71,19 @@ export class LabelComputer {
   compute(opts: ComputeLabelsOptions): string[] {
     const { analysis, files, firstTimeContributor, prData, authorProfile, aiFingerprint, riskyUser } = opts
     const labels: string[] = []
-    const score = analysis.risk_score
+    const score = analysis
+      ? analysis.risk_score
+      : LabelComputer.computeDeterministicScore({ authorProfile, aiFingerprint, riskyUser })
 
     labels.push(this.riskLabel(score))
-    labels.push(`slopper/confidence/${analysis.confidence}`)
 
-    if (score <= this.thresholds.low && analysis.confidence === 'high') {
-      labels.push('slopper/approved')
+    if (analysis) {
+      labels.push(`slopper/confidence/${analysis.confidence}`)
+      if (score <= this.thresholds.low && analysis.confidence === 'high') {
+        labels.push('slopper/approved')
+      }
+    } else {
+      labels.push('slopper/mode/deterministic')
     }
 
     if (firstTimeContributor) {
@@ -113,6 +119,23 @@ export class LabelComputer {
     if (riskyUser) labels.push('slopper/risky-user')
 
     return labels
+  }
+
+  static computeDeterministicScore(opts: {
+    authorProfile?: AuthorProfileAnalysis
+    aiFingerprint?: AiFingerprintResult
+    riskyUser?: boolean
+  }): number {
+    const { authorProfile, aiFingerprint, riskyUser } = opts
+    let score = 0
+    if (aiFingerprint) score += (aiFingerprint.score / 100) * 4
+    if (authorProfile) {
+      score += (authorProfile.spray_score / 100) * 3
+      if (authorProfile.account_age_days < 30) score += 1
+      if (authorProfile.merge_ratio < 0.4) score += 1
+    }
+    if (riskyUser) score += 1
+    return Math.min(10, Math.round(score * 10) / 10)
   }
 
   computeFailedLabels(): string[] {

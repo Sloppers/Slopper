@@ -11,6 +11,7 @@ export interface PipelineContext {
   aiFingerprint?: AiFingerprintResult
   analysisResult?: AnalysisResult
   analysisFailed?: boolean
+  deterministicScore?: number
   labels?: string[]
   vouched?: boolean
   vouchedBy?: string
