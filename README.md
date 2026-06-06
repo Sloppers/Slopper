@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/malvads/slopper/actions"><img src="https://github.com/malvads/slopper/workflows/CI/badge.svg" alt="CI" /></a>
   <a href="https://github.com/marketplace/actions/slopper"><img src="https://img.shields.io/badge/Marketplace-Slopper-blue?logo=github" alt="GitHub Marketplace" /></a>
-  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/malvads/COVERAGE_GIST_ID/raw/slopper-coverage.json" alt="Coverage" />
+  <img src="https://raw.githubusercontent.com/malvads/Slopper/main/badges/coverage.svg" alt="Coverage" />
   <a href="https://github.com/malvads/slopper/blob/main/LICENSE"><img src="https://img.shields.io/github/license/malvads/slopper" alt="License" /></a>
 </p>
 

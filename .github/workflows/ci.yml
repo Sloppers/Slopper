@@ -27,24 +27,25 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx jest --coverage --coverageReporters=json-summary
-      - name: Extract coverage percentage
-        id: coverage
-        run: |
-          COVERAGE=$(node -e "const c = require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)")
-          echo "result=$COVERAGE" >> "$GITHUB_OUTPUT"
-      - name: Upload coverage badge
+      - run: npx jest --coverage
+      - name: Generate coverage badge
         if: github.ref == 'refs/heads/main'
-        uses: schneegans/dynamic-badges-action@v1.7.0
-        with:
-          auth: ${{ secrets.GIST_TOKEN }}
-          gistID: ${{ vars.COVERAGE_GIST_ID }}
-          filename: slopper-coverage.json
-          label: coverage
-          message: ${{ steps.coverage.outputs.result }}%
-          valColorRange: ${{ steps.coverage.outputs.result }}
-          minColorRange: 50
-          maxColorRange: 90
+        run: |
+          COVERAGE=$(npx jest --coverage --coverageReporters=json-summary --silent 2>/dev/null; node -e "const c = require('./coverage/coverage-summary.json'); console.log(Math.round(c.total.lines.pct))")
+          if [ "$COVERAGE" -ge 90 ]; then COLOR="brightgreen"
+          elif [ "$COVERAGE" -ge 75 ]; then COLOR="green"
+          elif [ "$COVERAGE" -ge 60 ]; then COLOR="yellow"
+          else COLOR="red"; fi
+          mkdir -p badges
+          curl -s "https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}" > badges/coverage.svg
+      - name: Commit coverage badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add badges/coverage.svg
+          git diff --cached --quiet || git commit -m "Update coverage badge [skip ci]"
+          git push
 
   build:
     runs-on: ubuntu-latest
