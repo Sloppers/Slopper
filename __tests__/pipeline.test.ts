@@ -1,4 +1,4 @@
-import { AnalysisPipeline, PipelineStep, PipelineContext } from '../src/pipeline'
+import { AnalysisPipeline, PipelineStep, PipelineContext } from '../src/core/pipeline'
 
 jest.mock('@actions/core', () => ({
   info: jest.fn()

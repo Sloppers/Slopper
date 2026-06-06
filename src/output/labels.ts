@@ -1,5 +1,5 @@
-import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from './types'
-import { ThresholdsConfig, RulesConfig } from './config'
+import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
+import { ThresholdsConfig, RulesConfig } from '../core/config'
 
 const CI_PATTERNS = [
   '.github/workflows/',
@@ -34,6 +34,7 @@ export interface ComputeLabelsOptions {
   prData?: PrData
   authorProfile?: AuthorProfileAnalysis
   aiFingerprint?: AiFingerprintResult
+  riskyUser?: boolean
 }
 
 export class LabelComputer {
@@ -54,7 +55,7 @@ export class LabelComputer {
   }
 
   compute(opts: ComputeLabelsOptions): string[] {
-    const { analysis, files, firstTimeContributor, prData, authorProfile, aiFingerprint } = opts
+    const { analysis, files, firstTimeContributor, prData, authorProfile, aiFingerprint, riskyUser } = opts
     const labels: string[] = []
     const score = analysis.risk_score
 
@@ -94,6 +95,8 @@ export class LabelComputer {
       if (aiFingerprint.score >= 70) labels.push('slopper/likely-ai-generated')
       else if (aiFingerprint.score >= 40) labels.push('slopper/possibly-ai-generated')
     }
+
+    if (riskyUser) labels.push('slopper/risky-user')
 
     return labels
   }

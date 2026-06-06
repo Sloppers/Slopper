@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { ConfigLoader } from '../config'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { ConfigLoader } from '../core/config'
 import { GitHubClient } from '../clients/github'
 
 export class LoadConfigStep extends PipelineStep {

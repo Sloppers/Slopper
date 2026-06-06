@@ -85,10 +85,10 @@ Slopper supports five AI providers: **OpenAI** (`gpt-4o`), **Anthropic** (`claud
 ## Pipeline
 
 ```
-Vouch check → Banned list → Profile analysis → AI fingerprint → AI analysis → Labels → Comment → Auto-actions
+LoadConfig → VouchCheck → BannedCheck → RiskyUserCheck → VouchApply → CollectData → ProfileAnalysis → Fingerprint → AiAnalysis → ComputeLabels → PostResults → AutoActions
 ```
 
-Slopper runs through these steps on every PR. Vouched contributors skip everything. Banned users get their PRs auto-closed. For everyone else, Slopper collects cross-repo GitHub activity (account age, PR volume, merge ratio), runs heuristic AI fingerprinting on the diff, then sends everything to the AI provider for a holistic analysis.
+Slopper runs through these steps on every PR. Vouched contributors skip everything. Banned users get their PRs auto-closed. Users on the community risky list get flagged with extra scrutiny. For everyone else, Slopper collects cross-repo GitHub activity (account age, PR volume, merge ratio), runs heuristic AI fingerprinting on the diff, then sends everything to the AI provider for a holistic analysis.
 
 ## Configuration
 
@@ -134,11 +134,18 @@ Every field is optional. Missing fields use sensible defaults. Legacy plain-text
 
 ## Labels
 
-Labels are computed deterministically — never by the AI. Risk labels (`slopper/risk/low` through `slopper/risk/critical`) follow configurable thresholds. Author profile labels include `slopper/spray-and-pray`, `slopper/activity-burst`, and `slopper/new-account`. AI fingerprint labels: `slopper/likely-ai-generated` (score >= 70) and `slopper/possibly-ai-generated` (>= 40). Plus `slopper/ci-modified`, `slopper/dependencies-modified`, `slopper/banned`, and hygiene labels.
+Labels are computed deterministically — never by the AI. Risk labels (`slopper/risk/low` through `slopper/risk/critical`) follow configurable thresholds. Author profile labels include `slopper/spray-and-pray`, `slopper/activity-burst`, and `slopper/new-account`. AI fingerprint labels: `slopper/likely-ai-generated` (score >= 70) and `slopper/possibly-ai-generated` (>= 40). Plus `slopper/ci-modified`, `slopper/dependencies-modified`, `slopper/banned`, `slopper/risky-user`, and hygiene labels.
 
-## Vouching
+## Commands
 
-Code owners can permanently whitelist contributors by commenting `/slopper vouch` on a PR. Future PRs from that author skip analysis entirely.
+Maintainers and code owners can comment these commands on any PR:
+
+- **`/slopper vouch`** — permanently whitelist the PR author. Future PRs skip analysis entirely. The author is added to `.slopper`.
+- **`/slopper report`** — ban the PR author. Adds them to the `.slopper` banned list, applies `slopper/banned` label, and closes the PR.
+
+## Community Risky Users
+
+Slopper ships a community-maintained risky users list (`.slopper_risky_users`) that is fetched at runtime from the Slopper repo. PRs from listed accounts get flagged with the `slopper/risky-user` label. To report an account, open a PR against [`.slopper_risky_users`](https://github.com/malvads/slopper/blob/main/.slopper_risky_users) with evidence.
 
 ## Outputs
 

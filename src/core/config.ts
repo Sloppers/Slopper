@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { parse as parseYaml } from 'yaml'
-import { GitHubClient } from './clients/github'
+import { GitHubClient } from '../clients/github'
 
 export interface AutoCloseConfig {
   enabled: boolean

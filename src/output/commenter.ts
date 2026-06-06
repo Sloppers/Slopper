@@ -1,5 +1,5 @@
-import { GitHubClient } from './clients/github'
-import { AnalysisResult } from './types'
+import { GitHubClient } from '../clients/github'
+import { AnalysisResult } from '../core/types'
 
 const COMMENT_MARKER = '<!-- pr-trust-analysis -->'
 
@@ -27,7 +27,8 @@ const LABEL_COLORS: Record<string, string> = {
   'slopper/possibly-ai-generated': 'fbca04',
   'slopper/missing-description': 'e4e669',
   'slopper/no-linked-issue': 'e4e669',
-  'slopper/too-many-files': 'e4e669'
+  'slopper/too-many-files': 'e4e669',
+  'slopper/risky-user': 'b60205'
 }
 
 export interface CommentOptions {

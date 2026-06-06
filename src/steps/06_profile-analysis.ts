@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { AuthorProfileAnalyzer } from '../author-profile'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { AuthorProfileAnalyzer } from '../analysis/author-profile'
 import { GitHubClient } from '../clients/github'
 
 export class ProfileAnalysisStep extends PipelineStep {

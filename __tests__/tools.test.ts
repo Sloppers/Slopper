@@ -1,4 +1,4 @@
-import { buildOpenAITool, buildAnthropicTool, ANALYSIS_TOOL_NAME } from '../src/tools'
+import { buildOpenAITool, buildAnthropicTool, ANALYSIS_TOOL_NAME } from '../src/ai/tools'
 
 describe('Tool Schema', () => {
   describe('buildOpenAITool', () => {

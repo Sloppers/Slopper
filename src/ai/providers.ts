@@ -1,4 +1,4 @@
-import { AnalysisResult } from './types'
+import { AnalysisResult } from '../core/types'
 import { ANALYSIS_TOOL_NAME, buildOpenAITool, buildAnthropicTool, buildGeminiFunctionDeclaration } from './tools'
 
 export type AiProvider = 'openai' | 'anthropic' | 'vertex' | 'groq' | 'gemini'

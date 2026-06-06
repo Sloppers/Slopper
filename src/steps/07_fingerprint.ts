@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { AiFingerprintAnalyzer } from '../ai-fingerprint'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { AiFingerprintAnalyzer } from '../analysis/ai-fingerprint'
 
 export class FingerprintStep extends PipelineStep {
   readonly name = 'fingerprint'

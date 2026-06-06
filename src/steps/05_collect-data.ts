@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import { minimatch } from 'minimatch'
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { PrDataCollector } from '../collector'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { PrDataCollector } from '../analysis/collector'
 import { GitHubClient } from '../clients/github'
 
 export class CollectDataStep extends PipelineStep {

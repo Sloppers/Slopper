@@ -1,4 +1,4 @@
-import { AiFingerprintAnalyzer } from '../src/ai-fingerprint'
+import { AiFingerprintAnalyzer } from '../src/analysis/ai-fingerprint'
 
 describe('AiFingerprintAnalyzer', () => {
   const analyzer = new AiFingerprintAnalyzer()

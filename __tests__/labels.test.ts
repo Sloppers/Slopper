@@ -1,5 +1,5 @@
-import { LabelComputer } from '../src/labels'
-import { AnalysisResult, AuthorProfile, FileInfo, PrData } from '../src/types'
+import { LabelComputer } from '../src/output/labels'
+import { AnalysisResult, AuthorProfile, FileInfo, PrData } from '../src/core/types'
 
 function makeResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
   return {

@@ -1,13 +1,14 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { GitHubClient } from './clients/github'
-import { AnalysisPipeline } from './pipeline'
-import { AiProvider } from './providers'
+import { AnalysisPipeline } from './core/pipeline'
+import { AiProvider } from './ai/providers'
 import {
   LoadConfigStep,
   VouchCheckStep,
-  VouchApplyStep,
   BannedCheckStep,
+  RiskyUserCheckStep,
+  VouchApplyStep,
   CollectDataStep,
   ProfileAnalysisStep,
   FingerprintStep,
@@ -42,9 +43,11 @@ async function run(): Promise<void> {
   const geminiApiKey = core.getInput('gemini-api-key')
   const model = core.getInput('model') || undefined
 
-  const prNumber = github.context.payload.pull_request?.number
+  const prNumber =
+    github.context.payload.pull_request?.number ??
+    github.context.payload.issue?.number
   if (!prNumber) {
-    core.setFailed('This action must be run on a pull_request event')
+    core.setFailed('This action must be run on a pull_request or issue_comment event')
     return
   }
 
@@ -55,6 +58,7 @@ async function run(): Promise<void> {
     new LoadConfigStep(gh),
     new VouchCheckStep(gh),
     new BannedCheckStep(gh),
+    new RiskyUserCheckStep(),
     new VouchApplyStep(gh)
   ])
   const vouchResult = await vouchPipeline.run({ prNumber })

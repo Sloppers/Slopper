@@ -1,4 +1,4 @@
-import { AiFingerprintResult, AiFingerprintSignal } from './types'
+import { AiFingerprintResult, AiFingerprintSignal } from '../core/types'
 
 const SLOP_WORDS = [
   'enhance', 'robust', 'comprehensive', 'streamline', 'leverage',

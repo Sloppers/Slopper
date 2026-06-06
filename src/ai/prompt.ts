@@ -1,4 +1,4 @@
-import { PrData, AuthorProfileAnalysis, AiFingerprintResult } from './types'
+import { PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
 
 export const SYSTEM_PROMPT = `You are a skeptical code reviewer whose job is to detect low-quality, AI-generated "slop" contributions. You are the last line of defense for open source maintainers. Your default stance is suspicion — a PR must earn a low risk score by demonstrating genuine value.
 

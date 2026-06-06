@@ -22,25 +22,34 @@ npm run all --no-workspaces      # Build + test + package
 
 ```
 src/
-  clients/github.ts     # Shared GitHub API client
-  steps/                 # Pipeline steps (one per file)
-  ai-fingerprint.ts      # Heuristic AI code detection
-  author-profile.ts      # Cross-repo activity analysis
-  collector.ts           # PR data collection
-  commenter.ts           # PR comment builder + label manager
-  config.ts              # .slopper config parser
-  labels.ts              # Deterministic label computation
-  pipeline.ts            # Pipeline orchestrator
-  prompt.ts              # AI system/user prompt builder
-  providers.ts           # AI provider implementations
-  tools.ts               # Structured output schema
-  types.ts               # Shared TypeScript interfaces
   main.ts                # Entry point
+  clients/
+    github.ts            # Shared GitHub API client
+  core/
+    pipeline.ts          # Pipeline orchestrator
+    config.ts            # .slopper config parser
+    types.ts             # Shared TypeScript interfaces
+  analysis/
+    ai-fingerprint.ts    # Heuristic AI code detection
+    author-profile.ts    # Cross-repo activity analysis
+    collector.ts         # PR data collection
+  ai/
+    providers.ts         # AI provider implementations
+    prompt.ts            # AI system/user prompt builder
+    tools.ts             # Structured output schema
+  output/
+    labels.ts            # Deterministic label computation
+    commenter.ts         # PR comment builder + label manager
+  steps/
+    00_load-config.ts    # Pipeline steps (numbered by execution order)
+    01_vouch-check.ts
+    ...
+    10_auto-actions.ts
 ```
 
 ## Pipeline Flow
 
-**Vouch pipeline:** LoadConfig → VouchCheck → BannedCheck → VouchApply
+**Vouch pipeline:** LoadConfig → VouchCheck → BannedCheck → RiskyUserCheck → VouchApply
 
 **Analysis pipeline:** CollectData → ProfileAnalysis → Fingerprint → AiAnalysis → ComputeLabels → PostResults → AutoActions
 

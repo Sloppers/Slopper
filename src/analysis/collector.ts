@@ -1,5 +1,5 @@
-import { GitHubClient } from './clients/github'
-import { PrData, AuthorProfile, CommitSummary, FileInfo } from './types'
+import { GitHubClient } from '../clients/github'
+import { PrData, AuthorProfile, CommitSummary, FileInfo } from '../core/types'
 
 export class PrDataCollector {
   private readonly github: GitHubClient

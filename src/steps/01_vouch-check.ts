@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { PipelineStep, PipelineContext } from '../pipeline'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { GitHubClient } from '../clients/github'
 
 export class VouchCheckStep extends PipelineStep {

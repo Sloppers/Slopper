@@ -1,5 +1,5 @@
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { LabelComputer } from '../labels'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { LabelComputer } from '../output/labels'
 
 export class ComputeLabelsStep extends PipelineStep {
   readonly name = 'compute-labels'
@@ -16,7 +16,8 @@ export class ComputeLabelsStep extends PipelineStep {
         firstTimeContributor: ctx.prData.author.first_time_contributor,
         prData: ctx.prData,
         authorProfile: ctx.authorProfile,
-        aiFingerprint: ctx.aiFingerprint
+        aiFingerprint: ctx.aiFingerprint,
+        riskyUser: ctx.riskyUser
       })
     }
 

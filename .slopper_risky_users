@@ -1,0 +1,15 @@
+# Slopper Community Risky Users List
+# -----------------------------------
+# This list is fetched at runtime by anyone using the Slopper action.
+# PRs from these accounts get flagged with slopper/risky-user label
+# and extra scrutiny in the analysis pipeline.
+#
+# To add an account, open a PR against this file with evidence
+# (links to spam PRs, patterns of AI slop, etc).
+#
+# Format: one GitHub username per line. Lines starting with # are comments.
+# Blank lines are ignored.
+
+# Known AI slop / spray-and-pray accounts
+# (add usernames below with a comment linking evidence)
+

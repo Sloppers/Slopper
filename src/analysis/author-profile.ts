@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { GitHubClient } from './clients/github'
-import { AuthorProfileAnalysis } from './types'
+import { GitHubClient } from '../clients/github'
+import { AuthorProfileAnalysis } from '../core/types'
 
 export class AuthorProfileAnalyzer {
   private readonly github: GitHubClient

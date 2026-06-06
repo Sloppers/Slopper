@@ -16,6 +16,7 @@ export interface PipelineContext {
   vouchedBy?: string
   addToSlopperFile?: string
   banned?: boolean
+  riskyUser?: boolean
 }
 
 export abstract class PipelineStep {

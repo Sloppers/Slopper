@@ -23,11 +23,16 @@ git add -f dist/
 
 ## Architecture
 
-Single entry point: `src/main.ts`. All GitHub API access goes through `src/clients/github.ts` (`GitHubClient` class). Never import Octokit directly elsewhere.
+Single entry point: `src/main.ts`. Source is organized into purpose-based folders:
 
-Pipeline steps live in `src/steps/`, each extending the abstract `PipelineStep` class from `src/pipeline.ts`. The pipeline context (`PipelineContext`) is a shared data bag passed through all steps.
+- `src/core/` — pipeline framework, config loader, shared types
+- `src/clients/` — `GitHubClient` class (all GitHub API access; never import Octokit elsewhere)
+- `src/analysis/` — heuristic analyzers (fingerprint, profile, data collection)
+- `src/ai/` — AI provider implementations, prompt builder, structured output schemas
+- `src/output/` — label computation, PR comment builder
+- `src/steps/` — numbered pipeline steps (`00_`–`10_`), each extending `PipelineStep` from `src/core/pipeline.ts`
 
-**Vouch pipeline:** LoadConfig -> VouchCheck -> BannedCheck -> VouchApply (short-circuits if vouched or banned)
+**Vouch pipeline:** LoadConfig -> VouchCheck -> BannedCheck -> RiskyUserCheck -> VouchApply (short-circuits if vouched or banned)
 
 **Analysis pipeline:** CollectData -> ProfileAnalysis -> Fingerprint -> AiAnalysis -> ComputeLabels -> PostResults -> AutoActions
 

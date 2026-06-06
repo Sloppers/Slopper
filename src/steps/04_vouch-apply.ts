@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { PrCommentManager } from '../commenter'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { PrCommentManager } from '../output/commenter'
 import { GitHubClient } from '../clients/github'
 
 export class VouchApplyStep extends PipelineStep {

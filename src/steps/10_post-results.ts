@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { PrCommentManager } from '../commenter'
-import { LabelComputer } from '../labels'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { PrCommentManager } from '../output/commenter'
+import { LabelComputer } from '../output/labels'
 import { GitHubClient } from '../clients/github'
 
 export class PostResultsStep extends PipelineStep {

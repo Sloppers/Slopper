@@ -1,4 +1,4 @@
-import { ConfigLoader } from '../src/config'
+import { ConfigLoader } from '../src/core/config'
 
 jest.mock('@actions/core', () => ({
   info: jest.fn()

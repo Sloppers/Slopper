@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
-import { PipelineStep, PipelineContext } from '../pipeline'
-import { callProvider, AiProvider } from '../providers'
-import { SYSTEM_PROMPT, buildUserPrompt } from '../prompt'
-import { AnalysisResult } from '../types'
+import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { callProvider, AiProvider } from '../ai/providers'
+import { SYSTEM_PROMPT, buildUserPrompt } from '../ai/prompt'
+import { AnalysisResult } from '../core/types'
 
 export interface AiAnalysisConfig {
   provider: AiProvider
