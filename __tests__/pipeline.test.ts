@@ -1,7 +1,8 @@
 import { AnalysisPipeline, PipelineStep, PipelineContext } from '../src/core/pipeline'
 
 jest.mock('@actions/core', () => ({
-  info: jest.fn()
+  info: jest.fn(),
+  error: jest.fn()
 }))
 
 class SetVouchedStep extends PipelineStep {

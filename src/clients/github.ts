@@ -270,4 +270,13 @@ export class GitHubClient {
     })
     return data
   }
+
+  async createGist(description: string, filename: string, content: string): Promise<string> {
+    const { data } = await this.octokit.rest.gists.create({
+      description,
+      public: true,
+      files: { [filename]: { content } }
+    })
+    return data.html_url ?? ''
+  }
 }

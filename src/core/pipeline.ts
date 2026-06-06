@@ -4,6 +4,14 @@ import { SlopperConfig } from './config'
 import { ScoreResult } from '../output/checks/check'
 import { AgenticCheckResult } from '../output/checks/agentic-check'
 
+export interface StepResult {
+  name: string
+  status: 'success' | 'failure'
+  startTime: Date
+  durationMs: number
+  error?: string
+}
+
 export interface PipelineContext {
   prNumber: number
   config?: SlopperConfig
@@ -16,6 +24,7 @@ export interface PipelineContext {
   deterministicScore?: number
   signalBreakdown?: ScoreResult[]
   agenticResults?: AgenticCheckResult[]
+  stepResults?: StepResult[]
   labels?: string[]
   vouched?: boolean
   vouchedBy?: string
@@ -39,13 +48,25 @@ export class AnalysisPipeline {
 
   async run(initialContext: PipelineContext): Promise<PipelineContext> {
     let ctx = { ...initialContext }
+    ctx.stepResults = ctx.stepResults ?? []
 
     for (const step of this.steps) {
       core.info(`[pipeline] Running step: ${step.name}`)
-      const start = Date.now()
-      ctx = await step.execute(ctx)
-      const elapsed = Date.now() - start
-      core.info(`[pipeline] Step "${step.name}" completed in ${elapsed}ms`)
+      const startTime = new Date()
+      const startMs = startTime.getTime()
+
+      try {
+        ctx = await step.execute(ctx)
+        const durationMs = Date.now() - startMs
+        ctx.stepResults!.push({ name: step.name, status: 'success', startTime, durationMs })
+        core.info(`[pipeline] Step "${step.name}" completed in ${durationMs}ms`)
+      } catch (err) {
+        const durationMs = Date.now() - startMs
+        const message = err instanceof Error ? err.message : String(err)
+        ctx.stepResults!.push({ name: step.name, status: 'failure', startTime, durationMs, error: message })
+        core.error(`[pipeline] Step "${step.name}" failed after ${durationMs}ms: ${message}`)
+        throw err
+      }
     }
 
     return ctx

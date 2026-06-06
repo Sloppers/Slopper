@@ -2,11 +2,21 @@ import { GitHubClient } from '../clients/github'
 import { AnalysisResult } from '../core/types'
 import { ScoreResult } from './checks/check'
 import { AgenticCheckResult } from './checks/agentic-check'
+import { StepResult } from '../core/pipeline'
 import { colorMap } from './label-factory'
 
 const COMMENT_MARKER = '<!-- pr-trust-analysis -->'
 
 const LABEL_COLORS = colorMap()
+
+function formatDuration(ms: number): string {
+  const secs = Math.round(ms / 1000)
+  if (secs < 60) return `${secs} seconds`
+  const mins = Math.floor(secs / 60)
+  const rem = secs % 60
+  if (rem === 0) return mins === 1 ? 'a minute' : `${mins} minutes`
+  return mins === 1 ? `a minute` : `${mins} minutes`
+}
 
 export interface CommentOptions {
   result?: AnalysisResult
@@ -14,6 +24,8 @@ export interface CommentOptions {
   riskLevel?: string
   signalBreakdown?: ScoreResult[]
   agenticResults?: AgenticCheckResult[]
+  stepResults?: StepResult[]
+  pipelineGistUrl?: string
   labels: string[]
   suggestVouch?: { author: string }
   authorProfile?: {
@@ -38,7 +50,7 @@ export class PrCommentManager {
   }
 
   buildCommentBody(opts: CommentOptions): string {
-    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, labels, suggestVouch, authorProfile, aiFingerprint } = opts
+    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, stepResults, pipelineGistUrl, labels, suggestVouch, authorProfile, aiFingerprint } = opts
     const riskEmoji: Record<string, string> = {
       low: '🟢', medium: '🟡', high: '🟠', critical: '🔴', unknown: '⚪'
     }
@@ -59,6 +71,22 @@ export class PrCommentManager {
     } else {
       md += `> **Risk:** ${badge} **${score}**/10 (${level})`
       md += ` · **Mode:** deterministic (no AI provider)\n\n`
+    }
+
+    if (stepResults && stepResults.length > 0) {
+      md += `<details>\n<summary>Pipeline</summary>\n\n`
+      md += `| Status | Task | Start Time | Duration |\n`
+      md += `|--------|------|------------|----------|\n`
+      for (const s of stepResults) {
+        const icon = s.status === 'success' ? '✔️' : '❌'
+        const time = s.startTime.toISOString().replace('T', ' ').replace(/\.\d+Z$/, '+00:00')
+        const dur = formatDuration(s.durationMs)
+        md += `| ${icon} | ${s.name} | ${time} | ${dur} |\n`
+      }
+      if (pipelineGistUrl) {
+        md += `\nPipeline logs: ${pipelineGistUrl}\n`
+      }
+      md += `\n</details>\n\n`
     }
 
     md += `<details>\n<summary>Walkthrough</summary>\n\n`
