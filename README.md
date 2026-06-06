@@ -116,19 +116,20 @@ The remaining static checks are **label-only** (weight 0) — they flag patterns
 
 Agentic checks are fundamentally different from static checks. Each one makes its own focused AI call with a dedicated prompt and tool schema, then returns structured reasoning and evidence. They only run when you configure an `ai-provider`.
 
-There are **4 agentic checks**:
+There are **5 agentic checks**:
 
 | Check | Weight | What the AI evaluates |
 |-------|--------|----------------------|
 | Slop Content | +2 | Generic AI slop: phantom fixes, boilerplate, templated descriptions |
 | Security Concern | +2 | Obfuscated code, credentials, backdoors, CI tampering |
+| Suspicious Author | +2 | Author profile patterns: new account + high volume, spray-and-pray, bot-like behavior |
 | Description Mismatch | +1 | PR description doesn't match the actual diff |
 | Code Quality | +1 | Missing edge cases, unnecessary complexity, duplicate functionality |
 
 **Key differences from static checks:**
 
 - **Async** — each agentic check calls an LLM; static checks are synchronous and instant
-- **Parallel execution** — all 4 run concurrently via `Promise.allSettled`, so one failing doesn't block the others
+- **Parallel execution** — all 5 run concurrently via `Promise.allSettled`, so one failing doesn't block the others
 - **Structured reasoning** — each returns `{ triggered, label, reasoning, confidence, evidence[] }`, shown in the PR comment
 - **Independent prompts** — each check has its own system/user prompt and tool schema, not a single monolithic AI call
 - **Graceful failure** — if an individual check errors, it's skipped; the rest still run
@@ -266,6 +267,7 @@ All labels are deterministic — the AI never picks them.
 | `slopper/ai/description-mismatch` | AI: description ≠ diff | Requires AI provider |
 | `slopper/ai/code-quality` | AI: quality issues found | Requires AI provider |
 | `slopper/ai/security-concern` | AI: security concern | Requires AI provider |
+| `slopper/ai/suspicious-author` | AI: suspicious author profile | Requires AI provider |
 
 ## Outputs
 

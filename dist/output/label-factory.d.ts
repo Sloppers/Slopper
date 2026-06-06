@@ -42,6 +42,7 @@ export declare const Labels: {
     readonly AI_DESCRIPTION_MISMATCH: LabelDef;
     readonly AI_CODE_QUALITY: LabelDef;
     readonly AI_SECURITY_CONCERN: LabelDef;
+    readonly AI_SUSPICIOUS_AUTHOR: LabelDef;
 };
 export type LabelKey = keyof typeof Labels;
 export declare function colorMap(): Record<string, string>;

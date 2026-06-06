@@ -52,6 +52,7 @@ export const Labels = {
   AI_DESCRIPTION_MISMATCH: def('slopper/ai/description-mismatch', 'e99695', 'AI detected PR description does not match diff'),
   AI_CODE_QUALITY: def('slopper/ai/code-quality', 'fbca04', 'AI detected subtle code quality issues'),
   AI_SECURITY_CONCERN: def('slopper/ai/security-concern', 'b60205', 'AI detected potential security concerns'),
+  AI_SUSPICIOUS_AUTHOR: def('slopper/ai/suspicious-author', 'e99695', 'AI detected suspicious author profile patterns'),
 } as const
 
 export type LabelKey = keyof typeof Labels
