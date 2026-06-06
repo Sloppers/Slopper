@@ -1,4 +1,6 @@
-export { Check, CheckContext } from './check'
+export { Check, StaticCheck, CheckContext, ScoreResult } from './check'
+export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic-check'
+export { allAgenticChecks } from './agentic'
 export { ApprovedCheck } from './approved'
 export { DeterministicModeCheck } from './deterministic-mode'
 export { FirstTimeContributorCheck } from './first-time-contributor'
@@ -18,8 +20,9 @@ export { RiskyUserCheck } from './risky-user'
 export { TrustedOrgCheck } from './trusted-org'
 export { HeavyChangesCheck } from './heavy-changes'
 export { LargeFileCheck } from './large-file'
+export { LowMergeRatioCheck } from './low-merge-ratio'
 
-import { Check } from './check'
+import { Check, ScoreResult } from './check'
 import { ApprovedCheck } from './approved'
 import { DeterministicModeCheck } from './deterministic-mode'
 import { FirstTimeContributorCheck } from './first-time-contributor'
@@ -39,6 +42,7 @@ import { RiskyUserCheck } from './risky-user'
 import { TrustedOrgCheck } from './trusted-org'
 import { HeavyChangesCheck } from './heavy-changes'
 import { LargeFileCheck } from './large-file'
+import { LowMergeRatioCheck } from './low-merge-ratio'
 
 const ALL_CHECKS: Check[] = [
   new ApprovedCheck(),
@@ -59,9 +63,29 @@ const ALL_CHECKS: Check[] = [
   new RiskyUserCheck(),
   new TrustedOrgCheck(),
   new HeavyChangesCheck(),
-  new LargeFileCheck()
+  new LargeFileCheck(),
+  new LowMergeRatioCheck()
 ]
 
 export function allChecks(): Check[] {
   return [...ALL_CHECKS]
+}
+
+export function computeScore(checks: Check[], ctx: import('./check').CheckContext, weights?: Record<string, number>): { score: number; breakdown: ScoreResult[] } {
+  const breakdown: ScoreResult[] = []
+  let total = 0
+
+  for (const check of checks) {
+    if (check.defaultWeight === 0 && !weights) continue
+    const key = check.label.replace('slopper/', '').replace(/\//g, '_')
+    const weight = weights?.[key] ?? check.defaultWeight
+    if (weight === 0) continue
+    const factor = check.scoreFactor(ctx)
+    const points = factor * weight
+    total += points
+    breakdown.push({ key, factor, weight, points })
+  }
+
+  const score = Math.max(0, Math.min(10, Math.round(total * 10) / 10))
+  return { score, breakdown }
 }

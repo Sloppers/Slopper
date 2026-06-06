@@ -41,6 +41,13 @@ export const Labels = {
   TRUSTED_ORG: def('slopper/trusted-org', '0e8a16', 'Author belongs to a trusted organization'),
   HEAVY_CHANGES: def('slopper/heavy-changes', 'e99695', 'PR has too many lines changed to review effectively'),
   LARGE_FILE: def('slopper/large-file', 'fbca04', 'PR contains a file with an unusually large diff'),
+
+  LOW_MERGE_RATIO: def('slopper/low-merge-ratio', 'fbca04', 'Author has a low PR merge ratio'),
+
+  AI_SLOP_CONTENT: def('slopper/ai/slop-content', 'b60205', 'AI detected generic slop content'),
+  AI_DESCRIPTION_MISMATCH: def('slopper/ai/description-mismatch', 'e99695', 'AI detected PR description does not match diff'),
+  AI_CODE_QUALITY: def('slopper/ai/code-quality', 'fbca04', 'AI detected subtle code quality issues'),
+  AI_SECURITY_CONCERN: def('slopper/ai/security-concern', 'b60205', 'AI detected potential security concerns'),
 } as const
 
 export type LabelKey = keyof typeof Labels

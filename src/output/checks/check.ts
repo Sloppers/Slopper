@@ -16,7 +16,22 @@ export interface CheckContext {
   rules: RulesConfig
 }
 
-export abstract class Check {
-  abstract readonly label: string
-  abstract evaluate(ctx: CheckContext): boolean
+export interface ScoreResult {
+  key: string
+  factor: number
+  weight: number
+  points: number
 }
+
+export abstract class StaticCheck {
+  abstract readonly label: string
+  readonly defaultWeight: number = 0
+
+  abstract evaluate(ctx: CheckContext): boolean
+
+  scoreFactor(ctx: CheckContext): number {
+    return this.evaluate(ctx) ? 1 : 0
+  }
+}
+
+export { StaticCheck as Check }

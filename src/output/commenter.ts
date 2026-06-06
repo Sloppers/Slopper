@@ -1,6 +1,7 @@
 import { GitHubClient } from '../clients/github'
 import { AnalysisResult } from '../core/types'
-import { SignalResult } from '../core/signals'
+import { ScoreResult } from './checks/check'
+import { AgenticCheckResult } from './checks/agentic-check'
 import { colorMap } from './label-factory'
 
 const COMMENT_MARKER = '<!-- pr-trust-analysis -->'
@@ -11,7 +12,8 @@ export interface CommentOptions {
   result?: AnalysisResult
   deterministicScore?: number
   riskLevel?: string
-  signalBreakdown?: SignalResult[]
+  signalBreakdown?: ScoreResult[]
+  agenticResults?: AgenticCheckResult[]
   labels: string[]
   suggestVouch?: { author: string }
   authorProfile?: {
@@ -36,7 +38,7 @@ export class PrCommentManager {
   }
 
   buildCommentBody(opts: CommentOptions): string {
-    const { result, deterministicScore, riskLevel, signalBreakdown, labels, suggestVouch, authorProfile, aiFingerprint } = opts
+    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, labels, suggestVouch, authorProfile, aiFingerprint } = opts
     const riskEmoji: Record<string, string> = {
       low: '🟢', medium: '🟡', high: '🟠', critical: '🔴', unknown: '⚪'
     }
@@ -130,6 +132,23 @@ export class PrCommentManager {
       if (aiFingerprint.signals.length > 0) {
         for (const s of aiFingerprint.signals.filter(s => s.score > 20)) {
           md += `- **${s.name}** (${s.score}/100): ${s.detail}\n`
+        }
+        md += '\n'
+      }
+    }
+
+    if (agenticResults && agenticResults.length > 0) {
+      const triggered = agenticResults.filter(r => r.triggered)
+      if (triggered.length > 0) {
+        md += `#### 🤖 AI Checks\n`
+        for (const r of triggered) {
+          const confBadge: Record<string, string> = { high: '🔴', medium: '🟠', low: '🟡' }
+          md += `- ${confBadge[r.confidence] ?? '⚪'} **${r.label}** (${r.confidence}): ${r.reasoning}\n`
+          if (r.evidence && r.evidence.length > 0) {
+            for (const e of r.evidence) {
+              md += `  - ${e}\n`
+            }
+          }
         }
         md += '\n'
       }

@@ -18,22 +18,7 @@ export class ComputeLabelsStep extends PipelineStep {
       return ctx
     }
 
-    const isDeterministic = !ctx.analysisResult
-    if (isDeterministic) {
-      const result = LabelComputer.computeDeterministicResult({
-        authorProfile: ctx.authorProfile,
-        aiFingerprint: ctx.aiFingerprint,
-        riskyUser: ctx.riskyUser,
-        trustedOrg: ctx.trustedOrg,
-        weights: ctx.config?.label_thresholds?.score_weights
-      })
-      ctx.deterministicScore = result.score
-      ctx.signalBreakdown = result.breakdown
-      const active = result.breakdown.filter(s => s.points !== 0).map(s => `${s.key}=${s.points > 0 ? '+' : ''}${s.points}`).join(', ')
-      core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10 [${active}]`)
-    }
-
-    ctx.labels = computer.compute({
+    const opts = {
       analysis: ctx.analysisResult,
       files: ctx.prData.files,
       firstTimeContributor: ctx.prData.author.first_time_contributor,
@@ -42,7 +27,26 @@ export class ComputeLabelsStep extends PipelineStep {
       aiFingerprint: ctx.aiFingerprint,
       riskyUser: ctx.riskyUser,
       trustedOrg: ctx.trustedOrg
-    })
+    }
+
+    const isDeterministic = !ctx.analysisResult
+    if (isDeterministic) {
+      const result = computer.computeScoreFromChecks(opts)
+      ctx.deterministicScore = result.score
+      ctx.signalBreakdown = result.breakdown
+      const active = result.breakdown.filter(s => s.points !== 0).map(s => `${s.key}=${s.points > 0 ? '+' : ''}${s.points}`).join(', ')
+      core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10 [${active}]`)
+    }
+
+    ctx.labels = computer.compute(opts)
+
+    if (ctx.agenticResults) {
+      for (const result of ctx.agenticResults) {
+        if (result.triggered) {
+          ctx.labels.push(result.label)
+        }
+      }
+    }
 
     return ctx
   }

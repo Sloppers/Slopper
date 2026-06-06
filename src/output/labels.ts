@@ -1,10 +1,9 @@
 import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config'
-import { SignalEngine, SignalContext, SignalResult } from '../core/signals'
-import { Check, CheckContext, allChecks } from './checks'
+import { Check, CheckContext, ScoreResult, allChecks, computeScore } from './checks'
 import { Labels, confidenceLabel, riskLabel } from './label-factory'
 
-export type { CheckContext }
+export type { CheckContext, ScoreResult }
 export { Check }
 
 export interface ComputeLabelsOptions {
@@ -61,13 +60,7 @@ export class LabelComputer {
   compute(opts: ComputeLabelsOptions): string[] {
     const score = opts.analysis
       ? opts.analysis.risk_score
-      : LabelComputer.computeDeterministicScore({
-          authorProfile: opts.authorProfile,
-          aiFingerprint: opts.aiFingerprint,
-          riskyUser: opts.riskyUser,
-          trustedOrg: opts.trustedOrg,
-          weights: this.labelThresholds.score_weights
-        })
+      : this.computeScoreFromChecks(opts).score
 
     const ctx: CheckContext = {
       score,
@@ -107,6 +100,18 @@ export class LabelComputer {
     return true
   }
 
+  computeScoreFromChecks(opts: ComputeLabelsOptions): { score: number; breakdown: ScoreResult[] } {
+    const ctx: CheckContext = {
+      score: 0,
+      ...opts,
+      thresholds: this.thresholds,
+      labelThresholds: this.labelThresholds,
+      rules: this.rules
+    }
+    const weights = this.labelThresholds.score_weights as unknown as Record<string, number>
+    return computeScore(this.checks, ctx, weights)
+  }
+
   static computeDeterministicScore(opts: {
     authorProfile?: AuthorProfileAnalysis
     aiFingerprint?: AiFingerprintResult
@@ -124,12 +129,15 @@ export class LabelComputer {
     riskyUser?: boolean
     trustedOrg?: boolean
     weights?: ScoreWeightsConfig
-  }): { score: number; breakdown: SignalResult[] } {
-    const engine = new SignalEngine()
-    return engine.compute(
-      { authorProfile: opts.authorProfile, aiFingerprint: opts.aiFingerprint, riskyUser: opts.riskyUser, trustedOrg: opts.trustedOrg },
-      opts.weights as Record<string, number> | undefined
-    )
+  }): { score: number; breakdown: ScoreResult[] } {
+    const computer = new LabelComputer()
+    return computer.computeScoreFromChecks({
+      files: [],
+      firstTimeContributor: false,
+      authorProfile: opts.authorProfile,
+      aiFingerprint: opts.aiFingerprint,
+      riskyUser: opts.riskyUser,
+      trustedOrg: opts.trustedOrg
+    })
   }
-
 }

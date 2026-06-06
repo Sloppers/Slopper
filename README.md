@@ -32,6 +32,7 @@ Slopper is a GitHub Action that scores every PR using deterministic heuristics t
 - **Bans repeat offenders** — maintainers comment `/slopper report` to permanently block an account
 - **Vouches trusted contributors** — `/slopper vouch` skips all analysis for that author going forward
 - **AI optional** — runs fully on deterministic heuristics by default. Add an AI provider (`openai`, `anthropic`, `vertex`, `groq`, `gemini`) for deeper analysis when you want it
+- **Two check suites** — static checks run always (no cost); agentic checks use AI for deeper analysis (slop detection, description-vs-diff mismatch, code quality, security review)
 
 ## Quick Start
 
@@ -71,20 +72,31 @@ See [`examples/`](examples/) for more setups (strict mode, merge gating, multi-p
 
 ## How Scoring Works
 
-In deterministic mode (default), the risk score is derived from:
+Every check has a `defaultWeight` that contributes to the risk score. The score is `sum(factor × weight)`, clamped to 0–10. Checks with weight 0 only produce labels.
 
-| Signal | Default Weight | What it measures |
-|--------|---------------|-----------------|
-| AI Fingerprint | +4 | 6 heuristic signals detecting machine-generated code patterns |
-| Spray Score | +3 | Cross-repo PR volume, distinct repos, merge ratio, account age |
-| New Account | +1 | Account younger than configurable threshold (default 30 days) |
-| Low Merge Ratio | +1 | Below configurable threshold (default 40%) |
-| Risky User | +1 | Listed in community blocklist |
-| Trusted Org | **-2** | Public member of a trusted GitHub organization |
+### Static checks (always run, no AI)
 
-All weights are configurable via `label_thresholds.score_weights` in `.slopper`. Negative weights reduce the score. Final score is clamped to 0–10.
+| Check | Default Weight | Factor | What it measures |
+|-------|---------------|--------|-----------------|
+| AI Fingerprint | +4 | continuous (0–1) | 6 heuristic signals detecting machine-generated code patterns |
+| Spray Score | +3 | continuous (0–1) | Cross-repo PR volume, distinct repos, merge ratio, account age |
+| New Account | +1 | binary | Account younger than configurable threshold (default 30 days) |
+| Low Merge Ratio | +1 | binary | Below configurable threshold (default 40%) |
+| Risky User | +1 | binary | Listed in community blocklist |
+| Trusted Org | **-2** | binary | Public member of a trusted GitHub organization (reduces score) |
 
-When an AI provider is configured, the score comes from the AI analysis instead, with richer context from commit messages, code diffs, and behavioral signals.
+### Agentic checks (only with AI provider)
+
+| Check | Default Weight | What the AI evaluates |
+|-------|---------------|----------------------|
+| Slop Content | +2 | Generic AI slop: phantom fixes, boilerplate, templated descriptions |
+| Security Concern | +2 | Obfuscated code, credentials, backdoors, CI tampering |
+| Description Mismatch | +1 | PR description doesn't match the actual diff |
+| Code Quality | +1 | Missing edge cases, unnecessary complexity, duplicate functionality |
+
+Agentic checks run in parallel and return reasoning + evidence shown in the PR comment.
+
+All weights are configurable via `label_thresholds.score_weights` in `.slopper`. Final score is clamped to 0–10.
 
 ## Configuration
 
@@ -152,6 +164,8 @@ rules:
   require_description: true
   require_linked_issue: false
   max_files_changed: 0
+  max_total_changes: 1500
+  max_file_changes: 800
 ```
 
 ## Commands
@@ -174,13 +188,20 @@ All labels are deterministic — the AI never picks them.
 | `slopper/possibly-ai-generated` | Fingerprint >= 40 | `label_thresholds.ai_possibly` |
 | `slopper/spray-and-pray` | Spray score > 60 | `label_thresholds.spray_score` |
 | `slopper/new-account` | Account < 30 days | `label_thresholds.new_account_days` |
+| `slopper/low-merge-ratio` | Merge ratio < 40% | `label_thresholds.merge_ratio_suspect` |
 | `slopper/activity-burst` | > 10 PRs in 7 days | `label_thresholds.activity_burst_prs` |
 | `slopper/risky-user` | On community list | — |
 | `slopper/trusted-org` | Member of trusted org | `trusted_orgs` |
+| `slopper/heavy-changes` | Total lines > 1500 | `rules.max_total_changes` |
+| `slopper/large-file` | Single file > 800 lines | `rules.max_file_changes` |
 | `slopper/mode/deterministic` | No AI provider set | — |
 | `slopper/banned` | Banned or reported | — |
 | `slopper/ci-modified` | CI/CD files changed | — |
 | `slopper/dependencies-modified` | Lockfiles changed | — |
+| `slopper/ai/slop-content` | AI: generic slop detected | Requires AI provider |
+| `slopper/ai/description-mismatch` | AI: description ≠ diff | Requires AI provider |
+| `slopper/ai/code-quality` | AI: quality issues found | Requires AI provider |
+| `slopper/ai/security-concern` | AI: security concern | Requires AI provider |
 
 ## Outputs
 

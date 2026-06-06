@@ -13,6 +13,7 @@ import {
   ProfileAnalysisStep,
   FingerprintStep,
   AiAnalysisStep,
+  AgenticChecksStep,
   ComputeLabelsStep,
   PostResultsStep,
   AutoActionsStep
@@ -67,8 +68,7 @@ async function run(): Promise<void> {
 
   if (useAi) {
     const provider = providerInput as AiProvider
-    steps.push(new AiAnalysisStep({
-      provider,
+    const providerConfig = {
       openaiApiKey: core.getInput('openai-api-key'),
       anthropicApiKey: core.getInput('anthropic-api-key'),
       vertexProjectId: core.getInput('vertex-project-id'),
@@ -76,7 +76,9 @@ async function run(): Promise<void> {
       groqApiKey: core.getInput('groq-api-key'),
       geminiApiKey: core.getInput('gemini-api-key'),
       model: core.getInput('model') || undefined
-    }))
+    }
+    steps.push(new AiAnalysisStep({ provider, ...providerConfig }))
+    steps.push(new AgenticChecksStep({ provider, providerConfig }))
   } else {
     core.info('[main] Running in deterministic mode — no AI provider configured')
   }
