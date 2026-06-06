@@ -325,6 +325,8 @@ describe('LabelComputer', () => {
       require_description: true,
       require_linked_issue: true,
       max_files_changed: 10,
+      max_total_changes: 1500,
+      max_file_changes: 800,
       block_first_time_contributors: false
     })
 

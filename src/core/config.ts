@@ -65,6 +65,8 @@ export interface RulesConfig {
   require_description: boolean
   require_linked_issue: boolean
   max_files_changed: number
+  max_total_changes: number
+  max_file_changes: number
   block_first_time_contributors: boolean
 }
 
@@ -134,6 +136,8 @@ const DEFAULT_CONFIG: SlopperConfig = {
     require_description: false,
     require_linked_issue: false,
     max_files_changed: 0,
+    max_total_changes: 1500,
+    max_file_changes: 800,
     block_first_time_contributors: false
   }
 }
@@ -265,6 +269,8 @@ export class ConfigLoader {
       require_description: Boolean(parsedRules.require_description ?? DEFAULT_CONFIG.rules.require_description),
       require_linked_issue: Boolean(parsedRules.require_linked_issue ?? DEFAULT_CONFIG.rules.require_linked_issue),
       max_files_changed: Number(parsedRules.max_files_changed ?? DEFAULT_CONFIG.rules.max_files_changed),
+      max_total_changes: Number(parsedRules.max_total_changes ?? DEFAULT_CONFIG.rules.max_total_changes),
+      max_file_changes: Number(parsedRules.max_file_changes ?? DEFAULT_CONFIG.rules.max_file_changes),
       block_first_time_contributors: Boolean(parsedRules.block_first_time_contributors ?? DEFAULT_CONFIG.rules.block_first_time_contributors)
     }
 

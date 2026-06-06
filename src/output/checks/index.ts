@@ -16,6 +16,8 @@ export { NoLinkedIssueCheck } from './no-linked-issue'
 export { TooManyFilesCheck } from './too-many-files'
 export { RiskyUserCheck } from './risky-user'
 export { TrustedOrgCheck } from './trusted-org'
+export { HeavyChangesCheck } from './heavy-changes'
+export { LargeFileCheck } from './large-file'
 
 import { Check } from './check'
 import { ApprovedCheck } from './approved'
@@ -35,6 +37,8 @@ import { NoLinkedIssueCheck } from './no-linked-issue'
 import { TooManyFilesCheck } from './too-many-files'
 import { RiskyUserCheck } from './risky-user'
 import { TrustedOrgCheck } from './trusted-org'
+import { HeavyChangesCheck } from './heavy-changes'
+import { LargeFileCheck } from './large-file'
 
 const ALL_CHECKS: Check[] = [
   new ApprovedCheck(),
@@ -53,7 +57,9 @@ const ALL_CHECKS: Check[] = [
   new NoLinkedIssueCheck(),
   new TooManyFilesCheck(),
   new RiskyUserCheck(),
-  new TrustedOrgCheck()
+  new TrustedOrgCheck(),
+  new HeavyChangesCheck(),
+  new LargeFileCheck()
 ]
 
 export function allChecks(): Check[] {

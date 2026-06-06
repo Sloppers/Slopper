@@ -51,6 +51,8 @@ export class LabelComputer {
       require_description: false,
       require_linked_issue: false,
       max_files_changed: 0,
+      max_total_changes: 1500,
+      max_file_changes: 800,
       block_first_time_contributors: false
     }
     this.checks = checks ?? allChecks()

@@ -39,6 +39,8 @@ export const Labels = {
   TOO_MANY_FILES: def('slopper/too-many-files', 'e4e669', 'PR changes too many files'),
   RISKY_USER: def('slopper/risky-user', 'b60205', 'Author is on the risky users list'),
   TRUSTED_ORG: def('slopper/trusted-org', '0e8a16', 'Author belongs to a trusted organization'),
+  HEAVY_CHANGES: def('slopper/heavy-changes', 'e99695', 'PR has too many lines changed to review effectively'),
+  LARGE_FILE: def('slopper/large-file', 'fbca04', 'PR contains a file with an unusually large diff'),
 } as const
 
 export type LabelKey = keyof typeof Labels
