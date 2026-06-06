@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import { GitHubClient } from '../clients/github'
 import { AuthorProfileAnalysis } from '../core/types'
+import { SprayWeightsConfig } from '../core/config'
 
 export class AuthorProfileAnalyzer {
   private readonly github: GitHubClient
@@ -9,10 +10,15 @@ export class AuthorProfileAnalyzer {
     this.github = github
   }
 
-  async analyze(username: string): Promise<AuthorProfileAnalysis> {
+  async analyze(
+    username: string,
+    burstWindowDays = 7,
+    sprayWeights: SprayWeightsConfig = { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 }
+  ): Promise<AuthorProfileAnalysis> {
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const burstDaysAgo = new Date(now.getTime() - burstWindowDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     let accountAgeDays = 0
     let totalStars = 0
@@ -46,6 +52,12 @@ export class AuthorProfileAnalyzer {
       `author:${username} type:issue`
     )
 
+    const prsInBurstWindow = burstWindowDays === 7
+      ? prsLast7d
+      : await this.countSearchResults(
+          `author:${username} type:pr created:>=${burstDaysAgo}`
+        )
+
     const distinctRepos30d = await this.countDistinctRepos(username, thirtyDaysAgo)
 
     const totalPrs = mergedPrs + closedPrs
@@ -56,13 +68,15 @@ export class AuthorProfileAnalyzer {
       prsLast30d,
       mergeRatio,
       accountAgeDays
-    })
+    }, sprayWeights)
 
     return {
       account_age_days: accountAgeDays,
       is_new_account: accountAgeDays < 30,
       prs_last_7d: prsLast7d,
       prs_last_30d: prsLast30d,
+      prs_in_burst_window: prsInBurstWindow,
+      burst_window_days: burstWindowDays,
       distinct_repos_30d: distinctRepos30d,
       merge_ratio: Math.round(mergeRatio * 100) / 100,
       total_stars: totalStars,
@@ -97,29 +111,25 @@ export class AuthorProfileAnalyzer {
     prsLast30d: number
     mergeRatio: number
     accountAgeDays: number
-  }): number {
+  }, weights: SprayWeightsConfig): number {
     let score = 0
 
-    // Many distinct repos = spray behavior (0-40 points)
-    if (data.distinctRepos30d > 50) score += 40
-    else if (data.distinctRepos30d > 20) score += 30
-    else if (data.distinctRepos30d > 10) score += 15
-    else if (data.distinctRepos30d > 5) score += 5
+    if (data.distinctRepos30d > 50) score += weights.repos
+    else if (data.distinctRepos30d > 20) score += weights.repos * 0.75
+    else if (data.distinctRepos30d > 10) score += weights.repos * 0.375
+    else if (data.distinctRepos30d > 5) score += weights.repos * 0.125
 
-    // High volume of PRs (0-30 points)
-    if (data.prsLast30d > 50) score += 30
-    else if (data.prsLast30d > 20) score += 20
-    else if (data.prsLast30d > 10) score += 10
+    if (data.prsLast30d > 50) score += weights.volume
+    else if (data.prsLast30d > 20) score += weights.volume * 0.67
+    else if (data.prsLast30d > 10) score += weights.volume * 0.33
 
-    // Low merge ratio = rejected work (0-20 points)
-    if (data.mergeRatio < 0.2) score += 20
-    else if (data.mergeRatio < 0.4) score += 10
-    else if (data.mergeRatio < 0.6) score += 5
+    if (data.mergeRatio < 0.2) score += weights.merge_ratio
+    else if (data.mergeRatio < 0.4) score += weights.merge_ratio * 0.5
+    else if (data.mergeRatio < 0.6) score += weights.merge_ratio * 0.25
 
-    // New account bonus (0-10 points)
-    if (data.accountAgeDays < 30) score += 10
-    else if (data.accountAgeDays < 90) score += 5
+    if (data.accountAgeDays < 30) score += weights.account_age
+    else if (data.accountAgeDays < 90) score += weights.account_age * 0.5
 
-    return Math.min(score, 100)
+    return Math.min(Math.round(score), 100)
   }
 }

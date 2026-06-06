@@ -82,6 +82,15 @@ label_thresholds:
   spray_score: 60
   new_account_days: 30
   activity_burst_prs: 10
+  activity_burst_days: 7
+  merge_ratio_suspect: 0.4
+  security_review_score: 6
+  suspicious_score: 8
+  spray_weights:
+    repos: 40
+    volume: 30
+    merge_ratio: 20
+    account_age: 10
 
 ignore_paths:
   - "*.md"

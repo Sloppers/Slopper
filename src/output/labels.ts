@@ -53,7 +53,12 @@ export class LabelComputer {
       ai_possibly: 40,
       spray_score: 60,
       new_account_days: 30,
-      activity_burst_prs: 10
+      activity_burst_prs: 10,
+      activity_burst_days: 7,
+      spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
+      merge_ratio_suspect: 0.4,
+      security_review_score: 6,
+      suspicious_score: 8
     }
     this.rules = rules ?? {
       require_description: false,
@@ -87,8 +92,8 @@ export class LabelComputer {
       labels.push('slopper/dependencies-modified')
     }
 
-    if (score >= this.thresholds.medium + 1) labels.push('slopper/needs-security-review')
-    if (score >= this.thresholds.high) labels.push('slopper/suspicious')
+    if (score >= this.labelThresholds.security_review_score) labels.push('slopper/needs-security-review')
+    if (score >= this.labelThresholds.suspicious_score) labels.push('slopper/suspicious')
 
     if (prData) {
       labels.push(...this.ruleLabels(prData))
@@ -96,7 +101,7 @@ export class LabelComputer {
 
     if (authorProfile) {
       if (authorProfile.spray_score > this.labelThresholds.spray_score) labels.push('slopper/spray-and-pray')
-      if (authorProfile.prs_last_7d > this.labelThresholds.activity_burst_prs) labels.push('slopper/activity-burst')
+      if ((authorProfile.prs_in_burst_window ?? authorProfile.prs_last_7d) > this.labelThresholds.activity_burst_prs) labels.push('slopper/activity-burst')
       if (authorProfile.account_age_days < this.labelThresholds.new_account_days) labels.push('slopper/new-account')
     }
 

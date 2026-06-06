@@ -25,11 +25,20 @@ thresholds:
 
 # Tune when each label fires
 label_thresholds:
-  ai_likely: 70           # slopper/likely-ai-generated
-  ai_possibly: 40         # slopper/possibly-ai-generated
-  spray_score: 60         # slopper/spray-and-pray
-  new_account_days: 30    # slopper/new-account
-  activity_burst_prs: 10  # slopper/activity-burst
+  ai_likely: 70              # slopper/likely-ai-generated
+  ai_possibly: 40            # slopper/possibly-ai-generated
+  spray_score: 60            # slopper/spray-and-pray
+  new_account_days: 30       # slopper/new-account
+  activity_burst_prs: 10     # slopper/activity-burst
+  activity_burst_days: 7     # window for burst detection
+  merge_ratio_suspect: 0.4   # merge ratio below this feeds spray score
+  security_review_score: 6   # slopper/needs-security-review
+  suspicious_score: 8        # slopper/suspicious
+  spray_weights:             # how spray score is calculated (max points per signal)
+    repos: 40                # distinct repos in 30d
+    volume: 30               # PR volume in 30d
+    merge_ratio: 20          # low merge ratio penalty
+    account_age: 10          # new account penalty
 
 ignore_paths:
   - "*.md"

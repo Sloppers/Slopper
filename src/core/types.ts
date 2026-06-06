@@ -84,6 +84,8 @@ export interface AuthorProfileAnalysis {
   is_new_account: boolean
   prs_last_7d: number
   prs_last_30d: number
+  prs_in_burst_window: number
+  burst_window_days: number
   distinct_repos_30d: number
   merge_ratio: number
   total_stars: number

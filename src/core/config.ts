@@ -31,12 +31,24 @@ export interface ThresholdsConfig {
   high: number
 }
 
+export interface SprayWeightsConfig {
+  repos: number
+  volume: number
+  merge_ratio: number
+  account_age: number
+}
+
 export interface LabelThresholdsConfig {
   ai_likely: number
   ai_possibly: number
   spray_score: number
+  spray_weights: SprayWeightsConfig
   new_account_days: number
   activity_burst_prs: number
+  activity_burst_days: number
+  merge_ratio_suspect: number
+  security_review_score: number
+  suspicious_score: number
 }
 
 export interface RulesConfig {
@@ -85,7 +97,17 @@ const DEFAULT_CONFIG: SlopperConfig = {
     ai_possibly: 40,
     spray_score: 60,
     new_account_days: 30,
-    activity_burst_prs: 10
+    activity_burst_prs: 10,
+    activity_burst_days: 7,
+    spray_weights: {
+      repos: 40,
+      volume: 30,
+      merge_ratio: 20,
+      account_age: 10
+    },
+    merge_ratio_suspect: 0.4,
+    security_review_score: 6,
+    suspicious_score: 8
   },
   ignore_paths: [],
   rules: {
@@ -181,7 +203,21 @@ export class ConfigLoader {
       ai_possibly: Number(parsedLabelThresholds.ai_possibly ?? DEFAULT_CONFIG.label_thresholds.ai_possibly),
       spray_score: Number(parsedLabelThresholds.spray_score ?? DEFAULT_CONFIG.label_thresholds.spray_score),
       new_account_days: Number(parsedLabelThresholds.new_account_days ?? DEFAULT_CONFIG.label_thresholds.new_account_days),
-      activity_burst_prs: Number(parsedLabelThresholds.activity_burst_prs ?? DEFAULT_CONFIG.label_thresholds.activity_burst_prs)
+      activity_burst_prs: Number(parsedLabelThresholds.activity_burst_prs ?? DEFAULT_CONFIG.label_thresholds.activity_burst_prs),
+      activity_burst_days: Number(parsedLabelThresholds.activity_burst_days ?? DEFAULT_CONFIG.label_thresholds.activity_burst_days),
+      spray_weights: (() => {
+        const pw = (parsedLabelThresholds.spray_weights ?? {}) as Record<string, unknown>
+        const dw = DEFAULT_CONFIG.label_thresholds.spray_weights
+        return {
+          repos: Number(pw.repos ?? dw.repos),
+          volume: Number(pw.volume ?? dw.volume),
+          merge_ratio: Number(pw.merge_ratio ?? dw.merge_ratio),
+          account_age: Number(pw.account_age ?? dw.account_age)
+        }
+      })(),
+      merge_ratio_suspect: Number(parsedLabelThresholds.merge_ratio_suspect ?? DEFAULT_CONFIG.label_thresholds.merge_ratio_suspect),
+      security_review_score: Number(parsedLabelThresholds.security_review_score ?? DEFAULT_CONFIG.label_thresholds.security_review_score),
+      suspicious_score: Number(parsedLabelThresholds.suspicious_score ?? DEFAULT_CONFIG.label_thresholds.suspicious_score)
     }
 
     const ignore_paths = Array.isArray(parsed.ignore_paths)

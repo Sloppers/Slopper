@@ -25,7 +25,12 @@ export class ProfileAnalysisStep extends PipelineStep {
     }
 
     try {
-      ctx.authorProfile = await this.analyzer.analyze(author)
+      const lt = ctx.config?.label_thresholds
+      ctx.authorProfile = await this.analyzer.analyze(
+        author,
+        lt?.activity_burst_days ?? 7,
+        lt?.spray_weights
+      )
       core.info(
         `[profile-analysis] ${author}: spray=${ctx.authorProfile.spray_score}, ` +
         `age=${ctx.authorProfile.account_age_days}d, ` +

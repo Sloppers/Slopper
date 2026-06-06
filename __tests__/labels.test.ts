@@ -381,7 +381,8 @@ describe('LabelComputer', () => {
         firstTimeContributor: false,
         authorProfile: {
           account_age_days: 365, is_new_account: false, prs_last_7d: 5,
-          prs_last_30d: 30, distinct_repos_30d: 25, merge_ratio: 0.3,
+          prs_last_30d: 30, prs_in_burst_window: 5, burst_window_days: 7,
+          distinct_repos_30d: 25, merge_ratio: 0.3,
           total_stars: 10, total_issues: 5, spray_score: 75, activity_burst: false
         }
       })
@@ -395,7 +396,8 @@ describe('LabelComputer', () => {
         firstTimeContributor: false,
         authorProfile: {
           account_age_days: 15, is_new_account: true, prs_last_7d: 2,
-          prs_last_30d: 5, distinct_repos_30d: 3, merge_ratio: 0.5,
+          prs_last_30d: 5, prs_in_burst_window: 2, burst_window_days: 7,
+          distinct_repos_30d: 3, merge_ratio: 0.5,
           total_stars: 0, total_issues: 0, spray_score: 20, activity_burst: false
         }
       })
@@ -409,7 +411,8 @@ describe('LabelComputer', () => {
         firstTimeContributor: false,
         authorProfile: {
           account_age_days: 365, is_new_account: false, prs_last_7d: 15,
-          prs_last_30d: 20, distinct_repos_30d: 5, merge_ratio: 0.8,
+          prs_last_30d: 20, prs_in_burst_window: 15, burst_window_days: 7,
+          distinct_repos_30d: 5, merge_ratio: 0.8,
           total_stars: 50, total_issues: 10, spray_score: 30, activity_burst: true
         }
       })
