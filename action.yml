@@ -1,5 +1,5 @@
-name: 'Slopper'
-description: 'Analyzes pull requests for quality and trustworthiness using AI. Detects AI slop, low-quality contributions, and supply-chain attack indicators.'
+name: 'Slopper - AI Slop Detector'
+description: 'Detect AI slop and low-quality PRs. Analyzes author trust, code quality, and behavioral signals.'
 author: 'malvads'
 
 branding:
