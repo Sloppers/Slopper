@@ -23,7 +23,11 @@ export class BannedCheckStep extends PipelineStep {
       const isAuthorized = await this.isMaintainer(reportedBy)
       if (isAuthorized) {
         core.info(`[banned-check] Maintainer "${reportedBy}" reported "${ctx.prAuthor}" via /slopper report`)
-        await this.addUserToBannedList(ctx.prAuthor)
+        await this.addUserToBannedList(ctx.prAuthor, {
+          reporter: reportedBy,
+          pr: ctx.prNumber,
+          repo: `${this.github.owner}/${this.github.repo}`,
+        })
         return this.banAndClose(ctx, `reported by maintainer **@${reportedBy}** via \`/slopper report\``)
       } else {
         core.info(`[banned-check] "${reportedBy}" used /slopper report but is not a maintainer — ignoring`)
@@ -87,37 +91,29 @@ export class BannedCheckStep extends PipelineStep {
     return ['admin', 'maintain'].includes(permission)
   }
 
-  private async addUserToBannedList(username: string): Promise<void> {
-    const currentContent = await this.github.getFileContent('.slopper') ?? ''
-
-    const lines = currentContent.split('\n')
-    const bannedLine = lines.findIndex(l => l.trim() === 'banned:')
-
-    let newContent: string
-    if (bannedLine !== -1) {
-      const alreadyBanned = lines.some(
-        (l, i) => i > bannedLine && l.trim() === `- ${username}`
-      )
-      if (alreadyBanned) {
-        core.info(`[banned-check] ${username} already in .slopper banned list`)
-        return
-      }
-      lines.splice(bannedLine + 1, 0, `  - ${username}`)
-      newContent = lines.join('\n')
-    } else {
-      newContent = currentContent.trimEnd() + `\n\nbanned:\n  - ${username}\n`
+  private async addUserToBannedList(username: string, meta: { reporter: string; pr: number; repo: string }): Promise<void> {
+    const path = `.slopper.d/banned/${username}`
+    const existing = await this.github.getFileContent(path)
+    if (existing !== null) {
+      core.info(`[banned-check] ${username} already in .slopper.d/banned/`)
+      return
     }
 
+    const content = [
+      `reporter: ${meta.reporter}`,
+      `repo: ${meta.repo}`,
+      `pr: #${meta.pr}`,
+      `reason: /slopper report`,
+      `date: ${new Date().toISOString()}`,
+      '',
+    ].join('\n')
+
     try {
-      await this.github.createOrUpdateFile(
-        '.slopper',
-        `slopper: ban ${username} (reported)`,
-        newContent
-      )
-      core.info(`[banned-check] Added ${username} to .slopper banned list`)
+      await this.github.createOrUpdateFile(path, `slopper: ban ${username} (reported)`, content)
+      core.info(`[banned-check] Created .slopper.d/banned/${username}`)
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`[banned-check] Failed to update .slopper file: ${msg}`)
+      core.warning(`[banned-check] Failed to create banned entry: ${msg}`)
     }
   }
 }

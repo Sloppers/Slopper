@@ -151,16 +151,46 @@ export class ConfigLoader {
 
   async load(): Promise<SlopperConfig> {
     const content = await this.github.getFileContent('.slopper')
+    let config: SlopperConfig
+
     if (!content) {
       core.info('No .slopper configuration file found — using defaults')
-      return { ...DEFAULT_CONFIG }
+      config = { ...DEFAULT_CONFIG }
+    } else if (this.isYaml(content)) {
+      config = this.parseYamlConfig(content)
+    } else {
+      config = this.parsePlainText(content)
     }
 
-    if (this.isYaml(content)) {
-      return this.parseYamlConfig(content)
+    await this.mergeUserLists(config)
+    return config
+  }
+
+  private async mergeUserLists(config: SlopperConfig): Promise<void> {
+    const [bannedFiles, vouchedFiles] = await Promise.all([
+      this.github.listDirectory('.slopper.d/banned'),
+      this.github.listDirectory('.slopper.d/vouched'),
+    ])
+
+    const bannedSet = new Set(config.banned.map(u => u.toLowerCase()))
+    for (const name of bannedFiles) {
+      if (!bannedSet.has(name.toLowerCase())) {
+        config.banned.push(name)
+        bannedSet.add(name.toLowerCase())
+      }
     }
 
-    return this.parsePlainText(content)
+    const vouchedSet = new Set(config.vouched.map(u => u.toLowerCase()))
+    for (const name of vouchedFiles) {
+      if (!vouchedSet.has(name.toLowerCase())) {
+        config.vouched.push(name)
+        vouchedSet.add(name.toLowerCase())
+      }
+    }
+
+    if (bannedFiles.length > 0 || vouchedFiles.length > 0) {
+      core.info(`[config] Merged from .slopper.d/: ${bannedFiles.length} banned, ${vouchedFiles.length} vouched`)
+    }
   }
 
   private isYaml(content: string): boolean {

@@ -218,8 +218,24 @@ Comment on any PR:
 
 | Command | Who | What it does |
 |---------|-----|-------------|
-| `/slopper vouch` | Maintainers / code owners | Permanently whitelists the PR author — future PRs skip analysis |
-| `/slopper report` | Maintainers / code owners | Bans the PR author, closes the PR, adds them to `.slopper` banned list |
+| `/slopper vouch` | Maintainers / code owners | Permanently whitelists the PR author — creates `.slopper.d/vouched/<username>`, future PRs skip analysis |
+| `/slopper report` | Maintainers / code owners | Bans the PR author, closes the PR, creates `.slopper.d/banned/<username>` |
+
+### Merge-safe user lists
+
+Vouch and report actions write **one file per user** under `.slopper.d/`:
+
+```
+.slopper.d/
+  banned/
+    spam-account-1
+    spam-account-2
+  vouched/
+    trusted-dev
+    dependabot[bot]
+```
+
+Each file is a single entry — no merge conflicts when multiple maintainers vouch or report users in parallel. At load time, Slopper merges `.slopper.d/banned/*` and `.slopper.d/vouched/*` with the lists in `.slopper`. You can use either location — the inline `vouched:` / `banned:` arrays in `.slopper` still work, the directory entries are additive.
 
 ## Labels
 

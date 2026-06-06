@@ -46,38 +46,39 @@ export class VouchApplyStep extends PipelineStep {
     await this.commentManager.applyLabels(prNumber, labels)
 
     if (ctx.addToSlopperFile) {
-      await this.addUserToSlopperFile(ctx.addToSlopperFile)
+      await this.addUserToSlopperFile(ctx.addToSlopperFile, {
+        voucher: vouchedBy,
+        pr: prNumber,
+        repo: `${this.github.owner}/${this.github.repo}`,
+      })
     }
 
     return ctx
   }
 
-  private async addUserToSlopperFile(username: string): Promise<void> {
-    const currentContent = await this.github.getFileContent('.slopper') ?? ''
-
-    const users = currentContent
-      .split('\n')
-      .map(l => l.trim())
-      .filter(l => l && !l.startsWith('#'))
-
-    if (users.includes(username)) {
-      core.info(`${username} already in .slopper file`)
+  private async addUserToSlopperFile(username: string, meta: { voucher: string; pr: number; repo: string }): Promise<void> {
+    const path = `.slopper.d/vouched/${username}`
+    const existing = await this.github.getFileContent(path)
+    if (existing !== null) {
+      core.info(`[vouch-apply] ${username} already in .slopper.d/vouched/`)
       return
     }
 
-    const header = '# Vouched contributors — these users bypass slopper AI analysis.\n'
-    const existingUsers = currentContent
-      .split('\n')
-      .filter(l => l.trim() && !l.startsWith('#'))
-
-    const newContent = header + [...existingUsers, username].join('\n') + '\n'
+    const content = [
+      `voucher: ${meta.voucher}`,
+      `repo: ${meta.repo}`,
+      `pr: #${meta.pr}`,
+      `reason: /slopper vouch`,
+      `date: ${new Date().toISOString()}`,
+      '',
+    ].join('\n')
 
     try {
-      await this.github.createOrUpdateFile('.slopper', `slopper: vouch ${username}`, newContent)
-      core.info(`Added ${username} to .slopper file`)
+      await this.github.createOrUpdateFile(path, `slopper: vouch ${username}`, content)
+      core.info(`[vouch-apply] Created .slopper.d/vouched/${username}`)
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`Failed to update .slopper file: ${msg}`)
+      core.warning(`[vouch-apply] Failed to create vouch entry: ${msg}`)
     }
   }
 }

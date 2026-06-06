@@ -271,6 +271,22 @@ export class GitHubClient {
     return data
   }
 
+  async listDirectory(path: string): Promise<string[]> {
+    try {
+      const { data } = await this.octokit.rest.repos.getContent({
+        owner: this.owner,
+        repo: this.repo,
+        path
+      })
+      if (Array.isArray(data)) {
+        return data.filter(e => e.type === 'file').map(e => e.name)
+      }
+    } catch {
+      return []
+    }
+    return []
+  }
+
   async createGist(description: string, filename: string, content: string): Promise<string> {
     const { data } = await this.octokit.rest.gists.create({
       description,

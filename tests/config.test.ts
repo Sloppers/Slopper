@@ -6,7 +6,8 @@ jest.mock('@actions/core', () => ({
 
 function makeMockGitHub(fileContent: string | null) {
   return {
-    getFileContent: jest.fn().mockImplementation(async () => fileContent)
+    getFileContent: jest.fn().mockImplementation(async () => fileContent),
+    listDirectory: jest.fn().mockImplementation(async () => [])
   } as any
 }
 
