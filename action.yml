@@ -1,4 +1,4 @@
-name: 'Slopper - AI PR Trust Analysis'
+name: 'Slopper'
 description: 'Analyzes pull requests for quality and trustworthiness using AI. Detects AI slop, low-quality contributions, and supply-chain attack indicators.'
 author: 'malvads'
 
