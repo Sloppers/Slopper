@@ -17,6 +17,7 @@ export const ANALYSIS_TOOL_DESCRIPTION =
 /** JSON Schema for the submit_analysis tool input. */
 export const ANALYSIS_JSON_SCHEMA = {
   type: 'object' as const,
+  additionalProperties: false,
   required: [
     'risk_score',
     'risk_level',
@@ -51,6 +52,7 @@ export const ANALYSIS_JSON_SCHEMA = {
     },
     author_assessment: {
       type: 'object' as const,
+      additionalProperties: false,
       required: ['trust_level', 'reasoning'],
       properties: {
         trust_level: {
@@ -62,6 +64,7 @@ export const ANALYSIS_JSON_SCHEMA = {
     },
     commit_assessment: {
       type: 'object' as const,
+      additionalProperties: false,
       required: ['quality', 'reasoning'],
       properties: {
         quality: {
@@ -73,6 +76,7 @@ export const ANALYSIS_JSON_SCHEMA = {
     },
     code_assessment: {
       type: 'object' as const,
+      additionalProperties: false,
       required: ['categories_flagged', 'reasoning', 'suspicious_patterns'],
       properties: {
         categories_flagged: {
@@ -94,6 +98,7 @@ export const ANALYSIS_JSON_SCHEMA = {
           type: 'array' as const,
           items: {
             type: 'object' as const,
+            additionalProperties: false,
             required: ['file', 'description', 'severity'],
             properties: {
               file: { type: 'string' as const },
@@ -109,6 +114,7 @@ export const ANALYSIS_JSON_SCHEMA = {
     },
     behavioral_signals: {
       type: 'object' as const,
+      additionalProperties: false,
       required: ['flags', 'reasoning'],
       properties: {
         flags: {
