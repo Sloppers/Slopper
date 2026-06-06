@@ -1,7 +1,5 @@
 <h1 align="center">SLOPPER</h1>
 
-<h3 align="center">Keep AI slop out of your pull requests.</h3>
-
 <p align="center">
   <a href="https://github.com/malvads/slopper/actions"><img src="https://github.com/malvads/slopper/workflows/CI/badge.svg" alt="CI" /></a>
   <a href="https://github.com/marketplace/actions/slopper-ai-slop-detector"><img src="https://img.shields.io/badge/Marketplace-Slopper-blue?logo=github" alt="GitHub Marketplace" /></a>
@@ -10,7 +8,18 @@
 
 ---
 
-Slopper analyzes every pull request for signs of AI-generated slop — phantom fixes, duplicate functionality, boilerplate inflation, spray-and-pray behavior, and more. It scores PRs from 0 to 10, labels them, and gives maintainers the context they need to make informed decisions. It never blocks merging.
+GitHub Action that scores every pull request for AI slop. Catches spray-and-pray contributors, machine-generated boilerplate, and phantom fixes before they waste your review time. Scores 0–10, labels automatically, never blocks merging.
+
+## What It Does
+
+- **Scores PRs 0–10** with risk level and confidence, so you know where to spend review time
+- **Detects AI-generated code** using 6 heuristic signals (comment density, slop vocabulary, verbose identifiers, docstring bloat, boilerplate ratio, structural patterns) — no API calls needed
+- **Profiles contributors** across GitHub — account age, PR volume, merge ratio, spray score — to spot accounts that shotgun low-quality PRs across dozens of repos
+- **Flags risky accounts** from a community-maintained blocklist, updated in real time
+- **Auto-closes, auto-approves, or requests review** based on configurable thresholds
+- **Bans repeat offenders** — maintainers comment `/slopper report` to permanently block an account
+- **Vouches trusted contributors** — `/slopper vouch` skips all analysis for that author going forward
+- **Works with 5 AI providers** — OpenAI, Anthropic, Vertex AI, Groq, Gemini
 
 ## Quick Start
 
@@ -36,63 +45,11 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-## Providers
-
-Slopper supports five AI providers: **OpenAI** (`gpt-4o`), **Anthropic** (`claude-sonnet-4-6`), **Vertex AI** (`claude-sonnet-4-6`), **Groq** (`llama-3.3-70b-versatile`), and **Gemini** (`gemini-2.5-flash`). Set `ai-provider` and the matching API key input. Override the model with the `model` input.
-
-<details>
-<summary>Provider examples</summary>
-
-```yaml
-# OpenAI
-- uses: malvads/slopper@v1
-  with:
-    ai-provider: 'openai'
-    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-
-# Anthropic
-- uses: malvads/slopper@v1
-  with:
-    ai-provider: 'anthropic'
-    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-
-# Vertex AI
-- uses: malvads/slopper@v1
-  with:
-    ai-provider: 'vertex'
-    vertex-project-id: ${{ secrets.VERTEX_PROJECT_ID }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-
-# Groq
-- uses: malvads/slopper@v1
-  with:
-    ai-provider: 'groq'
-    groq-api-key: ${{ secrets.GROQ_API_KEY }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-
-# Gemini
-- uses: malvads/slopper@v1
-  with:
-    ai-provider: 'gemini'
-    gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-</details>
-
-## Pipeline
-
-```
-LoadConfig → VouchCheck → BannedCheck → RiskyUserCheck → VouchApply → CollectData → ProfileAnalysis → Fingerprint → AiAnalysis → ComputeLabels → PostResults → AutoActions
-```
-
-Slopper runs through these steps on every PR. Vouched contributors skip everything. Banned users get their PRs auto-closed. Users on the community risky list get flagged with extra scrutiny. For everyone else, Slopper collects cross-repo GitHub activity (account age, PR volume, merge ratio), runs heuristic AI fingerprinting on the diff, then sends everything to the AI provider for a holistic analysis.
+Swap `ai-provider` and the matching key for any supported provider: `openai`, `anthropic`, `vertex`, `groq`, or `gemini`. Override the default model with the `model` input.
 
 ## Configuration
 
-Create a `.slopper` file in your repo root:
+Create a `.slopper` file in your repo root. Every field is optional:
 
 ```yaml
 vouched:
@@ -127,33 +84,52 @@ rules:
   require_description: false
   require_linked_issue: false
   max_files_changed: 0
-  block_first_time_contributors: false
 ```
-
-Every field is optional. Missing fields use sensible defaults. Legacy plain-text format (newline-separated usernames) still works for the vouched list.
-
-## Labels
-
-Labels are computed deterministically — never by the AI. Risk labels (`slopper/risk/low` through `slopper/risk/critical`) follow configurable thresholds. Author profile labels include `slopper/spray-and-pray`, `slopper/activity-burst`, and `slopper/new-account`. AI fingerprint labels: `slopper/likely-ai-generated` (score >= 70) and `slopper/possibly-ai-generated` (>= 40). Plus `slopper/ci-modified`, `slopper/dependencies-modified`, `slopper/banned`, `slopper/risky-user`, and hygiene labels.
 
 ## Commands
 
-Maintainers and code owners can comment these commands on any PR:
+Comment on any PR:
 
-- **`/slopper vouch`** — permanently whitelist the PR author. Future PRs skip analysis entirely. The author is added to `.slopper`.
-- **`/slopper report`** — ban the PR author. Adds them to the `.slopper` banned list, applies `slopper/banned` label, and closes the PR.
+| Command | Who | What it does |
+|---------|-----|-------------|
+| `/slopper vouch` | Maintainers / code owners | Permanently whitelists the PR author — future PRs skip analysis |
+| `/slopper report` | Maintainers / code owners | Bans the PR author, closes the PR, adds them to `.slopper` banned list |
 
 ## Community Risky Users
 
-Slopper ships a community-maintained risky users list (`.slopper_risky_users`) that is fetched at runtime from the Slopper repo. PRs from listed accounts get flagged with the `slopper/risky-user` label. To report an account, open a PR against [`.slopper_risky_users`](https://github.com/malvads/slopper/blob/main/.slopper_risky_users) with evidence.
+Slopper fetches a [community-maintained list](https://github.com/malvads/slopper/blob/main/.slopper_risky_users) of known slop accounts at runtime. PRs from listed users get the `slopper/risky-user` label. To add an account, open a PR against that file with evidence.
+
+## Labels
+
+All labels are deterministic — the AI never picks them.
+
+| Label | Trigger |
+|-------|---------|
+| `slopper/risk/low` ... `critical` | Score thresholds (configurable) |
+| `slopper/likely-ai-generated` | AI fingerprint score >= 70 |
+| `slopper/possibly-ai-generated` | AI fingerprint score >= 40 |
+| `slopper/spray-and-pray` | Spray score > 60 |
+| `slopper/new-account` | Account < 30 days old |
+| `slopper/activity-burst` | > 10 PRs in 7 days |
+| `slopper/risky-user` | On community risky users list |
+| `slopper/banned` | On repo banned list or reported |
+| `slopper/ci-modified` | CI/CD files changed |
+| `slopper/dependencies-modified` | Lockfiles or manifests changed |
 
 ## Outputs
 
-`risk-score` (0-10), `risk-level`, `confidence`, and `labels` (comma-separated). Use in subsequent workflow steps.
+Use in subsequent workflow steps:
+
+| Output | Description |
+|--------|-------------|
+| `risk-score` | 0–10 |
+| `risk-level` | `low`, `medium`, `high`, `critical` |
+| `confidence` | `low`, `medium`, `high` |
+| `labels` | Comma-separated list |
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and development instructions.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
