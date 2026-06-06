@@ -80,10 +80,12 @@ export const ANALYSIS_JSON_SCHEMA = {
           items: {
             type: 'string' as const,
             enum: [
+              'phantom_fix', 'well_formed_noise', 'boilerplate_inflation',
+              'unnecessary_refactoring', 'cosmetic_disguise', 'duplicate_code',
+              'documentation_slop', 'convention_breaking',
               'obfuscation', 'secrets', 'backdoor', 'dependency_hijack',
               'ci_tampering', 'data_exfiltration', 'crypto_mining',
-              'typosquatting', 'low_quality', 'ai_generated_slop',
-              'unnecessary_changes', 'duplicate_code', 'none'
+              'typosquatting', 'none'
             ]
           }
         },
@@ -111,7 +113,17 @@ export const ANALYSIS_JSON_SCHEMA = {
       properties: {
         flags: {
           type: 'array' as const,
-          items: { type: 'string' as const }
+          items: {
+            type: 'string' as const,
+            enum: [
+              'spray_and_pray', 'reputation_farming', 'new_account',
+              'bot_like_timing', 'no_engagement', 'holiday_burst',
+              'generic_description', 'phantom_fix_claim',
+              'description_diff_mismatch', 'templated_test_plan',
+              'none'
+            ]
+          },
+          description: 'Behavioral flags detected in the PR and author patterns'
         },
         reasoning: { type: 'string' as const }
       }

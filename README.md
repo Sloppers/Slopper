@@ -115,19 +115,31 @@ Override the default model with the `model` input:
 
 ## What It Detects
 
+Slopper's detection patterns are based on real incidents reported by maintainers of curl, the Linux kernel, Godot, Jazzband, Node.js, and others.
+
 ### Quality Signals
 
-| Signal | What it catches |
-|--------|----------------|
-| Generic descriptions | PR descriptions that don't match the actual changes |
-| Empty commits | Commit messages that are polished but semantically empty |
-| Functionally wrong code | Code that looks plausible but is incorrect or unnecessary |
-| Complexity inflation | Refactors that increase complexity without clear benefit |
-| Obvious documentation | Docs that restate the obvious or add no real value |
-| Cosmetic changes | Whitespace/formatting-only changes disguised as improvements |
-| Copy-paste patterns | Copy-pasted code with superficial modifications |
-| Convention breaks | Changes that break existing patterns without justification |
-| Duplication | Additions that duplicate existing functionality |
+| Signal | What it catches | Seen in |
+|--------|----------------|---------|
+| Phantom fixes | PRs that fix bugs that don't exist or solve unreported problems | curl |
+| Well-formed noise | Clean syntax, consistent naming, but subtle logic errors and missing edge cases | Godot |
+| Boilerplate inflation | Generic commit messages and templated PR descriptions that don't match the diff | curl, Node.js |
+| Unnecessary refactoring | Refactors that add complexity without benefit — AI code generates 9x more churn | GitClear data |
+| Cosmetic disguises | Whitespace/formatting changes presented as meaningful improvements | widespread |
+| Duplicate functionality | Code that reimplements something that already exists in the codebase | widespread |
+| Documentation slop | Docs that restate the obvious or add boilerplate READMEs | widespread |
+| Convention breaking | Changes that ignore project patterns in favor of "textbook" alternatives | Godot |
+
+### Author Signals
+
+| Signal | What it catches | Seen in |
+|--------|----------------|---------|
+| Spray-and-pray | 100+ PRs across dozens of unrelated repos in days | Kai Gritun incident |
+| Reputation farming | Building merge credits to gain trust in critical infrastructure | Cloudflare Workers SDK |
+| New account bursts | Fresh accounts submitting PRs to established projects with no prior engagement | widespread |
+| Holiday timing | Bursts of PRs during holidays/weekends when maintainers are less vigilant | Node.js |
+| No engagement | Authors who never respond to review comments or participate in issues | curl, Godot |
+| Description mismatch | PR description doesn't align with what the diff actually does | curl |
 
 ### Security Signals
 
@@ -139,15 +151,6 @@ Override the default model with the `model` input:
 | Suspicious URLs | URLs pointing to raw IPs or untrusted domains |
 | CI tampering | Changes to CI/CD pipelines that could enable code execution |
 | Dependency hijack | Unexpected packages, changed registries, typosquatting |
-
-### Author Signals
-
-| Signal | What it checks |
-|--------|----------------|
-| Account age | New accounts created to spray low-quality PRs |
-| Activity history | Contribution patterns in the target repo |
-| Spray-and-pray | Mass-opening PRs across many repos |
-| Bot behavior | Automated patterns that suggest mass production |
 
 ## Pipeline
 
