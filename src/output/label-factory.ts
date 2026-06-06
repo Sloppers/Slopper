@@ -43,6 +43,10 @@ export const Labels = {
   LARGE_FILE: def('slopper/large-file', 'fbca04', 'PR contains a file with an unusually large diff'),
 
   LOW_MERGE_RATIO: def('slopper/low-merge-ratio', 'fbca04', 'Author has a low PR merge ratio'),
+  SUPPLY_CHAIN: def('slopper/supply-chain', 'b60205', 'Suspicious dependency or lockfile changes'),
+  UNSIGNED_COMMITS: def('slopper/unsigned-commits', 'e99695', 'PR contains unsigned commits or author/committer mismatches'),
+  NO_TESTS: def('slopper/no-tests', 'fbca04', 'PR adds code but no tests'),
+  CODE_DUPLICATION: def('slopper/code-duplication', 'fbca04', 'PR contains duplicated code blocks'),
 
   AI_SLOP_CONTENT: def('slopper/ai/slop-content', 'b60205', 'AI detected generic slop content'),
   AI_DESCRIPTION_MISMATCH: def('slopper/ai/description-mismatch', 'e99695', 'AI detected PR description does not match diff'),

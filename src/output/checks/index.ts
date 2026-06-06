@@ -21,6 +21,10 @@ export { TrustedOrgCheck } from './trusted-org'
 export { HeavyChangesCheck } from './heavy-changes'
 export { LargeFileCheck } from './large-file'
 export { LowMergeRatioCheck } from './low-merge-ratio'
+export { SupplyChainCheck } from './supply-chain'
+export { UnsignedCommitsCheck } from './unsigned-commits'
+export { NoTestsCheck } from './no-tests'
+export { CodeDuplicationCheck } from './code-duplication'
 
 import { Check, ScoreResult } from './check'
 import { ApprovedCheck } from './approved'
@@ -43,6 +47,10 @@ import { TrustedOrgCheck } from './trusted-org'
 import { HeavyChangesCheck } from './heavy-changes'
 import { LargeFileCheck } from './large-file'
 import { LowMergeRatioCheck } from './low-merge-ratio'
+import { SupplyChainCheck } from './supply-chain'
+import { UnsignedCommitsCheck } from './unsigned-commits'
+import { NoTestsCheck } from './no-tests'
+import { CodeDuplicationCheck } from './code-duplication'
 
 const ALL_CHECKS: Check[] = [
   new ApprovedCheck(),
@@ -64,7 +72,11 @@ const ALL_CHECKS: Check[] = [
   new TrustedOrgCheck(),
   new HeavyChangesCheck(),
   new LargeFileCheck(),
-  new LowMergeRatioCheck()
+  new LowMergeRatioCheck(),
+  new SupplyChainCheck(),
+  new UnsignedCommitsCheck(),
+  new NoTestsCheck(),
+  new CodeDuplicationCheck()
 ]
 
 export function allChecks(): Check[] {

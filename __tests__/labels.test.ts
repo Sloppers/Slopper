@@ -188,7 +188,7 @@ describe('LabelComputer', () => {
     })
 
     it('clean PR from known contributor gets minimal labels', () => {
-      const files = [makeFile('src/feature.ts')]
+      const files = [makeFile('src/feature.ts'), makeFile('src/__tests__/feature.test.ts')]
       const result = makeResult({ risk_score: 0, confidence: 'high' })
       const labels = compute(computer, result, files)
 
