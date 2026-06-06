@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="assets/slopper.png" alt="Slopper" width="400" />
-</p>
+<h1 align="center">SLOPPER</h1>
 
 <h3 align="center">Keep AI slop out of your pull requests.</h3>
 
