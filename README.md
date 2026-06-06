@@ -43,15 +43,15 @@ jobs:
 
 ## Providers
 
-| Provider | Default Model | Key Input |
-|----------|---------------|-----------|
-| **OpenAI** | `gpt-4o` | `openai-api-key` |
-| **Anthropic** | `claude-sonnet-4-6` | `anthropic-api-key` |
-| **Vertex AI** | `claude-sonnet-4-6` | `vertex-project-id` |
-| **Groq** | `llama-3.3-70b-versatile` | `groq-api-key` |
-| **Gemini** | `gemini-2.5-flash` | `gemini-api-key` |
+Slopper supports five AI providers. Pick the one you already have an API key for.
 
-Override the default model with the `model` input:
+**OpenAI** uses `gpt-4o` by default. Pass your key via `openai-api-key`.
+**Anthropic** uses `claude-sonnet-4-6` by default. Pass your key via `anthropic-api-key`.
+**Vertex AI** uses `claude-sonnet-4-6` by default. Pass your project ID via `vertex-project-id`.
+**Groq** uses `llama-3.3-70b-versatile` by default. Pass your key via `groq-api-key`.
+**Gemini** uses `gemini-2.5-flash` by default. Pass your key via `gemini-api-key`.
+
+You can override the default model with the `model` input:
 
 ```yaml
 - uses: malvads/slopper@v1
@@ -115,42 +115,19 @@ Override the default model with the `model` input:
 
 ## What It Detects
 
-Slopper's detection patterns are based on real incidents reported by maintainers of curl, the Linux kernel, Godot, Jazzband, Node.js, and others.
+Slopper's detection patterns come from real incidents reported by maintainers of curl, the Linux kernel, Godot, Jazzband, Node.js, and others.
 
 ### Quality Signals
 
-| Signal | What it catches | Seen in |
-|--------|----------------|---------|
-| Phantom fixes | PRs that fix bugs that don't exist or solve unreported problems | curl |
-| Well-formed noise | Clean syntax, consistent naming, but subtle logic errors and missing edge cases | Godot |
-| Boilerplate inflation | Generic commit messages and templated PR descriptions that don't match the diff | curl, Node.js |
-| Unnecessary refactoring | Refactors that add complexity without benefit — AI code generates 9x more churn | GitClear data |
-| Cosmetic disguises | Whitespace/formatting changes presented as meaningful improvements | widespread |
-| Duplicate functionality | Code that reimplements something that already exists in the codebase | widespread |
-| Documentation slop | Docs that restate the obvious or add boilerplate READMEs | widespread |
-| Convention breaking | Changes that ignore project patterns in favor of "textbook" alternatives | Godot |
+**Phantom fixes** catch PRs that fix bugs that don't exist or solve unreported problems, something curl maintainers deal with regularly. **Well-formed noise** spots code with clean syntax and consistent naming that still has subtle logic errors and missing edge cases, a pattern Godot contributors have flagged. **Boilerplate inflation** identifies generic commit messages and templated PR descriptions that don't match the actual diff, seen across curl and Node.js. **Unnecessary refactoring** flags refactors that add complexity without benefit — GitClear data shows AI-generated code produces 9x more churn. **Cosmetic disguises** are whitespace and formatting changes dressed up as meaningful improvements. **Duplicate functionality** catches code that reimplements something already in the codebase. **Documentation slop** flags docs that restate the obvious or add boilerplate READMEs. **Convention breaking** identifies changes that ignore project patterns in favor of "textbook" alternatives, a recurring complaint from Godot maintainers.
 
 ### Author Signals
 
-| Signal | What it catches | Seen in |
-|--------|----------------|---------|
-| Spray-and-pray | 100+ PRs across dozens of unrelated repos in days | Kai Gritun incident |
-| Reputation farming | Building merge credits to gain trust in critical infrastructure | Cloudflare Workers SDK |
-| New account bursts | Fresh accounts submitting PRs to established projects with no prior engagement | widespread |
-| Holiday timing | Bursts of PRs during holidays/weekends when maintainers are less vigilant | Node.js |
-| No engagement | Authors who never respond to review comments or participate in issues | curl, Godot |
-| Description mismatch | PR description doesn't align with what the diff actually does | curl |
+**Spray-and-pray** detects accounts submitting 100+ PRs across dozens of unrelated repos in days, like the Kai Gritun incident. **Reputation farming** spots patterns of building merge credits to gain trust before targeting critical infrastructure, as seen with the Cloudflare Workers SDK. **New account bursts** flags fresh accounts submitting to established projects with no prior engagement. **Holiday timing** watches for bursts of PRs during holidays and weekends when maintainers are less vigilant, a tactic reported by Node.js maintainers. **No engagement** flags authors who never respond to review comments or participate in issues. **Description mismatch** catches PR descriptions that don't align with what the diff actually does.
 
 ### Security Signals
 
-| Signal | What it catches |
-|--------|----------------|
-| Obfuscation | Base64 blobs, hex-encoded strings, minified code in non-minified contexts |
-| Dynamic execution | eval, exec, Function constructor in unusual contexts |
-| Secrets | Hardcoded credentials, API keys, tokens in source code |
-| Suspicious URLs | URLs pointing to raw IPs or untrusted domains |
-| CI tampering | Changes to CI/CD pipelines that could enable code execution |
-| Dependency hijack | Unexpected packages, changed registries, typosquatting |
+Slopper also watches for **obfuscation** like base64 blobs and hex-encoded strings, **dynamic execution** via eval or Function constructors, **hardcoded secrets** and API keys, **suspicious URLs** pointing to raw IPs, **CI tampering** in workflow files, and **dependency hijacking** through unexpected packages or changed registries.
 
 ## Configuration
 
@@ -159,160 +136,104 @@ Create a `.slopper` file in your repository root to customize behavior. Supports
 ```yaml
 # .slopper
 
-# Vouched contributors bypass AI analysis entirely
 vouched:
   - octocat
   - trusted-contributor
   - dependabot[bot]
 
-# Automated actions based on analysis results
 actions:
   auto_close:
     enabled: false
-    threshold: 9          # Close PRs with risk score >= this value
+    threshold: 9
     comment: "This PR was automatically closed by Slopper due to critical risk score."
   auto_approve:
     enabled: false
-    threshold: 2          # Approve PRs with risk score <= this value (requires high confidence)
+    threshold: 2
   auto_request_review:
     enabled: false
-    threshold: 6          # Request reviewers for PRs with risk score >= this value
+    threshold: 6
     reviewers:
       - security-team-lead
       - senior-maintainer
 
-# Customize risk score boundaries for labels
 thresholds:
-  low: 2                  # 0–2 = low risk
-  medium: 5               # 3–5 = medium risk
-  high: 8                 # 6–8 = high risk, 9–10 = critical
+  low: 2
+  medium: 5
+  high: 8
 
-# Glob patterns for files to exclude from analysis
 ignore_paths:
   - "*.md"
   - "docs/**"
   - "LICENSE"
   - "**/*.test.ts"
 
-# PR hygiene rules — violations get their own labels
 rules:
-  require_description: false       # Label PRs with empty body
-  require_linked_issue: false      # Label PRs with no issue reference (#123, fixes #123, etc.)
-  max_files_changed: 0             # Label PRs exceeding this file count (0 = disabled)
-  block_first_time_contributors: false  # Auto-close PRs from first-time contributors
+  require_description: false
+  require_linked_issue: false
+  max_files_changed: 0
+  block_first_time_contributors: false
 ```
 
-**Legacy format** — a plain text list of vouched usernames is still supported:
+The `vouched` list contains contributors who bypass AI analysis entirely. Under `actions`, you can auto-close PRs that exceed a risk threshold, auto-approve low-risk PRs with high confidence, or automatically request reviewers when the score is concerning. The `thresholds` section lets you customize where the boundaries between low, medium, high, and critical risk sit. Use `ignore_paths` to exclude files from analysis (markdown, docs, tests, etc.). The `rules` section adds PR hygiene checks: flag PRs with empty descriptions, require linked issues, cap the number of changed files, or block first-time contributors entirely.
+
+Every field is optional. Missing fields use sensible defaults. If you just need a vouched list, the legacy plain text format still works:
 
 ```
-# .slopper — vouched contributors bypass AI analysis
 octocat
 trusted-contributor
 dependabot[bot]
 ```
 
-Slopper auto-detects the format. If no `.slopper` file exists, all defaults are used.
-
 ## Pipeline
 
-Each analysis step is a discrete, testable `PipelineStep` class:
+When a PR is opened, Slopper runs through a series of steps. First it loads the `.slopper` config, then checks if the author is vouched (skipping analysis if so). Otherwise it collects PR metadata, filters out ignored files, sends everything to the AI provider via structured tool calling, computes labels deterministically from the result, posts a comment, and finally executes any configured auto-actions like closing or requesting reviewers.
 
 ```
-PR opened → Load config → Vouch check → Data collection → AI analysis → Labels → Comment → Auto-actions
+Load config -> Vouch check -> Collect data -> AI analysis -> Labels -> Comment -> Auto-actions
 ```
-
-| Step | What it does |
-|------|-------------|
-| `LoadConfigStep` | Loads and parses the `.slopper` configuration file |
-| `VouchCheckStep` | Checks vouched users from config and `/slopper vouch` commands |
-| `VouchApplyStep` | If vouched, applies labels and skips analysis |
-| `CollectDataStep` | Gathers PR metadata, filters files by `ignore_paths` |
-| `AiAnalysisStep` | Sends context to the AI provider via structured tool calling |
-| `ComputeLabelsStep` | Deterministically computes labels using configured thresholds and rules |
-| `PostResultsStep` | Posts the analysis comment and applies labels |
-| `AutoActionsStep` | Executes auto-close, auto-approve, and auto-request-review actions |
-
-All providers use **structured tool calling** — the AI calls a `submit_analysis` tool with a strict JSON schema. No raw JSON parsing.
 
 ## Labels
 
-Labels are computed deterministically from the analysis — never suggested by the AI.
+Labels are computed deterministically from the analysis result, never suggested by the AI.
 
-| Label | Rule |
-|-------|------|
-| `slopper/approved` | Risk score 0–2 AND high confidence |
-| `slopper/vouched` | Author vouched by a code owner |
-| `slopper/risk/low` | Risk score 0–2 |
-| `slopper/risk/medium` | Risk score 3–5 |
-| `slopper/risk/high` | Risk score 6–8 |
-| `slopper/risk/critical` | Risk score 9–10 |
-| `slopper/confidence/high` | AI is highly confident |
-| `slopper/confidence/medium` | Moderate confidence |
-| `slopper/confidence/low` | Low confidence |
-| `slopper/first-time-contributor` | No prior PRs or issues in this repo |
-| `slopper/ci-modified` | CI/workflow files changed |
-| `slopper/dependencies-modified` | Dependency/lockfiles changed |
-| `slopper/needs-security-review` | Risk score ≥ 6 |
-| `slopper/suspicious` | Risk score ≥ 8 |
-| `slopper/missing-description` | PR body is empty (`require_description: true`) |
-| `slopper/no-linked-issue` | No issue reference in body (`require_linked_issue: true`) |
-| `slopper/too-many-files` | Files changed exceeds `max_files_changed` |
-| `slopper/analysis-failed` | AI analysis encountered an error |
+`slopper/risk/low` for scores 0 through 2, `slopper/risk/medium` for 3 through 5, `slopper/risk/high` for 6 through 8, and `slopper/risk/critical` for 9 and 10. These boundaries are configurable via the `thresholds` section in `.slopper`.
+
+`slopper/approved` is applied when the risk score falls within the low range and confidence is high. `slopper/vouched` marks PRs from authors in the vouched list. `slopper/first-time-contributor` flags authors with no prior PRs or issues in the repo.
+
+`slopper/ci-modified` and `slopper/dependencies-modified` are applied when CI/workflow files or dependency lockfiles are changed. `slopper/needs-security-review` triggers at score 6 or above, and `slopper/suspicious` at 8 or above.
+
+When hygiene rules are enabled, `slopper/missing-description` flags PRs with empty bodies, `slopper/no-linked-issue` flags PRs without an issue reference, and `slopper/too-many-files` flags PRs that exceed the configured file limit.
+
+If the AI analysis fails for any reason, `slopper/analysis-failed` is applied instead.
 
 ## Vouching
 
-Code owners can permanently whitelist trusted contributors:
-
-1. Comment `/slopper vouch` on a PR
-2. Slopper verifies the commenter is in `CODEOWNERS` or has admin/maintain permissions
-3. The author is added to the `.slopper` file
-4. Future PRs from that author skip AI analysis
+Code owners can permanently whitelist trusted contributors by commenting `/slopper vouch` on a PR. Slopper verifies the commenter is in `CODEOWNERS` or has admin/maintain permissions, then adds the author to the `.slopper` file. Future PRs from that author skip AI analysis entirely.
 
 When an author has a perfect score (risk 0, high confidence, trusted), Slopper proactively suggests vouching them.
 
 ## PR Comments
 
-Slopper posts a structured comment inspired by [CodeRabbit](https://www.coderabbit.ai/):
+Slopper posts a single comment on each analyzed PR with the risk score, confidence level, and a summary of findings. Collapsible sections break down the author, commit, code, and behavioral assessments. Review suggestions are listed as a checklist. Applied labels are shown at the bottom, along with a vouch suggestion for highly trusted authors when applicable.
 
-- Risk badge and metrics table
-- Collapsible **Walkthrough** with author, commit, code, and behavioral assessments
-- Collapsible **Review Suggestions** as a checklist
-- Applied labels
-- Vouch suggestion for highly trusted authors
-
-Comments are upserted — updated on re-runs, never duplicated.
+Comments are upserted on re-runs, never duplicated.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `ai-provider` | No | `openai` | `openai`, `anthropic`, `vertex`, `groq`, or `gemini` |
-| `model` | No | — | Override the default model for the selected provider |
-| `openai-api-key` | If OpenAI | — | OpenAI API key |
-| `anthropic-api-key` | If Anthropic | — | Anthropic API key |
-| `vertex-project-id` | If Vertex | — | Google Cloud project ID |
-| `vertex-region` | No | `global` | Google Cloud region |
-| `groq-api-key` | If Groq | — | Groq API key |
-| `gemini-api-key` | If Gemini | — | Google Gemini API key |
-| `github-token` | Yes | `${{ github.token }}` | GitHub token |
+The `ai-provider` input selects which provider to use (defaults to `openai`). Use `model` to override the default model. Each provider needs its own API key: `openai-api-key`, `anthropic-api-key`, `vertex-project-id` (with optional `vertex-region`), `groq-api-key`, or `gemini-api-key`. The `github-token` is always required and defaults to `${{ github.token }}`.
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
-| `risk-score` | Numeric risk score (0–10) |
-| `risk-level` | `low`, `medium`, `high`, or `critical` |
-| `confidence` | `low`, `medium`, or `high` |
-| `labels` | Comma-separated list of applied labels |
+Slopper sets four outputs after analysis: `risk-score` (0 to 10), `risk-level` (`low`, `medium`, `high`, or `critical`), `confidence` (`low`, `medium`, or `high`), and `labels` (comma-separated list of all applied labels). Use these in subsequent workflow steps to gate deployments or trigger notifications.
 
 ## Development
 
 ```bash
 npm install
-npm run build    # compile TypeScript
-npm run test     # run unit tests
-npm run package  # bundle with ncc
-npm run all      # build + test + package
+npm run build
+npm run test
+npm run package
+npm run all
 ```
 
 ## License
