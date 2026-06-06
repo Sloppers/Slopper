@@ -27,7 +27,24 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx jest --coverage
+      - run: npx jest --coverage --coverageReporters=json-summary
+      - name: Extract coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(node -e "const c = require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)")
+          echo "result=$COVERAGE" >> "$GITHUB_OUTPUT"
+      - name: Upload coverage badge
+        if: github.ref == 'refs/heads/main'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: ${{ vars.COVERAGE_GIST_ID }}
+          filename: slopper-coverage.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.result }}%
+          valColorRange: ${{ steps.coverage.outputs.result }}
+          minColorRange: 50
+          maxColorRange: 90
 
   build:
     runs-on: ubuntu-latest
