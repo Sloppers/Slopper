@@ -1,42 +1,17 @@
 import { GitHubClient } from '../clients/github'
 import { AnalysisResult } from '../core/types'
+import { SignalResult } from '../core/signals'
+import { colorMap } from './label-factory'
 
 const COMMENT_MARKER = '<!-- pr-trust-analysis -->'
 
-const LABEL_COLORS: Record<string, string> = {
-  'slopper/approved': '0e8a16',
-  'slopper/vouched': '0e8a16',
-  'slopper/banned': 'b60205',
-  'slopper/confidence/high': '0e8a16',
-  'slopper/confidence/medium': 'fbca04',
-  'slopper/confidence/low': 'e4e669',
-  'slopper/risk/low': '0e8a16',
-  'slopper/risk/medium': 'fbca04',
-  'slopper/risk/high': 'e99695',
-  'slopper/risk/critical': 'b60205',
-  'slopper/first-time-contributor': 'c5def5',
-  'slopper/ci-modified': 'd4c5f9',
-  'slopper/dependencies-modified': 'f9d0c4',
-  'slopper/needs-security-review': 'b60205',
-  'slopper/suspicious': 'b60205',
-  'slopper/analysis-failed': 'cccccc',
-  'slopper/spray-and-pray': 'b60205',
-  'slopper/activity-burst': 'e99695',
-  'slopper/new-account': 'fbca04',
-  'slopper/likely-ai-generated': 'b60205',
-  'slopper/possibly-ai-generated': 'fbca04',
-  'slopper/missing-description': 'e4e669',
-  'slopper/no-linked-issue': 'e4e669',
-  'slopper/too-many-files': 'e4e669',
-  'slopper/risky-user': 'b60205',
-  'slopper/trusted-org': '0e8a16',
-  'slopper/mode/deterministic': '1d76db'
-}
+const LABEL_COLORS = colorMap()
 
 export interface CommentOptions {
   result?: AnalysisResult
   deterministicScore?: number
   riskLevel?: string
+  signalBreakdown?: SignalResult[]
   labels: string[]
   suggestVouch?: { author: string }
   authorProfile?: {
@@ -61,7 +36,7 @@ export class PrCommentManager {
   }
 
   buildCommentBody(opts: CommentOptions): string {
-    const { result, deterministicScore, riskLevel, labels, suggestVouch, authorProfile, aiFingerprint } = opts
+    const { result, deterministicScore, riskLevel, signalBreakdown, labels, suggestVouch, authorProfile, aiFingerprint } = opts
     const riskEmoji: Record<string, string> = {
       low: '🟢', medium: '🟡', high: '🟠', critical: '🔴', unknown: '⚪'
     }
@@ -100,6 +75,20 @@ export class PrCommentManager {
       md += `Repos (30d): **${authorProfile.distinct_repos_30d}** · `
       md += `Merge ratio: **${Math.round(authorProfile.merge_ratio * 100)}%** · `
       md += `Spray score: **${authorProfile.spray_score}**/100\n\n`
+    }
+
+    if (signalBreakdown && signalBreakdown.length > 0) {
+      const active = signalBreakdown.filter(s => s.points !== 0)
+      if (active.length > 0) {
+        md += `#### ⚖️ Score Breakdown\n`
+        md += `| Signal | Factor | Weight | Points |\n`
+        md += `|--------|--------|--------|--------|\n`
+        for (const s of active) {
+          const sign = s.points > 0 ? '+' : ''
+          md += `| ${s.key} | ${Math.round(s.factor * 100)}% | ${s.weight} | ${sign}${Math.round(s.points * 10) / 10} |\n`
+        }
+        md += '\n'
+      }
     }
 
     if (result?.commit_assessment) {

@@ -45,6 +45,7 @@ export class PostResultsStep extends PipelineStep {
       result: analysisResult,
       deterministicScore: ctx.deterministicScore,
       riskLevel: level,
+      signalBreakdown: ctx.signalBreakdown,
       labels,
       suggestVouch,
       authorProfile: ctx.authorProfile,

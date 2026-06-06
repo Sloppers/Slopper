@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { PrCommentManager } from '../output/commenter'
 import { GitHubClient } from '../clients/github'
+import { Labels } from '../output/label-factory'
 
 export class VouchApplyStep extends PipelineStep {
   readonly name = 'vouch-apply'
@@ -18,7 +19,7 @@ export class VouchApplyStep extends PipelineStep {
     if (!ctx.vouched || !ctx.prAuthor || !ctx.vouchedBy) return ctx
 
     const { prNumber, prAuthor, vouchedBy } = ctx
-    const labels = ['slopper/vouched', 'slopper/approved']
+    const labels = [Labels.VOUCHED.name, Labels.APPROVED.name]
 
     core.setOutput('risk-score', '0')
     core.setOutput('risk-level', 'low')

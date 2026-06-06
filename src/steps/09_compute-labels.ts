@@ -20,14 +20,17 @@ export class ComputeLabelsStep extends PipelineStep {
 
     const isDeterministic = !ctx.analysisResult
     if (isDeterministic) {
-      ctx.deterministicScore = LabelComputer.computeDeterministicScore({
+      const result = LabelComputer.computeDeterministicResult({
         authorProfile: ctx.authorProfile,
         aiFingerprint: ctx.aiFingerprint,
         riskyUser: ctx.riskyUser,
         trustedOrg: ctx.trustedOrg,
         weights: ctx.config?.label_thresholds?.score_weights
       })
-      core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10`)
+      ctx.deterministicScore = result.score
+      ctx.signalBreakdown = result.breakdown
+      const active = result.breakdown.filter(s => s.points !== 0).map(s => `${s.key}=${s.points > 0 ? '+' : ''}${s.points}`).join(', ')
+      core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10 [${active}]`)
     }
 
     ctx.labels = computer.compute({

@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import { AnalysisResult, PrData, AuthorProfileAnalysis, AiFingerprintResult } from './types'
 import { SlopperConfig } from './config'
+import { SignalResult } from './signals'
 
 export interface PipelineContext {
   prNumber: number
@@ -12,6 +13,7 @@ export interface PipelineContext {
   analysisResult?: AnalysisResult
   analysisFailed?: boolean
   deterministicScore?: number
+  signalBreakdown?: SignalResult[]
   labels?: string[]
   vouched?: boolean
   vouchedBy?: string

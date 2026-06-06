@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { PrCommentManager } from '../output/commenter'
 import { GitHubClient } from '../clients/github'
+import { Labels } from '../output/label-factory'
 
 export class BannedCheckStep extends PipelineStep {
   readonly name = 'banned-check'
@@ -40,7 +41,7 @@ export class BannedCheckStep extends PipelineStep {
   private async banAndClose(ctx: PipelineContext, reason: string): Promise<PipelineContext> {
     ctx.banned = true
 
-    const labels = ['slopper/banned']
+    const labels = [Labels.BANNED.name]
     await this.commentManager.applyLabels(ctx.prNumber, labels)
 
     const body = `<!-- pr-trust-analysis -->\n` +

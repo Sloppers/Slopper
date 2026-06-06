@@ -1,31 +1,11 @@
 import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config'
+import { SignalEngine, SignalContext, SignalResult } from '../core/signals'
+import { Check, CheckContext, allChecks } from './checks'
+import { Labels, confidenceLabel, riskLabel } from './label-factory'
 
-const CI_PATTERNS = [
-  '.github/workflows/',
-  '.github/actions/',
-  '.gitlab-ci',
-  '.circleci/',
-  '.travis.yml',
-  'Jenkinsfile',
-  'azure-pipelines'
-]
-
-const DEPENDENCY_FILES = new Set([
-  'package.json',
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  'requirements.txt',
-  'Pipfile.lock',
-  'poetry.lock',
-  'go.sum',
-  'go.mod',
-  'Cargo.lock',
-  'Gemfile.lock',
-  'composer.lock',
-  'pubspec.lock'
-])
+export type { CheckContext }
+export { Check }
 
 export interface ComputeLabelsOptions {
   analysis?: AnalysisResult
@@ -42,11 +22,13 @@ export class LabelComputer {
   private readonly thresholds: ThresholdsConfig
   private readonly labelThresholds: LabelThresholdsConfig
   private readonly rules: RulesConfig
+  private readonly checks: Check[]
 
   constructor(
     thresholds?: ThresholdsConfig,
     rules?: RulesConfig,
-    labelThresholds?: LabelThresholdsConfig
+    labelThresholds?: LabelThresholdsConfig,
+    checks?: Check[]
   ) {
     this.thresholds = thresholds ?? { low: 2, medium: 5, high: 8 }
     this.labelThresholds = labelThresholds ?? {
@@ -71,91 +53,47 @@ export class LabelComputer {
       max_files_changed: 0,
       block_first_time_contributors: false
     }
+    this.checks = checks ?? allChecks()
   }
 
   compute(opts: ComputeLabelsOptions): string[] {
-    const { analysis, files, firstTimeContributor, prData, authorProfile, aiFingerprint, riskyUser, trustedOrg } = opts
-    const labels: string[] = []
-    const score = analysis
-      ? analysis.risk_score
+    const score = opts.analysis
+      ? opts.analysis.risk_score
       : LabelComputer.computeDeterministicScore({
-          authorProfile, aiFingerprint, riskyUser, trustedOrg,
+          authorProfile: opts.authorProfile,
+          aiFingerprint: opts.aiFingerprint,
+          riskyUser: opts.riskyUser,
+          trustedOrg: opts.trustedOrg,
           weights: this.labelThresholds.score_weights
         })
 
-    labels.push(this.riskLabel(score))
+    const ctx: CheckContext = {
+      score,
+      ...opts,
+      thresholds: this.thresholds,
+      labelThresholds: this.labelThresholds,
+      rules: this.rules
+    }
 
-    if (analysis) {
-      labels.push(`slopper/confidence/${analysis.confidence}`)
-      if (score <= this.thresholds.low && analysis.confidence === 'high') {
-        labels.push('slopper/approved')
+    const labels: string[] = []
+
+    labels.push(riskLabel(score, this.thresholds).name)
+
+    if (opts.analysis) {
+      labels.push(confidenceLabel(opts.analysis.confidence).name)
+    }
+
+    for (const check of this.checks) {
+      if (check.evaluate(ctx)) {
+        labels.push(check.label)
       }
-    } else {
-      labels.push('slopper/mode/deterministic')
     }
-
-    if (firstTimeContributor) {
-      labels.push('slopper/first-time-contributor')
-    }
-
-    if (this.hasCiChanges(files)) {
-      labels.push('slopper/ci-modified')
-    }
-
-    if (this.hasDependencyChanges(files)) {
-      labels.push('slopper/dependencies-modified')
-    }
-
-    if (score >= this.labelThresholds.security_review_score) labels.push('slopper/needs-security-review')
-    if (score >= this.labelThresholds.suspicious_score) labels.push('slopper/suspicious')
-
-    if (prData) {
-      labels.push(...this.ruleLabels(prData))
-    }
-
-    if (authorProfile) {
-      if (authorProfile.spray_score > this.labelThresholds.spray_score) labels.push('slopper/spray-and-pray')
-      if ((authorProfile.prs_in_burst_window ?? authorProfile.prs_last_7d) > this.labelThresholds.activity_burst_prs) labels.push('slopper/activity-burst')
-      if (authorProfile.account_age_days < this.labelThresholds.new_account_days) labels.push('slopper/new-account')
-    }
-
-    if (aiFingerprint) {
-      if (aiFingerprint.score >= this.labelThresholds.ai_likely) labels.push('slopper/likely-ai-generated')
-      else if (aiFingerprint.score >= this.labelThresholds.ai_possibly) labels.push('slopper/possibly-ai-generated')
-    }
-
-    if (riskyUser) labels.push('slopper/risky-user')
-    if (trustedOrg) labels.push('slopper/trusted-org')
 
     return labels
   }
 
-  static computeDeterministicScore(opts: {
-    authorProfile?: AuthorProfileAnalysis
-    aiFingerprint?: AiFingerprintResult
-    riskyUser?: boolean
-    trustedOrg?: boolean
-    weights?: ScoreWeightsConfig
-  }): number {
-    const { authorProfile, aiFingerprint, riskyUser, trustedOrg, weights } = opts
-    const w = weights ?? {
-      fingerprint: 4, spray: 3, new_account: 1,
-      low_merge_ratio: 1, risky_user: 1, trusted_org: -2
-    }
-    let score = 0
-    if (aiFingerprint) score += (aiFingerprint.score / 100) * w.fingerprint
-    if (authorProfile) {
-      score += (authorProfile.spray_score / 100) * w.spray
-      if (authorProfile.account_age_days < 30) score += w.new_account
-      if (authorProfile.merge_ratio < 0.4) score += w.low_merge_ratio
-    }
-    if (riskyUser) score += w.risky_user
-    if (trustedOrg) score += w.trusted_org
-    return Math.max(0, Math.min(10, Math.round(score * 10) / 10))
-  }
-
   computeFailedLabels(): string[] {
-    return ['slopper/analysis-failed']
+    return [Labels.ANALYSIS_FAILED.name]
   }
 
   shouldSuggestVouch(analysis: AnalysisResult, author: AuthorProfile): boolean {
@@ -167,45 +105,29 @@ export class LabelComputer {
     return true
   }
 
-  private ruleLabels(prData: PrData): string[] {
-    const labels: string[] = []
-
-    if (this.rules.require_description && !prData.body.trim()) {
-      labels.push('slopper/missing-description')
-    }
-
-    if (this.rules.require_linked_issue && !this.hasLinkedIssue(prData.body)) {
-      labels.push('slopper/no-linked-issue')
-    }
-
-    if (this.rules.max_files_changed > 0 && prData.changed_files_count > this.rules.max_files_changed) {
-      labels.push('slopper/too-many-files')
-    }
-
-    return labels
+  static computeDeterministicScore(opts: {
+    authorProfile?: AuthorProfileAnalysis
+    aiFingerprint?: AiFingerprintResult
+    riskyUser?: boolean
+    trustedOrg?: boolean
+    weights?: ScoreWeightsConfig
+  }): number {
+    const { score } = LabelComputer.computeDeterministicResult(opts)
+    return score
   }
 
-  private hasLinkedIssue(body: string): boolean {
-    return /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+/i.test(body) || /#\d+/.test(body)
-  }
-
-  private riskLabel(score: number): string {
-    if (score <= this.thresholds.low) return 'slopper/risk/low'
-    if (score <= this.thresholds.medium) return 'slopper/risk/medium'
-    if (score <= this.thresholds.high) return 'slopper/risk/high'
-    return 'slopper/risk/critical'
-  }
-
-  private hasCiChanges(files: FileInfo[]): boolean {
-    return files.some(f =>
-      CI_PATTERNS.some(pattern => f.filename.includes(pattern))
+  static computeDeterministicResult(opts: {
+    authorProfile?: AuthorProfileAnalysis
+    aiFingerprint?: AiFingerprintResult
+    riskyUser?: boolean
+    trustedOrg?: boolean
+    weights?: ScoreWeightsConfig
+  }): { score: number; breakdown: SignalResult[] } {
+    const engine = new SignalEngine()
+    return engine.compute(
+      { authorProfile: opts.authorProfile, aiFingerprint: opts.aiFingerprint, riskyUser: opts.riskyUser, trustedOrg: opts.trustedOrg },
+      opts.weights as Record<string, number> | undefined
     )
   }
 
-  private hasDependencyChanges(files: FileInfo[]): boolean {
-    return files.some(f => {
-      const basename = f.filename.split('/').pop() ?? ''
-      return DEPENDENCY_FILES.has(basename)
-    })
-  }
 }
