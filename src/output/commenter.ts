@@ -10,12 +10,7 @@ const COMMENT_MARKER = '<!-- pr-trust-analysis -->'
 const LABEL_COLORS = colorMap()
 
 function formatDuration(ms: number): string {
-  const secs = Math.round(ms / 1000)
-  if (secs < 60) return `${secs} seconds`
-  const mins = Math.floor(secs / 60)
-  const rem = secs % 60
-  if (rem === 0) return mins === 1 ? 'a minute' : `${mins} minutes`
-  return mins === 1 ? `a minute` : `${mins} minutes`
+  return `${ms}ms`
 }
 
 export interface CommentOptions {
