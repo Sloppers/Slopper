@@ -1,8 +1,6 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
 import { parse as parseYaml } from 'yaml'
-
-type Octokit = ReturnType<typeof github.getOctokit>
+import { GitHubClient } from './clients/github'
 
 export interface AutoCloseConfig {
   enabled: boolean
@@ -42,6 +40,7 @@ export interface RulesConfig {
 
 export interface SlopperConfig {
   vouched: string[]
+  banned: string[]
   actions: ActionsConfig
   thresholds: ThresholdsConfig
   ignore_paths: string[]
@@ -50,6 +49,7 @@ export interface SlopperConfig {
 
 const DEFAULT_CONFIG: SlopperConfig = {
   vouched: [],
+  banned: [],
   actions: {
     auto_close: {
       enabled: false,
@@ -80,29 +80,19 @@ const DEFAULT_CONFIG: SlopperConfig = {
   }
 }
 
-/**
- * Loads and parses the `.slopper` configuration file from a repository.
- *
- * Supports two formats:
- * - **YAML** (new): full configuration with actions, thresholds, rules
- * - **Plain text** (legacy): newline-separated list of vouched usernames
- *
- * Auto-detects the format. Missing fields get sensible defaults.
- */
 export class ConfigLoader {
-  private readonly octokit: Octokit
-  private readonly owner: string
-  private readonly repo: string
+  private readonly github: GitHubClient
 
-  constructor(octokit: Octokit, owner: string, repo: string) {
-    this.octokit = octokit
-    this.owner = owner
-    this.repo = repo
+  constructor(github: GitHubClient) {
+    this.github = github
   }
 
   async load(): Promise<SlopperConfig> {
-    const content = await this.fetchFile()
-    if (!content) return { ...DEFAULT_CONFIG }
+    const content = await this.github.getFileContent('.slopper')
+    if (!content) {
+      core.info('No .slopper configuration file found — using defaults')
+      return { ...DEFAULT_CONFIG }
+    }
 
     if (this.isYaml(content)) {
       return this.parseYamlConfig(content)
@@ -111,25 +101,8 @@ export class ConfigLoader {
     return this.parsePlainText(content)
   }
 
-  private async fetchFile(): Promise<string | null> {
-    try {
-      const { data } = await this.octokit.rest.repos.getContent({
-        owner: this.owner,
-        repo: this.repo,
-        path: '.slopper'
-      })
-
-      if ('content' in data && data.content) {
-        return Buffer.from(data.content, 'base64').toString('utf-8')
-      }
-    } catch {
-      core.info('No .slopper configuration file found — using defaults')
-    }
-    return null
-  }
-
   private isYaml(content: string): boolean {
-    return /^\s*(vouched|actions|thresholds|ignore_paths|rules)\s*:/m.test(content)
+    return /^\s*(vouched|banned|actions|thresholds|ignore_paths|rules)\s*:/m.test(content)
   }
 
   private parseYamlConfig(content: string): SlopperConfig {
@@ -150,6 +123,10 @@ export class ConfigLoader {
     const vouched = Array.isArray(parsed.vouched)
       ? (parsed.vouched as string[])
       : DEFAULT_CONFIG.vouched
+
+    const banned = Array.isArray(parsed.banned)
+      ? (parsed.banned as string[])
+      : DEFAULT_CONFIG.banned
 
     const parsedActions = (parsed.actions ?? {}) as Record<string, unknown>
     const parsedAutoClose = (parsedActions.auto_close ?? {}) as Record<string, unknown>
@@ -194,6 +171,6 @@ export class ConfigLoader {
       block_first_time_contributors: Boolean(parsedRules.block_first_time_contributors ?? DEFAULT_CONFIG.rules.block_first_time_contributors)
     }
 
-    return { vouched, actions, thresholds, ignore_paths, rules }
+    return { vouched, banned, actions, thresholds, ignore_paths, rules }
   }
 }

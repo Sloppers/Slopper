@@ -1,24 +1,16 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
 import { PipelineStep, PipelineContext } from '../pipeline'
 import { PrCommentManager } from '../commenter'
 import { LabelComputer } from '../labels'
+import { GitHubClient } from '../clients/github'
 
-type Octokit = ReturnType<typeof github.getOctokit>
-
-/**
- * Pipeline step that posts the analysis comment and applies labels to the PR.
- *
- * Reads `analysisResult`, `labels`, `prNumber`, and `prData` from context.
- * Writes action outputs: `risk-score`, `risk-level`, `confidence`, `labels`.
- */
 export class PostResultsStep extends PipelineStep {
   readonly name = 'post-results'
   private readonly commentManager: PrCommentManager
 
-  constructor(octokit: Octokit, owner: string, repo: string) {
+  constructor(github: GitHubClient) {
     super()
-    this.commentManager = new PrCommentManager(octokit, owner, repo)
+    this.commentManager = new PrCommentManager(github)
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
@@ -38,7 +30,13 @@ export class PostResultsStep extends PipelineStep {
       ? { author: prData.author.login }
       : undefined
 
-    const commentBody = this.commentManager.buildCommentBody(analysisResult, labels, suggestVouch)
+    const commentBody = this.commentManager.buildCommentBody({
+      result: analysisResult,
+      labels,
+      suggestVouch,
+      authorProfile: ctx.authorProfile,
+      aiFingerprint: ctx.aiFingerprint
+    })
     await this.commentManager.upsertComment(prNumber, commentBody)
 
     if (labels.length > 0) {

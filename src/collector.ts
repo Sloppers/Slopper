@@ -1,42 +1,15 @@
-import * as github from '@actions/github'
+import { GitHubClient } from './clients/github'
 import { PrData, AuthorProfile, CommitSummary, FileInfo } from './types'
 
-type Octokit = ReturnType<typeof github.getOctokit>
-
-/**
- * Collects all PR-related data from the GitHub API for trust analysis.
- *
- * Uses Octokit to fetch PR metadata, author profile, contribution history,
- * commit details, changed files, and the unified diff.
- */
 export class PrDataCollector {
-  private octokit: Octokit
-  private owner: string
-  private repo: string
+  private readonly github: GitHubClient
 
-  /**
-   * @param octokit - Authenticated Octokit instance.
-   * @param owner - Repository owner.
-   * @param repo - Repository name.
-   */
-  constructor(octokit: Octokit, owner: string, repo: string) {
-    this.octokit = octokit
-    this.owner = owner
-    this.repo = repo
+  constructor(github: GitHubClient) {
+    this.github = github
   }
 
-  /**
-   * Collects all data for a given PR number.
-   * @param prNumber - The pull request number.
-   * @returns Complete PR data ready for AI analysis.
-   */
   async collect(prNumber: number): Promise<PrData> {
-    const { data: pr } = await this.octokit.rest.pulls.get({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber
-    })
-
+    const pr = await this.github.getPr(prNumber)
     const authorLogin = pr.user?.login ?? 'unknown'
     const authorType = pr.user?.type ?? 'User'
 
@@ -44,11 +17,11 @@ export class PrDataCollector {
       this.collectAuthorProfile(authorLogin, authorType),
       this.collectCommits(prNumber),
       this.collectFiles(prNumber),
-      this.collectDiff(prNumber)
+      this.github.getPrDiff(prNumber)
     ])
 
     return {
-      repo: `${this.owner}/${this.repo}`,
+      repo: `${this.github.owner}/${this.github.repo}`,
       pr_number: prNumber,
       title: pr.title,
       body: (pr.body ?? '').slice(0, 3000),
@@ -64,11 +37,6 @@ export class PrDataCollector {
     }
   }
 
-  /**
-   * Fetches author profile, collaboration status, and contribution history.
-   * @param login - GitHub username.
-   * @param type - Account type (User or Bot).
-   */
   private async collectAuthorProfile(login: string, type: string): Promise<AuthorProfile> {
     const profile: AuthorProfile = {
       login,
@@ -88,7 +56,7 @@ export class PrDataCollector {
     if (type === 'Bot') return profile
 
     try {
-      const { data: user } = await this.octokit.rest.users.getByUsername({ username: login })
+      const user = await this.github.getUser(login)
       profile.created_at = user.created_at ?? ''
       profile.public_repos = user.public_repos ?? 0
       profile.followers = user.followers ?? 0
@@ -96,36 +64,25 @@ export class PrDataCollector {
       profile.bio = user.bio ?? ''
       profile.company = user.company ?? ''
     } catch {
-      // User lookup failed, continue with defaults.
+      // User lookup failed.
     }
 
-    try {
-      await this.octokit.rest.repos.checkCollaborator({
-        owner: this.owner,
-        repo: this.repo,
-        username: login
-      })
-      profile.is_collaborator = true
-    } catch {
-      profile.is_collaborator = false
-    }
+    profile.is_collaborator = await this.github.checkCollaborator(login)
 
     try {
-      const { data: prSearch } = await this.octokit.rest.search.issuesAndPullRequests({
-        q: `repo:${this.owner}/${this.repo} author:${login} type:pr is:merged`,
-        per_page: 1
-      })
-      profile.past_merged_prs_in_repo = prSearch.total_count
+      const result = await this.github.searchIssues(
+        `repo:${this.github.owner}/${this.github.repo} author:${login} type:pr is:merged`
+      )
+      profile.past_merged_prs_in_repo = result.total_count
     } catch {
       // Search failed.
     }
 
     try {
-      const { data: issueSearch } = await this.octokit.rest.search.issuesAndPullRequests({
-        q: `repo:${this.owner}/${this.repo} author:${login} type:issue`,
-        per_page: 1
-      })
-      profile.past_issues_in_repo = issueSearch.total_count
+      const result = await this.github.searchIssues(
+        `repo:${this.github.owner}/${this.github.repo} author:${login} type:issue`
+      )
+      profile.past_issues_in_repo = result.total_count
     } catch {
       // Search failed.
     }
@@ -136,17 +93,8 @@ export class PrDataCollector {
     return profile
   }
 
-  /**
-   * Fetches and summarizes commit metadata for the PR.
-   * @param prNumber - The pull request number.
-   */
   private async collectCommits(prNumber: number): Promise<CommitSummary> {
-    const { data: commits } = await this.octokit.rest.pulls.listCommits({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber,
-      per_page: 100
-    })
+    const commits = await this.github.listPrCommits(prNumber)
 
     const summary: CommitSummary = {
       count: commits.length,
@@ -178,18 +126,8 @@ export class PrDataCollector {
     return summary
   }
 
-  /**
-   * Fetches the list of changed files with metadata.
-   * @param prNumber - The pull request number.
-   */
   private async collectFiles(prNumber: number): Promise<FileInfo[]> {
-    const { data: files } = await this.octokit.rest.pulls.listFiles({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber,
-      per_page: 100
-    })
-
+    const files = await this.github.listPrFiles(prNumber)
     return files.map(f => ({
       filename: f.filename,
       status: f.status,
@@ -197,26 +135,5 @@ export class PrDataCollector {
       deletions: f.deletions,
       is_binary: f.patch === undefined && f.status !== 'removed'
     }))
-  }
-
-  /**
-   * Fetches the unified diff, truncated to 80k characters.
-   * @param prNumber - The pull request number.
-   */
-  private async collectDiff(prNumber: number): Promise<string> {
-    const { data: diff } = await this.octokit.rest.pulls.get({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber,
-      mediaType: { format: 'diff' }
-    })
-
-    // Octokit returns a string when mediaType.format is 'diff', but types say otherwise
-    let diffText = String(diff)
-    const maxChars = 80_000
-    if (diffText.length > maxChars) {
-      diffText = diffText.slice(0, maxChars) + '\n\n[... diff truncated for analysis ...]'
-    }
-    return diffText
   }
 }

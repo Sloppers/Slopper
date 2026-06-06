@@ -1,33 +1,21 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
 import { PipelineStep, PipelineContext } from '../pipeline'
+import { GitHubClient } from '../clients/github'
 
-type Octokit = ReturnType<typeof github.getOctokit>
-
-/**
- * Pipeline step that checks for vouching — both pre-existing (.slopper file)
- * and active (/slopper vouch commands from code owners).
- *
- * Reads `prNumber` from context.
- * Writes `vouched`, `vouchedBy`, `prAuthor`, and `addToSlopperFile` to context.
- */
 export class VouchCheckStep extends PipelineStep {
   readonly name = 'vouch-check'
-  private readonly octokit: Octokit
-  private readonly owner: string
-  private readonly repo: string
+  private readonly github: GitHubClient
 
-  constructor(octokit: Octokit, owner: string, repo: string) {
+  constructor(github: GitHubClient) {
     super()
-    this.octokit = octokit
-    this.owner = owner
-    this.repo = repo
+    this.github = github
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     ctx.vouched = false
 
-    const prAuthor = await this.getPrAuthor(ctx.prNumber)
+    const pr = await this.github.getPr(ctx.prNumber)
+    const prAuthor = pr.user?.login ?? 'unknown'
     ctx.prAuthor = prAuthor
 
     const vouchedUsers = ctx.config?.vouched ?? []
@@ -55,24 +43,10 @@ export class VouchCheckStep extends PipelineStep {
     return ctx
   }
 
-  private async getPrAuthor(prNumber: number): Promise<string> {
-    const { data: pr } = await this.octokit.rest.pulls.get({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber
-    })
-    return pr.user?.login ?? 'unknown'
-  }
-
   private async findVouchCommand(
     prNumber: number
   ): Promise<{ author: string; commentId: number } | null> {
-    const { data: comments } = await this.octokit.rest.issues.listComments({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: prNumber,
-      per_page: 100
-    })
+    const comments = await this.github.listComments(prNumber)
 
     for (const comment of comments) {
       const body = comment.body?.trim() ?? ''
@@ -90,31 +64,13 @@ export class VouchCheckStep extends PipelineStep {
     const codeownersPaths = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
 
     for (const path of codeownersPaths) {
-      try {
-        const { data } = await this.octokit.rest.repos.getContent({
-          owner: this.owner,
-          repo: this.repo,
-          path
-        })
-
-        if ('content' in data && data.content) {
-          const content = Buffer.from(data.content, 'base64').toString('utf-8')
-          return content.includes(`@${username}`)
-        }
-      } catch {
-        // File doesn't exist at this path, try next.
+      const content = await this.github.getFileContent(path)
+      if (content && content.includes(`@${username}`)) {
+        return true
       }
     }
 
-    try {
-      const { data: permission } = await this.octokit.rest.repos.getCollaboratorPermissionLevel({
-        owner: this.owner,
-        repo: this.repo,
-        username
-      })
-      return ['admin', 'maintain'].includes(permission.permission)
-    } catch {
-      return false
-    }
+    const permission = await this.github.getPermissionLevel(username)
+    return ['admin', 'maintain'].includes(permission)
   }
 }

@@ -4,7 +4,6 @@ import { callProvider, AiProvider } from '../providers'
 import { SYSTEM_PROMPT, buildUserPrompt } from '../prompt'
 import { AnalysisResult } from '../types'
 
-/** Configuration for the AI analysis step. */
 export interface AiAnalysisConfig {
   provider: AiProvider
   openaiApiKey?: string
@@ -16,15 +15,6 @@ export interface AiAnalysisConfig {
   model?: string
 }
 
-/**
- * Pipeline step that sends PR data to an AI provider for trust analysis.
- *
- * Uses structured tool calling to get validated output from the AI.
- * Falls back to a failure result if the AI call errors.
- *
- * Reads `prData` from context.
- * Writes `analysisResult` to context.
- */
 export class AiAnalysisStep extends PipelineStep {
   readonly name = 'ai-analysis'
   private readonly config: AiAnalysisConfig
@@ -39,7 +29,11 @@ export class AiAnalysisStep extends PipelineStep {
       throw new Error('prData is required but missing from context')
     }
 
-    const userPrompt = buildUserPrompt(ctx.prData)
+    const userPrompt = buildUserPrompt({
+      prData: ctx.prData,
+      authorProfile: ctx.authorProfile,
+      aiFingerprint: ctx.aiFingerprint
+    })
 
     try {
       const result = await callProvider(

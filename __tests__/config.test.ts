@@ -4,30 +4,17 @@ jest.mock('@actions/core', () => ({
   info: jest.fn()
 }))
 
-function makeMockOctokit(fileContent: string | null) {
+function makeMockGitHub(fileContent: string | null) {
   return {
-    rest: {
-      repos: {
-        getContent: jest.fn().mockImplementation(() => {
-          if (fileContent === null) {
-            throw new Error('Not Found')
-          }
-          return {
-            data: {
-              content: Buffer.from(fileContent).toString('base64')
-            }
-          }
-        })
-      }
-    }
+    getFileContent: jest.fn().mockImplementation(async () => fileContent)
   } as any
 }
 
 describe('ConfigLoader', () => {
   describe('plain text format (legacy)', () => {
     it('parses newline-separated usernames', async () => {
-      const octokit = makeMockOctokit('alice\nbob\ncharlie')
-      const loader = new ConfigLoader(octokit, 'owner', 'repo')
+      const gh = makeMockGitHub('alice\nbob\ncharlie')
+      const loader = new ConfigLoader(gh)
       const config = await loader.load()
 
       expect(config.vouched).toEqual(['alice', 'bob', 'charlie'])
@@ -35,8 +22,8 @@ describe('ConfigLoader', () => {
     })
 
     it('ignores comments and blank lines', async () => {
-      const octokit = makeMockOctokit('# trusted users\nalice\n\n# bots\ndependabot[bot]\n')
-      const loader = new ConfigLoader(octokit, 'owner', 'repo')
+      const gh = makeMockGitHub('# trusted users\nalice\n\n# bots\ndependabot[bot]\n')
+      const loader = new ConfigLoader(gh)
       const config = await loader.load()
 
       expect(config.vouched).toEqual(['alice', 'dependabot[bot]'])
@@ -49,6 +36,9 @@ describe('ConfigLoader', () => {
 vouched:
   - alice
   - bob
+
+banned:
+  - slop-bot
 
 actions:
   auto_close:
@@ -79,11 +69,12 @@ rules:
   max_files_changed: 50
   block_first_time_contributors: true
 `
-      const octokit = makeMockOctokit(yaml)
-      const loader = new ConfigLoader(octokit, 'owner', 'repo')
+      const gh = makeMockGitHub(yaml)
+      const loader = new ConfigLoader(gh)
       const config = await loader.load()
 
       expect(config.vouched).toEqual(['alice', 'bob'])
+      expect(config.banned).toEqual(['slop-bot'])
       expect(config.actions.auto_close.enabled).toBe(true)
       expect(config.actions.auto_close.threshold).toBe(8)
       expect(config.actions.auto_close.comment).toBe('Closed by Slopper')
@@ -105,11 +96,12 @@ actions:
   auto_close:
     enabled: true
 `
-      const octokit = makeMockOctokit(yaml)
-      const loader = new ConfigLoader(octokit, 'owner', 'repo')
+      const gh = makeMockGitHub(yaml)
+      const loader = new ConfigLoader(gh)
       const config = await loader.load()
 
       expect(config.vouched).toEqual(['alice'])
+      expect(config.banned).toEqual([])
       expect(config.actions.auto_close.enabled).toBe(true)
       expect(config.actions.auto_close.threshold).toBe(9)
       expect(config.actions.auto_close.comment).toContain('critical risk score')
@@ -122,11 +114,12 @@ actions:
 
   describe('no .slopper file', () => {
     it('returns all defaults', async () => {
-      const octokit = makeMockOctokit(null)
-      const loader = new ConfigLoader(octokit, 'owner', 'repo')
+      const gh = makeMockGitHub(null)
+      const loader = new ConfigLoader(gh)
       const config = await loader.load()
 
       expect(config.vouched).toEqual([])
+      expect(config.banned).toEqual([])
       expect(config.actions.auto_close.enabled).toBe(false)
       expect(config.thresholds).toEqual({ low: 2, medium: 5, high: 8 })
       expect(config.ignore_paths).toEqual([])

@@ -1,31 +1,17 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
 import { PipelineStep, PipelineContext } from '../pipeline'
 import { PrCommentManager } from '../commenter'
+import { GitHubClient } from '../clients/github'
 
-type Octokit = ReturnType<typeof github.getOctokit>
-
-/**
- * Pipeline step that applies vouching results.
- *
- * If the PR was vouched, this step applies labels, posts a comment,
- * and commits the user to the .slopper file if newly vouched.
- *
- * Reads `vouched`, `vouchedBy`, `addToSlopperFile`, `prAuthor`, `prNumber` from context.
- */
 export class VouchApplyStep extends PipelineStep {
   readonly name = 'vouch-apply'
-  private readonly octokit: Octokit
-  private readonly owner: string
-  private readonly repo: string
+  private readonly github: GitHubClient
   private readonly commentManager: PrCommentManager
 
-  constructor(octokit: Octokit, owner: string, repo: string) {
+  constructor(github: GitHubClient) {
     super()
-    this.octokit = octokit
-    this.owner = owner
-    this.repo = repo
-    this.commentManager = new PrCommentManager(octokit, owner, repo)
+    this.github = github
+    this.commentManager = new PrCommentManager(github)
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
@@ -66,22 +52,7 @@ export class VouchApplyStep extends PipelineStep {
   }
 
   private async addUserToSlopperFile(username: string): Promise<void> {
-    let currentContent = ''
-    let sha: string | undefined
-
-    try {
-      const { data } = await this.octokit.rest.repos.getContent({
-        owner: this.owner,
-        repo: this.repo,
-        path: '.slopper'
-      })
-      if ('content' in data && data.content) {
-        currentContent = Buffer.from(data.content, 'base64').toString('utf-8')
-        sha = data.sha
-      }
-    } catch {
-      // File doesn't exist yet.
-    }
+    const currentContent = await this.github.getFileContent('.slopper') ?? ''
 
     const users = currentContent
       .split('\n')
@@ -101,14 +72,7 @@ export class VouchApplyStep extends PipelineStep {
     const newContent = header + [...existingUsers, username].join('\n') + '\n'
 
     try {
-      await this.octokit.rest.repos.createOrUpdateFileContents({
-        owner: this.owner,
-        repo: this.repo,
-        path: '.slopper',
-        message: `slopper: vouch ${username}`,
-        content: Buffer.from(newContent).toString('base64'),
-        ...(sha ? { sha } : {})
-      })
+      await this.github.createOrUpdateFile('.slopper', `slopper: vouch ${username}`, newContent)
       core.info(`Added ${username} to .slopper file`)
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)

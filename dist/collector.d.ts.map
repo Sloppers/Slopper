@@ -1,0 +1,1 @@
+{"version":3,"file":"","sourceRoot":"","sources":["file:///Users/malvads/slopper/src/collector.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,YAAY,EAAE,MAAM,kBAAkB,CAAA;AAC/C,OAAO,EAAE,MAAM,EAA0C,MAAM,SAAS,CAAA;AAExE,qBAAa,eAAe;IAC1B,OAAO,CAAC,QAAQ,CAAC,MAAM,CAAc;gBAEzB,MAAM,EAAE,YAAY;IAI1B,OAAO,CAAC,QAAQ,EAAE,MAAM,GAAG,OAAO,CAAC,MAAM,CAAC;YA6BlC,oBAAoB;YAwDpB,cAAc;YAiCd,YAAY;CAU3B"}

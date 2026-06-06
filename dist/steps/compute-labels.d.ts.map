@@ -1,0 +1,1 @@
+{"version":3,"file":"compute-labels.d.ts","sourceRoot":"","sources":["file:///Users/malvads/slopper/src/steps/compute-labels.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,YAAY,EAAE,eAAe,EAAE,MAAM,aAAa,CAAA;AAG3D,qBAAa,iBAAkB,SAAQ,YAAY;IACjD,QAAQ,CAAC,IAAI,oBAAmB;IAE1B,OAAO,CAAC,GAAG,EAAE,eAAe,GAAG,OAAO,CAAC,eAAe,CAAC;CAkB9D"}

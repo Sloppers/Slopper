@@ -1,18 +1,16 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
 import { minimatch } from 'minimatch'
 import { PipelineStep, PipelineContext } from '../pipeline'
 import { PrDataCollector } from '../collector'
-
-type Octokit = ReturnType<typeof github.getOctokit>
+import { GitHubClient } from '../clients/github'
 
 export class CollectDataStep extends PipelineStep {
   readonly name = 'collect-data'
   private readonly collector: PrDataCollector
 
-  constructor(octokit: Octokit, owner: string, repo: string) {
+  constructor(github: GitHubClient) {
     super()
-    this.collector = new PrDataCollector(octokit, owner, repo)
+    this.collector = new PrDataCollector(github)
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {

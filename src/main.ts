@@ -1,12 +1,16 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import { GitHubClient } from './clients/github'
 import { AnalysisPipeline } from './pipeline'
 import { AiProvider } from './providers'
 import {
   LoadConfigStep,
   VouchCheckStep,
   VouchApplyStep,
+  BannedCheckStep,
   CollectDataStep,
+  ProfileAnalysisStep,
+  FingerprintStep,
   AiAnalysisStep,
   ComputeLabelsStep,
   PostResultsStep,
@@ -44,22 +48,23 @@ async function run(): Promise<void> {
     return
   }
 
-  const octokit = github.getOctokit(githubToken)
   const { owner, repo } = github.context.repo
-
-  const loadConfigStep = new LoadConfigStep(octokit, owner, repo)
+  const gh = new GitHubClient(githubToken, owner, repo)
 
   const vouchPipeline = new AnalysisPipeline([
-    loadConfigStep,
-    new VouchCheckStep(octokit, owner, repo),
-    new VouchApplyStep(octokit, owner, repo)
+    new LoadConfigStep(gh),
+    new VouchCheckStep(gh),
+    new BannedCheckStep(gh),
+    new VouchApplyStep(gh)
   ])
   const vouchResult = await vouchPipeline.run({ prNumber })
 
-  if (vouchResult.vouched) return
+  if (vouchResult.vouched || vouchResult.banned) return
 
   const analysisPipeline = new AnalysisPipeline([
-    new CollectDataStep(octokit, owner, repo),
+    new CollectDataStep(gh),
+    new ProfileAnalysisStep(gh),
+    new FingerprintStep(),
     new AiAnalysisStep({
       provider,
       openaiApiKey,
@@ -71,8 +76,8 @@ async function run(): Promise<void> {
       model
     }),
     new ComputeLabelsStep(),
-    new PostResultsStep(octokit, owner, repo),
-    new AutoActionsStep(octokit, owner, repo)
+    new PostResultsStep(gh),
+    new AutoActionsStep(gh)
   ])
   await analysisPipeline.run({ prNumber, config: vouchResult.config })
 }

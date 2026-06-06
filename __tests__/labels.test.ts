@@ -20,78 +20,82 @@ function makeFile(filename: string): FileInfo {
   return { filename, status: 'modified', additions: 10, deletions: 5, is_binary: false }
 }
 
+function compute(computer: LabelComputer, result: AnalysisResult, files: FileInfo[] = [], firstTime = false, prData?: PrData) {
+  return computer.compute({ analysis: result, files, firstTimeContributor: firstTime, prData })
+}
+
 describe('LabelComputer', () => {
   const computer = new LabelComputer()
 
   describe('risk labels', () => {
     it('assigns slopper/risk/low for scores 0-2', () => {
-      const labels = computer.compute(makeResult({ risk_score: 0 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 0 }))
       expect(labels).toContain('slopper/risk/low')
     })
 
     it('assigns slopper/risk/low for score 2', () => {
-      const labels = computer.compute(makeResult({ risk_score: 2 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 2 }))
       expect(labels).toContain('slopper/risk/low')
     })
 
     it('assigns slopper/risk/medium for scores 3-5', () => {
-      const labels = computer.compute(makeResult({ risk_score: 4 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 4 }))
       expect(labels).toContain('slopper/risk/medium')
     })
 
     it('assigns slopper/risk/high for scores 6-8', () => {
-      const labels = computer.compute(makeResult({ risk_score: 7 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 7 }))
       expect(labels).toContain('slopper/risk/high')
     })
 
     it('assigns slopper/risk/critical for scores 9-10', () => {
-      const labels = computer.compute(makeResult({ risk_score: 9 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 9 }))
       expect(labels).toContain('slopper/risk/critical')
     })
   })
 
   describe('confidence labels', () => {
     it('assigns slopper/confidence/high', () => {
-      const labels = computer.compute(makeResult({ confidence: 'high' }), [], false)
+      const labels = compute(computer, makeResult({ confidence: 'high' }))
       expect(labels).toContain('slopper/confidence/high')
     })
 
     it('assigns slopper/confidence/medium', () => {
-      const labels = computer.compute(makeResult({ confidence: 'medium' }), [], false)
+      const labels = compute(computer, makeResult({ confidence: 'medium' }))
       expect(labels).toContain('slopper/confidence/medium')
     })
 
     it('assigns slopper/confidence/low', () => {
-      const labels = computer.compute(makeResult({ confidence: 'low' }), [], false)
+      const labels = compute(computer, makeResult({ confidence: 'low' }))
       expect(labels).toContain('slopper/confidence/low')
     })
   })
 
   describe('approved label', () => {
     it('assigns slopper/approved when score <= 2 and confidence is high', () => {
-      const labels = computer.compute(makeResult({ risk_score: 1, confidence: 'high' }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 1, confidence: 'high' }))
       expect(labels).toContain('slopper/approved')
     })
 
     it('does not assign slopper/approved when score > 2', () => {
-      const labels = computer.compute(makeResult({ risk_score: 3, confidence: 'high' }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 3, confidence: 'high' }))
       expect(labels).not.toContain('slopper/approved')
     })
 
     it('does not assign slopper/approved when confidence is not high', () => {
-      const labels = computer.compute(makeResult({ risk_score: 1, confidence: 'medium' }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 1, confidence: 'medium' }))
       expect(labels).not.toContain('slopper/approved')
     })
   })
 
   describe('first-time contributor', () => {
     it('assigns slopper/first-time-contributor when true', () => {
-      const labels = computer.compute(makeResult(), [], true)
+      const labels = compute(computer, makeResult(), [], true)
       expect(labels).toContain('slopper/first-time-contributor')
     })
 
     it('does not assign when false', () => {
-      const labels = computer.compute(makeResult(), [], false)
+      const labels = compute(computer, makeResult(), [], false)
       expect(labels).not.toContain('slopper/first-time-contributor')
     })
   })
@@ -99,59 +103,59 @@ describe('LabelComputer', () => {
   describe('CI/dependency file detection', () => {
     it('detects .github/workflows/ changes', () => {
       const files = [makeFile('.github/workflows/ci.yml')]
-      const labels = computer.compute(makeResult(), files, false)
+      const labels = compute(computer, makeResult(), files)
       expect(labels).toContain('slopper/ci-modified')
     })
 
     it('detects Jenkinsfile changes', () => {
       const files = [makeFile('Jenkinsfile')]
-      const labels = computer.compute(makeResult(), files, false)
+      const labels = compute(computer, makeResult(), files)
       expect(labels).toContain('slopper/ci-modified')
     })
 
     it('does not flag non-CI files', () => {
       const files = [makeFile('src/index.ts')]
-      const labels = computer.compute(makeResult(), files, false)
+      const labels = compute(computer, makeResult(), files)
       expect(labels).not.toContain('slopper/ci-modified')
     })
 
     it('detects package.json changes', () => {
       const files = [makeFile('package.json')]
-      const labels = computer.compute(makeResult(), files, false)
+      const labels = compute(computer, makeResult(), files)
       expect(labels).toContain('slopper/dependencies-modified')
     })
 
     it('detects nested dependency files', () => {
       const files = [makeFile('services/api/requirements.txt')]
-      const labels = computer.compute(makeResult(), files, false)
+      const labels = compute(computer, makeResult(), files)
       expect(labels).toContain('slopper/dependencies-modified')
     })
 
     it('does not flag non-dependency files', () => {
       const files = [makeFile('src/utils.ts')]
-      const labels = computer.compute(makeResult(), files, false)
+      const labels = compute(computer, makeResult(), files)
       expect(labels).not.toContain('slopper/dependencies-modified')
     })
   })
 
   describe('security review thresholds', () => {
     it('assigns needs-security-review at score >= 6', () => {
-      const labels = computer.compute(makeResult({ risk_score: 6 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 6 }))
       expect(labels).toContain('slopper/needs-security-review')
     })
 
     it('does not assign needs-security-review below 6', () => {
-      const labels = computer.compute(makeResult({ risk_score: 5 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 5 }))
       expect(labels).not.toContain('slopper/needs-security-review')
     })
 
     it('assigns suspicious at score >= 8', () => {
-      const labels = computer.compute(makeResult({ risk_score: 8 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 8 }))
       expect(labels).toContain('slopper/suspicious')
     })
 
     it('does not assign suspicious below 8', () => {
-      const labels = computer.compute(makeResult({ risk_score: 7 }), [], false)
+      const labels = compute(computer, makeResult({ risk_score: 7 }))
       expect(labels).not.toContain('slopper/suspicious')
     })
   })
@@ -171,7 +175,7 @@ describe('LabelComputer', () => {
         makeFile('src/hack.ts')
       ]
       const result = makeResult({ risk_score: 9, confidence: 'high' })
-      const labels = computer.compute(result, files, true)
+      const labels = compute(computer, result, files, true)
 
       expect(labels).toContain('slopper/risk/critical')
       expect(labels).toContain('slopper/confidence/high')
@@ -186,7 +190,7 @@ describe('LabelComputer', () => {
     it('clean PR from known contributor gets minimal labels', () => {
       const files = [makeFile('src/feature.ts')]
       const result = makeResult({ risk_score: 0, confidence: 'high' })
-      const labels = computer.compute(result, files, false)
+      const labels = compute(computer, result, files)
 
       expect(labels).toEqual([
         'slopper/risk/low',
@@ -272,22 +276,22 @@ describe('LabelComputer', () => {
     const custom = new LabelComputer({ low: 3, medium: 6, high: 9 })
 
     it('uses custom low threshold for risk label', () => {
-      const labels = custom.compute(makeResult({ risk_score: 3 }), [], false)
+      const labels = compute(custom, makeResult({ risk_score: 3 }))
       expect(labels).toContain('slopper/risk/low')
     })
 
     it('uses custom medium threshold', () => {
-      const labels = custom.compute(makeResult({ risk_score: 6 }), [], false)
+      const labels = compute(custom, makeResult({ risk_score: 6 }))
       expect(labels).toContain('slopper/risk/medium')
     })
 
     it('uses custom high threshold', () => {
-      const labels = custom.compute(makeResult({ risk_score: 9 }), [], false)
+      const labels = compute(custom, makeResult({ risk_score: 9 }))
       expect(labels).toContain('slopper/risk/high')
     })
 
     it('uses custom threshold for approved label', () => {
-      const labels = custom.compute(makeResult({ risk_score: 3, confidence: 'high' }), [], false)
+      const labels = compute(custom, makeResult({ risk_score: 3, confidence: 'high' }))
       expect(labels).toContain('slopper/approved')
     })
   })
@@ -326,46 +330,124 @@ describe('LabelComputer', () => {
 
     it('adds missing-description label when body is empty', () => {
       const prData = makePrData({ body: '' })
-      const labels = withRules.compute(makeResult(), [], false, prData)
+      const labels = compute(withRules, makeResult(), [], false, prData)
       expect(labels).toContain('slopper/missing-description')
     })
 
     it('does not add missing-description when body has content', () => {
       const prData = makePrData({ body: 'This PR adds a feature' })
-      const labels = withRules.compute(makeResult(), [], false, prData)
+      const labels = compute(withRules, makeResult(), [], false, prData)
       expect(labels).not.toContain('slopper/missing-description')
     })
 
     it('adds no-linked-issue when body has no issue reference', () => {
       const prData = makePrData({ body: 'Just some changes with no issue ref' })
-      const labels = withRules.compute(makeResult(), [], false, prData)
+      const labels = compute(withRules, makeResult(), [], false, prData)
       expect(labels).toContain('slopper/no-linked-issue')
     })
 
     it('does not add no-linked-issue when body references an issue', () => {
       const prData = makePrData({ body: 'Fixes #123' })
-      const labels = withRules.compute(makeResult(), [], false, prData)
+      const labels = compute(withRules, makeResult(), [], false, prData)
       expect(labels).not.toContain('slopper/no-linked-issue')
     })
 
     it('adds too-many-files when changed_files_count exceeds max', () => {
       const prData = makePrData({ changed_files_count: 15 })
-      const labels = withRules.compute(makeResult(), [], false, prData)
+      const labels = compute(withRules, makeResult(), [], false, prData)
       expect(labels).toContain('slopper/too-many-files')
     })
 
     it('does not add too-many-files when within limit', () => {
       const prData = makePrData({ changed_files_count: 5 })
-      const labels = withRules.compute(makeResult(), [], false, prData)
+      const labels = compute(withRules, makeResult(), [], false, prData)
       expect(labels).not.toContain('slopper/too-many-files')
     })
 
     it('does not add rule labels when rules are disabled', () => {
       const noRules = new LabelComputer()
       const prData = makePrData({ body: '', changed_files_count: 100 })
-      const labels = noRules.compute(makeResult(), [], false, prData)
+      const labels = compute(noRules, makeResult(), [], false, prData)
       expect(labels).not.toContain('slopper/missing-description')
       expect(labels).not.toContain('slopper/too-many-files')
+    })
+  })
+
+  describe('author profile labels', () => {
+    it('adds spray-and-pray label when spray_score > 60', () => {
+      const labels = computer.compute({
+        analysis: makeResult(),
+        files: [],
+        firstTimeContributor: false,
+        authorProfile: {
+          account_age_days: 365, is_new_account: false, prs_last_7d: 5,
+          prs_last_30d: 30, distinct_repos_30d: 25, merge_ratio: 0.3,
+          total_stars: 10, total_issues: 5, spray_score: 75, activity_burst: false
+        }
+      })
+      expect(labels).toContain('slopper/spray-and-pray')
+    })
+
+    it('adds new-account label for accounts < 30 days', () => {
+      const labels = computer.compute({
+        analysis: makeResult(),
+        files: [],
+        firstTimeContributor: false,
+        authorProfile: {
+          account_age_days: 15, is_new_account: true, prs_last_7d: 2,
+          prs_last_30d: 5, distinct_repos_30d: 3, merge_ratio: 0.5,
+          total_stars: 0, total_issues: 0, spray_score: 20, activity_burst: false
+        }
+      })
+      expect(labels).toContain('slopper/new-account')
+    })
+
+    it('adds activity-burst label when > 10 PRs in 7d', () => {
+      const labels = computer.compute({
+        analysis: makeResult(),
+        files: [],
+        firstTimeContributor: false,
+        authorProfile: {
+          account_age_days: 365, is_new_account: false, prs_last_7d: 15,
+          prs_last_30d: 20, distinct_repos_30d: 5, merge_ratio: 0.8,
+          total_stars: 50, total_issues: 10, spray_score: 30, activity_burst: true
+        }
+      })
+      expect(labels).toContain('slopper/activity-burst')
+    })
+  })
+
+  describe('AI fingerprint labels', () => {
+    it('adds likely-ai-generated when score >= 70', () => {
+      const labels = computer.compute({
+        analysis: makeResult(),
+        files: [],
+        firstTimeContributor: false,
+        aiFingerprint: { score: 75, signals: [] }
+      })
+      expect(labels).toContain('slopper/likely-ai-generated')
+    })
+
+    it('adds possibly-ai-generated when score >= 40 and < 70', () => {
+      const labels = computer.compute({
+        analysis: makeResult(),
+        files: [],
+        firstTimeContributor: false,
+        aiFingerprint: { score: 50, signals: [] }
+      })
+      expect(labels).toContain('slopper/possibly-ai-generated')
+      expect(labels).not.toContain('slopper/likely-ai-generated')
+    })
+
+    it('adds no fingerprint label when score < 40', () => {
+      const labels = computer.compute({
+        analysis: makeResult(),
+        files: [],
+        firstTimeContributor: false,
+        aiFingerprint: { score: 20, signals: [] }
+      })
+      expect(labels).not.toContain('slopper/likely-ai-generated')
+      expect(labels).not.toContain('slopper/possibly-ai-generated')
     })
   })
 })

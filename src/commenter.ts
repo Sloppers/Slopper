@@ -1,15 +1,12 @@
-import * as github from '@actions/github'
+import { GitHubClient } from './clients/github'
 import { AnalysisResult } from './types'
 
-type Octokit = ReturnType<typeof github.getOctokit>
-
-/** Hidden HTML marker for comment upsert detection. */
 const COMMENT_MARKER = '<!-- pr-trust-analysis -->'
 
-/** Color codes for slopper labels in the GitHub UI. */
 const LABEL_COLORS: Record<string, string> = {
   'slopper/approved': '0e8a16',
   'slopper/vouched': '0e8a16',
+  'slopper/banned': 'b60205',
   'slopper/confidence/high': '0e8a16',
   'slopper/confidence/medium': 'fbca04',
   'slopper/confidence/low': 'e4e669',
@@ -22,65 +19,56 @@ const LABEL_COLORS: Record<string, string> = {
   'slopper/dependencies-modified': 'f9d0c4',
   'slopper/needs-security-review': 'b60205',
   'slopper/suspicious': 'b60205',
-  'slopper/analysis-failed': 'cccccc'
+  'slopper/analysis-failed': 'cccccc',
+  'slopper/spray-and-pray': 'b60205',
+  'slopper/activity-burst': 'e99695',
+  'slopper/new-account': 'fbca04',
+  'slopper/likely-ai-generated': 'b60205',
+  'slopper/possibly-ai-generated': 'fbca04',
+  'slopper/missing-description': 'e4e669',
+  'slopper/no-linked-issue': 'e4e669',
+  'slopper/too-many-files': 'e4e669'
 }
 
-/**
- * Manages PR comments and labels for slopper analysis results.
- *
- * Comment format is modeled after CodeRabbit — a top-level summary
- * with collapsible detail sections for each analysis dimension.
- */
-export class PrCommentManager {
-  private octokit: Octokit
-  private owner: string
-  private repo: string
+export interface CommentOptions {
+  result: AnalysisResult
+  labels: string[]
+  suggestVouch?: { author: string }
+  authorProfile?: {
+    account_age_days: number
+    prs_last_7d: number
+    prs_last_30d: number
+    distinct_repos_30d: number
+    merge_ratio: number
+    spray_score: number
+  }
+  aiFingerprint?: {
+    score: number
+    signals: { name: string; score: number; detail: string }[]
+  }
+}
 
-  /**
-   * @param octokit - Authenticated Octokit instance.
-   * @param owner - Repository owner.
-   * @param repo - Repository name.
-   */
-  constructor(octokit: Octokit, owner: string, repo: string) {
-    this.octokit = octokit
-    this.owner = owner
-    this.repo = repo
+export class PrCommentManager {
+  private readonly github: GitHubClient
+
+  constructor(github: GitHubClient) {
+    this.github = github
   }
 
-  /**
-   * Builds the markdown comment body from analysis results and labels.
-   *
-   * Structure (inspired by CodeRabbit):
-   * - Top-level summary with risk badge and metrics table
-   * - Collapsible walkthrough with detailed assessments
-   * - Labels section
-   * - Actionable review suggestions
-   *
-   * @param result - AI analysis result.
-   * @param labels - Deterministically computed labels.
-   * @returns Formatted markdown string.
-   */
-  buildCommentBody(
-    result: AnalysisResult,
-    labels: string[],
-    suggestVouch?: { author: string }
-  ): string {
+  buildCommentBody(opts: CommentOptions): string {
+    const { result, labels, suggestVouch, authorProfile, aiFingerprint } = opts
     const riskEmoji: Record<string, string> = {
       low: '🟢', medium: '🟡', high: '🟠', critical: '🔴', unknown: '⚪'
     }
     const badge = riskEmoji[result.risk_level] ?? '⚪'
-
-    const confidenceEmoji: Record<string, string> = {
-      high: '🟢', medium: '🟡', low: '🔴'
-    }
-    const confBadge = confidenceEmoji[result.confidence] ?? '⚪'
+    const confBadge: Record<string, string> = { high: '🟢', medium: '🟡', low: '🔴' }
 
     let md = `${COMMENT_MARKER}\n`
     md += `## ${badge} Slopper — PR Trust Analysis\n\n`
     md += `${result.summary}\n\n`
 
     md += `> **Risk:** ${badge} **${result.risk_score}**/10 (${result.risk_level})`
-    md += ` · **Confidence:** ${confBadge} ${result.confidence}`
+    md += ` · **Confidence:** ${confBadge[result.confidence] ?? '⚪'} ${result.confidence}`
     md += ` · **Provider:** ${result.provider ?? 'unknown'}\n\n`
 
     md += `<details>\n<summary>Walkthrough</summary>\n\n`
@@ -89,6 +77,16 @@ export class PrCommentManager {
       md += `#### 👤 Author\n`
       md += `**Trust level:** ${result.author_assessment.trust_level}\n\n`
       md += `${result.author_assessment.reasoning}\n\n`
+    }
+
+    if (authorProfile) {
+      md += `#### 📊 Author Activity\n`
+      md += `Account age: **${authorProfile.account_age_days}** days · `
+      md += `PRs (7d): **${authorProfile.prs_last_7d}** · `
+      md += `PRs (30d): **${authorProfile.prs_last_30d}** · `
+      md += `Repos (30d): **${authorProfile.distinct_repos_30d}** · `
+      md += `Merge ratio: **${Math.round(authorProfile.merge_ratio * 100)}%** · `
+      md += `Spray score: **${authorProfile.spray_score}**/100\n\n`
     }
 
     if (result.commit_assessment) {
@@ -120,6 +118,21 @@ export class PrCommentManager {
       md += `${result.behavioral_signals.reasoning}\n\n`
     }
 
+    if (aiFingerprint) {
+      md += `#### 🤖 AI Fingerprint\n`
+      md += `**Score:** ${aiFingerprint.score}/100`
+      if (aiFingerprint.score >= 70) md += ` (likely AI-generated)`
+      else if (aiFingerprint.score >= 40) md += ` (possibly AI-generated)`
+      else md += ` (likely human)`
+      md += '\n\n'
+      if (aiFingerprint.signals.length > 0) {
+        for (const s of aiFingerprint.signals.filter(s => s.score > 20)) {
+          md += `- **${s.name}** (${s.score}/100): ${s.detail}\n`
+        }
+        md += '\n'
+      }
+    }
+
     md += `</details>\n\n`
 
     if (result.review_suggestions?.length > 0) {
@@ -148,99 +161,15 @@ export class PrCommentManager {
     return md
   }
 
-  /**
-   * Creates or updates the slopper analysis comment on a PR.
-   * Uses the hidden marker to find and update existing comments.
-   * @param issueNumber - PR/issue number.
-   * @param body - Comment body markdown.
-   */
   async upsertComment(issueNumber: number, body: string): Promise<void> {
-    const { data: comments } = await this.octokit.rest.issues.listComments({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: issueNumber
-    })
-
-    const existing = comments.find(c => c.body?.includes(COMMENT_MARKER))
-
-    if (existing) {
-      await this.octokit.rest.issues.updateComment({
-        owner: this.owner,
-        repo: this.repo,
-        comment_id: existing.id,
-        body
-      })
-    } else {
-      await this.octokit.rest.issues.createComment({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: issueNumber,
-        body
-      })
-    }
+    await this.github.upsertComment(issueNumber, COMMENT_MARKER, body)
   }
 
-  /**
-   * Removes existing slopper/* labels and applies the new set.
-   * Creates labels in the repo if they don't exist yet.
-   * @param issueNumber - PR/issue number.
-   * @param labels - Label names to apply.
-   */
   async applyLabels(issueNumber: number, labels: string[]): Promise<void> {
-    const { data: currentLabels } = await this.octokit.rest.issues.listLabelsOnIssue({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: issueNumber
-    })
-
-    for (const label of currentLabels) {
-      if (label.name.startsWith('slopper/')) {
-        try {
-          await this.octokit.rest.issues.removeLabel({
-            owner: this.owner,
-            repo: this.repo,
-            issue_number: issueNumber,
-            name: label.name
-          })
-        } catch {
-          // Label removal failed, continue.
-        }
-      }
+    await this.github.removeSlopperLabels(issueNumber)
+    for (const name of labels) {
+      await this.github.ensureLabel(name, LABEL_COLORS[name] ?? 'ededed')
     }
-
-    for (const labelName of labels) {
-      await this.ensureLabelExists(labelName)
-      await this.octokit.rest.issues.addLabels({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: issueNumber,
-        labels: [labelName]
-      })
-    }
-  }
-
-  /**
-   * Creates a label in the repo if it doesn't already exist.
-   * @param name - Label name.
-   */
-  private async ensureLabelExists(name: string): Promise<void> {
-    try {
-      await this.octokit.rest.issues.getLabel({
-        owner: this.owner,
-        repo: this.repo,
-        name
-      })
-    } catch (e: unknown) {
-      const status = e && typeof e === 'object' && 'status' in e ? (e as { status: number }).status : undefined
-      if (status === 404) {
-        await this.octokit.rest.issues.createLabel({
-          owner: this.owner,
-          repo: this.repo,
-          name,
-          color: LABEL_COLORS[name] ?? 'ededed',
-          description: 'Slopper PR trust analysis label'
-        })
-      }
-    }
+    await this.github.applyLabels(issueNumber, labels)
   }
 }

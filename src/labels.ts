@@ -1,7 +1,6 @@
-import { AnalysisResult, AuthorProfile, FileInfo, PrData } from './types'
+import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from './types'
 import { ThresholdsConfig, RulesConfig } from './config'
 
-/** File path patterns that indicate CI/CD infrastructure. */
 const CI_PATTERNS = [
   '.github/workflows/',
   '.github/actions/',
@@ -12,7 +11,6 @@ const CI_PATTERNS = [
   'azure-pipelines'
 ]
 
-/** Basenames of common dependency/lockfiles. */
 const DEPENDENCY_FILES = new Set([
   'package.json',
   'package-lock.json',
@@ -29,13 +27,15 @@ const DEPENDENCY_FILES = new Set([
   'pubspec.lock'
 ])
 
-/**
- * Deterministically computes PR labels from analysis results and file metadata.
- *
- * Labels are never suggested by the AI — they are computed by code from
- * the risk score, confidence level, changed file paths, and author metadata.
- * This ensures consistent, predictable labeling regardless of AI provider.
- */
+export interface ComputeLabelsOptions {
+  analysis: AnalysisResult
+  files: FileInfo[]
+  firstTimeContributor: boolean
+  prData?: PrData
+  authorProfile?: AuthorProfileAnalysis
+  aiFingerprint?: AiFingerprintResult
+}
+
 export class LabelComputer {
   private readonly thresholds: ThresholdsConfig
   private readonly rules: RulesConfig
@@ -53,12 +53,8 @@ export class LabelComputer {
     }
   }
 
-  compute(
-    analysis: AnalysisResult,
-    files: FileInfo[],
-    firstTimeContributor: boolean,
-    prData?: PrData
-  ): string[] {
+  compute(opts: ComputeLabelsOptions): string[] {
+    const { analysis, files, firstTimeContributor, prData, authorProfile, aiFingerprint } = opts
     const labels: string[] = []
     const score = analysis.risk_score
 
@@ -88,31 +84,24 @@ export class LabelComputer {
       labels.push(...this.ruleLabels(prData))
     }
 
+    if (authorProfile) {
+      if (authorProfile.spray_score > 60) labels.push('slopper/spray-and-pray')
+      if (authorProfile.activity_burst) labels.push('slopper/activity-burst')
+      if (authorProfile.is_new_account) labels.push('slopper/new-account')
+    }
+
+    if (aiFingerprint) {
+      if (aiFingerprint.score >= 70) labels.push('slopper/likely-ai-generated')
+      else if (aiFingerprint.score >= 40) labels.push('slopper/possibly-ai-generated')
+    }
+
     return labels
   }
 
-  /**
-   * Returns labels for a failed analysis.
-   * @returns Array containing only the analysis-failed label.
-   */
   computeFailedLabels(): string[] {
     return ['slopper/analysis-failed']
   }
 
-  /**
-   * Determines whether slopper should suggest vouching this author.
-   *
-   * Criteria (all must be true):
-   * - Risk score is 0 (completely clean)
-   * - Confidence is high
-   * - AI assessed the author as "trusted"
-   * - Author is a collaborator OR has 3+ previously merged PRs in this repo
-   * - Author is not a bot
-   *
-   * @param analysis - The AI analysis result.
-   * @param author - The PR author's profile.
-   * @returns True if slopper should suggest vouching.
-   */
   shouldSuggestVouch(analysis: AnalysisResult, author: AuthorProfile): boolean {
     if (analysis.risk_score !== 0) return false
     if (analysis.confidence !== 'high') return false
@@ -122,10 +111,6 @@ export class LabelComputer {
     return true
   }
 
-  /**
-   * Maps a numeric risk score to the corresponding risk label.
-   * @param score - Risk score (0-10).
-   */
   private ruleLabels(prData: PrData): string[] {
     const labels: string[] = []
 
@@ -155,20 +140,12 @@ export class LabelComputer {
     return 'slopper/risk/critical'
   }
 
-  /**
-   * Checks if any changed files match CI/CD infrastructure patterns.
-   * @param files - List of changed files.
-   */
   private hasCiChanges(files: FileInfo[]): boolean {
     return files.some(f =>
       CI_PATTERNS.some(pattern => f.filename.includes(pattern))
     )
   }
 
-  /**
-   * Checks if any changed files are dependency/lockfiles.
-   * @param files - List of changed files.
-   */
   private hasDependencyChanges(files: FileInfo[]): boolean {
     return files.some(f => {
       const basename = f.filename.split('/').pop() ?? ''
