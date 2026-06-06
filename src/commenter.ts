@@ -230,7 +230,8 @@ export class PrCommentManager {
         name
       })
     } catch (e: unknown) {
-      if (e && typeof e === 'object' && 'status' in e && (e as { status: number }).status === 404) {
+      const status = e && typeof e === 'object' && 'status' in e ? (e as { status: number }).status : undefined
+      if (status === 404) {
         await this.octokit.rest.issues.createLabel({
           owner: this.owner,
           repo: this.repo,

@@ -1,12 +1,11 @@
 import { PipelineStep, PipelineContext } from '../pipeline'
 import { LabelComputer } from '../labels'
-import { AnalysisResult, PrData } from '../types'
 
 /**
  * Pipeline step that deterministically computes labels from the AI analysis result.
  *
  * Labels are derived from risk score, confidence, file paths, and author metadata —
- * never from AI suggestions. This ensures consistent, predictable labeling.
+ * never from AI suggestions.
  *
  * Reads `analysisResult`, `prData`, and `analysisFailed` from context.
  * Writes `labels` to context.
@@ -17,12 +16,14 @@ export class ComputeLabelsStep extends PipelineStep {
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     const computer = new LabelComputer()
 
-    if (ctx.analysisFailed) {
+    if (ctx.analysisFailed || !ctx.analysisResult || !ctx.prData) {
       ctx.labels = computer.computeFailedLabels()
     } else {
-      const result = ctx.analysisResult as AnalysisResult
-      const prData = ctx.prData as PrData
-      ctx.labels = computer.compute(result, prData.files, prData.author.first_time_contributor)
+      ctx.labels = computer.compute(
+        ctx.analysisResult,
+        ctx.prData.files,
+        ctx.prData.author.first_time_contributor
+      )
     }
 
     return ctx

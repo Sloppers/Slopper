@@ -211,7 +211,8 @@ export class PrDataCollector {
       mediaType: { format: 'diff' }
     })
 
-    let diffText = diff as unknown as string
+    // Octokit returns a string when mediaType.format is 'diff', but types say otherwise
+    let diffText = String(diff)
     const maxChars = 80_000
     if (diffText.length > maxChars) {
       diffText = diffText.slice(0, maxChars) + '\n\n[... diff truncated for analysis ...]'

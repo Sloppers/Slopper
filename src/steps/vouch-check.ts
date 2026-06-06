@@ -8,26 +8,15 @@ type Octokit = ReturnType<typeof github.getOctokit>
  * Pipeline step that checks for vouching — both pre-existing (.slopper file)
  * and active (/slopper vouch commands from code owners).
  *
- * If the PR author is in the `.slopper` vouched users file, the analysis
- * is skipped entirely and the PR is auto-approved.
- *
- * If a code owner comments `/slopper vouch` on the PR, the author is added
- * to `.slopper` and the PR is approved with `slopper/vouched`.
- *
  * Reads `prNumber` from context.
- * Writes `vouched` (boolean) and `vouchedBy` (string) to context.
+ * Writes `vouched`, `vouchedBy`, `prAuthor`, and `addToSlopperFile` to context.
  */
 export class VouchCheckStep extends PipelineStep {
   readonly name = 'vouch-check'
-  private octokit: Octokit
-  private owner: string
-  private repo: string
+  private readonly octokit: Octokit
+  private readonly owner: string
+  private readonly repo: string
 
-  /**
-   * @param octokit - Authenticated Octokit instance.
-   * @param owner - Repository owner.
-   * @param repo - Repository name.
-   */
   constructor(octokit: Octokit, owner: string, repo: string) {
     super()
     this.octokit = octokit
@@ -36,10 +25,9 @@ export class VouchCheckStep extends PipelineStep {
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    const prNumber = ctx.prNumber as number
     ctx.vouched = false
 
-    const prAuthor = await this.getPrAuthor(prNumber)
+    const prAuthor = await this.getPrAuthor(ctx.prNumber)
     ctx.prAuthor = prAuthor
 
     const vouchedUsers = await this.getVouchedUsers()
@@ -51,7 +39,7 @@ export class VouchCheckStep extends PipelineStep {
       return ctx
     }
 
-    const vouchComment = await this.findVouchCommand(prNumber)
+    const vouchComment = await this.findVouchCommand(ctx.prNumber)
     if (vouchComment) {
       const isCodeOwner = await this.isCodeOwner(vouchComment.author)
       if (isCodeOwner) {
@@ -67,7 +55,6 @@ export class VouchCheckStep extends PipelineStep {
     return ctx
   }
 
-  /** Gets the login of the PR author. */
   private async getPrAuthor(prNumber: number): Promise<string> {
     const { data: pr } = await this.octokit.rest.pulls.get({
       owner: this.owner,
@@ -77,7 +64,6 @@ export class VouchCheckStep extends PipelineStep {
     return pr.user?.login ?? 'unknown'
   }
 
-  /** Reads the .slopper file and returns a list of vouched usernames. */
   private async getVouchedUsers(): Promise<string[]> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
@@ -94,12 +80,11 @@ export class VouchCheckStep extends PipelineStep {
           .filter(line => line && !line.startsWith('#'))
       }
     } catch {
-      // .slopper file doesn't exist, no vouched users.
+      // .slopper file doesn't exist yet.
     }
     return []
   }
 
-  /** Searches PR comments for a /slopper vouch command. */
   private async findVouchCommand(
     prNumber: number
   ): Promise<{ author: string; commentId: number } | null> {
@@ -122,7 +107,6 @@ export class VouchCheckStep extends PipelineStep {
     return null
   }
 
-  /** Checks if a user is listed in the CODEOWNERS file. */
   private async isCodeOwner(username: string): Promise<boolean> {
     const codeownersPaths = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
 
@@ -143,7 +127,6 @@ export class VouchCheckStep extends PipelineStep {
       }
     }
 
-    // Fallback: check if user has admin or maintain permissions.
     try {
       const { data: permission } = await this.octokit.rest.repos.getCollaboratorPermissionLevel({
         owner: this.owner,

@@ -8,27 +8,18 @@ type Octokit = ReturnType<typeof github.getOctokit>
 /**
  * Pipeline step that applies vouching results.
  *
- * If the PR was vouched (either via .slopper file or /slopper vouch command),
- * this step:
- * 1. Applies the slopper/vouched and slopper/approved labels
- * 2. Posts a comment confirming the vouch
- * 3. If a new user was vouched, commits them to the .slopper file
+ * If the PR was vouched, this step applies labels, posts a comment,
+ * and commits the user to the .slopper file if newly vouched.
  *
  * Reads `vouched`, `vouchedBy`, `addToSlopperFile`, `prAuthor`, `prNumber` from context.
- * This step only runs when `vouched` is true.
  */
 export class VouchApplyStep extends PipelineStep {
   readonly name = 'vouch-apply'
-  private octokit: Octokit
-  private owner: string
-  private repo: string
-  private commentManager: PrCommentManager
+  private readonly octokit: Octokit
+  private readonly owner: string
+  private readonly repo: string
+  private readonly commentManager: PrCommentManager
 
-  /**
-   * @param octokit - Authenticated Octokit instance.
-   * @param owner - Repository owner.
-   * @param repo - Repository name.
-   */
   constructor(octokit: Octokit, owner: string, repo: string) {
     super()
     this.octokit = octokit
@@ -38,11 +29,9 @@ export class VouchApplyStep extends PipelineStep {
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    if (!ctx.vouched) return ctx
+    if (!ctx.vouched || !ctx.prAuthor || !ctx.vouchedBy) return ctx
 
-    const prNumber = ctx.prNumber as number
-    const prAuthor = ctx.prAuthor as string
-    const vouchedBy = ctx.vouchedBy as string
+    const { prNumber, prAuthor, vouchedBy } = ctx
     const labels = ['slopper/vouched', 'slopper/approved']
 
     core.setOutput('risk-score', '0')
@@ -70,17 +59,12 @@ export class VouchApplyStep extends PipelineStep {
     await this.commentManager.applyLabels(prNumber, labels)
 
     if (ctx.addToSlopperFile) {
-      await this.addUserToSlopperFile(ctx.addToSlopperFile as string)
+      await this.addUserToSlopperFile(ctx.addToSlopperFile)
     }
 
     return ctx
   }
 
-  /**
-   * Adds a username to the .slopper file in the repository.
-   * Creates the file if it doesn't exist.
-   * @param username - GitHub username to add.
-   */
   private async addUserToSlopperFile(username: string): Promise<void> {
     let currentContent = ''
     let sha: string | undefined
@@ -126,7 +110,7 @@ export class VouchApplyStep extends PipelineStep {
         ...(sha ? { sha } : {})
       })
       core.info(`Added ${username} to .slopper file`)
-    } catch (error) {
+    } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
       core.warning(`Failed to update .slopper file: ${msg}`)
     }

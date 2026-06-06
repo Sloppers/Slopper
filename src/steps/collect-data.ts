@@ -12,21 +12,15 @@ type Octokit = ReturnType<typeof github.getOctokit>
  */
 export class CollectDataStep extends PipelineStep {
   readonly name = 'collect-data'
-  private collector: PrDataCollector
+  private readonly collector: PrDataCollector
 
-  /**
-   * @param octokit - Authenticated Octokit instance.
-   * @param owner - Repository owner.
-   * @param repo - Repository name.
-   */
   constructor(octokit: Octokit, owner: string, repo: string) {
     super()
     this.collector = new PrDataCollector(octokit, owner, repo)
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    const prNumber = ctx.prNumber as number
-    ctx.prData = await this.collector.collect(prNumber)
+    ctx.prData = await this.collector.collect(ctx.prNumber)
     return ctx
   }
 }

@@ -1,32 +1,24 @@
 import { AnalysisPipeline, PipelineStep, PipelineContext } from '../src/pipeline'
 
-// Mock @actions/core to prevent actual GitHub Actions output
 jest.mock('@actions/core', () => ({
   info: jest.fn()
 }))
 
-class AddValueStep extends PipelineStep {
-  readonly name = 'add-value'
-  private key: string
-  private value: unknown
-
-  constructor(key: string, value: unknown) {
-    super()
-    this.key = key
-    this.value = value
-  }
+class SetVouchedStep extends PipelineStep {
+  readonly name = 'set-vouched'
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    ctx[this.key] = this.value
+    ctx.vouched = true
+    ctx.vouchedBy = 'test-user'
     return ctx
   }
 }
 
-class TransformStep extends PipelineStep {
-  readonly name = 'transform'
+class SetAuthorStep extends PipelineStep {
+  readonly name = 'set-author'
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    ctx.doubled = (ctx.count as number) * 2
+    ctx.prAuthor = 'contributor'
     return ctx
   }
 }
@@ -42,38 +34,39 @@ class FailingStep extends PipelineStep {
 describe('AnalysisPipeline', () => {
   it('runs steps in order and passes context through', async () => {
     const pipeline = new AnalysisPipeline([
-      new AddValueStep('count', 5),
-      new TransformStep()
+      new SetAuthorStep(),
+      new SetVouchedStep()
     ])
 
-    const result = await pipeline.run({})
-    expect(result.count).toBe(5)
-    expect(result.doubled).toBe(10)
+    const result = await pipeline.run({ prNumber: 1 })
+    expect(result.prAuthor).toBe('contributor')
+    expect(result.vouched).toBe(true)
+    expect(result.vouchedBy).toBe('test-user')
   })
 
   it('preserves initial context', async () => {
     const pipeline = new AnalysisPipeline([
-      new AddValueStep('extra', 'data')
+      new SetAuthorStep()
     ])
 
-    const result = await pipeline.run({ existing: true })
-    expect(result.existing).toBe(true)
-    expect(result.extra).toBe('data')
+    const result = await pipeline.run({ prNumber: 42 })
+    expect(result.prNumber).toBe(42)
+    expect(result.prAuthor).toBe('contributor')
   })
 
   it('propagates errors from failing steps', async () => {
     const pipeline = new AnalysisPipeline([
-      new AddValueStep('before', true),
+      new SetAuthorStep(),
       new FailingStep(),
-      new AddValueStep('after', true)
+      new SetVouchedStep()
     ])
 
-    await expect(pipeline.run({})).rejects.toThrow('Step failed')
+    await expect(pipeline.run({ prNumber: 1 })).rejects.toThrow('Step failed')
   })
 
   it('handles empty pipeline', async () => {
     const pipeline = new AnalysisPipeline([])
-    const result = await pipeline.run({ value: 42 })
-    expect(result.value).toBe(42)
+    const result = await pipeline.run({ prNumber: 42 })
+    expect(result.prNumber).toBe(42)
   })
 })
