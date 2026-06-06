@@ -1,0 +1,34 @@
+export { Check, StaticCheck, CheckContext, ScoreResult } from './check';
+export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic-check';
+export { allAgenticChecks } from './agentic';
+export { ApprovedCheck } from './approved';
+export { DeterministicModeCheck } from './deterministic-mode';
+export { FirstTimeContributorCheck } from './first-time-contributor';
+export { CiModifiedCheck } from './ci-modified';
+export { DependenciesModifiedCheck } from './dependencies-modified';
+export { SecurityReviewCheck } from './security-review';
+export { SuspiciousCheck } from './suspicious';
+export { SprayAndPrayCheck } from './spray-and-pray';
+export { ActivityBurstCheck } from './activity-burst';
+export { NewAccountCheck } from './new-account';
+export { LikelyAiCheck } from './likely-ai';
+export { PossiblyAiCheck } from './possibly-ai';
+export { MissingDescriptionCheck } from './missing-description';
+export { NoLinkedIssueCheck } from './no-linked-issue';
+export { TooManyFilesCheck } from './too-many-files';
+export { RiskyUserCheck } from './risky-user';
+export { TrustedOrgCheck } from './trusted-org';
+export { HeavyChangesCheck } from './heavy-changes';
+export { LargeFileCheck } from './large-file';
+export { LowMergeRatioCheck } from './low-merge-ratio';
+export { SupplyChainCheck } from './supply-chain';
+export { UnsignedCommitsCheck } from './unsigned-commits';
+export { NoTestsCheck } from './no-tests';
+export { CodeDuplicationCheck } from './code-duplication';
+import { Check, ScoreResult } from './check';
+export declare function allChecks(): Check[];
+export declare function computeScore(checks: Check[], ctx: import('./check').CheckContext, weights?: Record<string, number>): {
+    score: number;
+    breakdown: ScoreResult[];
+};
+//# sourceMappingURL=index.d.ts.map

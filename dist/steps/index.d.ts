@@ -1,12 +1,14 @@
-export { LoadConfigStep } from './load-config';
-export { VouchCheckStep } from './vouch-check';
-export { VouchApplyStep } from './vouch-apply';
-export { BannedCheckStep } from './banned-check';
-export { CollectDataStep } from './collect-data';
-export { ProfileAnalysisStep } from './profile-analysis';
-export { FingerprintStep } from './fingerprint';
-export { AiAnalysisStep } from './ai-analysis';
-export { ComputeLabelsStep } from './compute-labels';
-export { PostResultsStep } from './post-results';
-export { AutoActionsStep } from './auto-actions';
+export { LoadConfigStep } from './00_load-config';
+export { VouchCheckStep } from './01_vouch-check';
+export { BannedCheckStep } from './02_banned-check';
+export { RiskyUserCheckStep } from './03_risky-user-check';
+export { VouchApplyStep } from './04_vouch-apply';
+export { CollectDataStep } from './05_collect-data';
+export { ProfileAnalysisStep } from './06_profile-analysis';
+export { FingerprintStep } from './07_fingerprint';
+export { AiAnalysisStep } from './08_ai-analysis';
+export { AgenticChecksStep } from './08b_agentic-checks';
+export { ComputeLabelsStep } from './09_compute-labels';
+export { PostResultsStep } from './10_post-results';
+export { AutoActionsStep } from './11_auto-actions';
 //# sourceMappingURL=index.d.ts.map

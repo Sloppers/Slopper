@@ -688,6 +688,7 @@ export declare class GitHubClient {
     createOrUpdateFile(path: string, message: string, content: string): Promise<void>;
     checkCollaborator(username: string): Promise<boolean>;
     getPermissionLevel(username: string): Promise<string>;
+    isOrgPublicMember(org: string, username: string): Promise<boolean>;
     getUser(username: string): Promise<{
         login: string;
         id: number;
@@ -1236,5 +1237,7 @@ export declare class GitHubClient {
             rocket: number;
         };
     }[]>;
+    listDirectory(path: string): Promise<string[]>;
+    createGist(description: string, filename: string, content: string): Promise<string>;
 }
 //# sourceMappingURL=github.d.ts.map
