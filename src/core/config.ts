@@ -31,6 +31,14 @@ export interface ThresholdsConfig {
   high: number
 }
 
+export interface LabelThresholdsConfig {
+  ai_likely: number
+  ai_possibly: number
+  spray_score: number
+  new_account_days: number
+  activity_burst_prs: number
+}
+
 export interface RulesConfig {
   require_description: boolean
   require_linked_issue: boolean
@@ -43,6 +51,7 @@ export interface SlopperConfig {
   banned: string[]
   actions: ActionsConfig
   thresholds: ThresholdsConfig
+  label_thresholds: LabelThresholdsConfig
   ignore_paths: string[]
   rules: RulesConfig
 }
@@ -70,6 +79,13 @@ const DEFAULT_CONFIG: SlopperConfig = {
     low: 2,
     medium: 5,
     high: 8
+  },
+  label_thresholds: {
+    ai_likely: 70,
+    ai_possibly: 40,
+    spray_score: 60,
+    new_account_days: 30,
+    activity_burst_prs: 10
   },
   ignore_paths: [],
   rules: {
@@ -102,7 +118,7 @@ export class ConfigLoader {
   }
 
   private isYaml(content: string): boolean {
-    return /^\s*(vouched|banned|actions|thresholds|ignore_paths|rules)\s*:/m.test(content)
+    return /^\s*(vouched|banned|actions|thresholds|label_thresholds|ignore_paths|rules)\s*:/m.test(content)
   }
 
   private parseYamlConfig(content: string): SlopperConfig {
@@ -159,6 +175,15 @@ export class ConfigLoader {
       high: Number(parsedThresholds.high ?? DEFAULT_CONFIG.thresholds.high)
     }
 
+    const parsedLabelThresholds = (parsed.label_thresholds ?? {}) as Record<string, unknown>
+    const label_thresholds: LabelThresholdsConfig = {
+      ai_likely: Number(parsedLabelThresholds.ai_likely ?? DEFAULT_CONFIG.label_thresholds.ai_likely),
+      ai_possibly: Number(parsedLabelThresholds.ai_possibly ?? DEFAULT_CONFIG.label_thresholds.ai_possibly),
+      spray_score: Number(parsedLabelThresholds.spray_score ?? DEFAULT_CONFIG.label_thresholds.spray_score),
+      new_account_days: Number(parsedLabelThresholds.new_account_days ?? DEFAULT_CONFIG.label_thresholds.new_account_days),
+      activity_burst_prs: Number(parsedLabelThresholds.activity_burst_prs ?? DEFAULT_CONFIG.label_thresholds.activity_burst_prs)
+    }
+
     const ignore_paths = Array.isArray(parsed.ignore_paths)
       ? (parsed.ignore_paths as string[])
       : DEFAULT_CONFIG.ignore_paths
@@ -171,6 +196,6 @@ export class ConfigLoader {
       block_first_time_contributors: Boolean(parsedRules.block_first_time_contributors ?? DEFAULT_CONFIG.rules.block_first_time_contributors)
     }
 
-    return { vouched, banned, actions, thresholds, ignore_paths, rules }
+    return { vouched, banned, actions, thresholds, label_thresholds, ignore_paths, rules }
   }
 }

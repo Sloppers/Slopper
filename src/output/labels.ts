@@ -1,5 +1,5 @@
 import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
-import { ThresholdsConfig, RulesConfig } from '../core/config'
+import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig } from '../core/config'
 
 const CI_PATTERNS = [
   '.github/workflows/',
@@ -39,13 +39,22 @@ export interface ComputeLabelsOptions {
 
 export class LabelComputer {
   private readonly thresholds: ThresholdsConfig
+  private readonly labelThresholds: LabelThresholdsConfig
   private readonly rules: RulesConfig
 
   constructor(
     thresholds?: ThresholdsConfig,
-    rules?: RulesConfig
+    rules?: RulesConfig,
+    labelThresholds?: LabelThresholdsConfig
   ) {
     this.thresholds = thresholds ?? { low: 2, medium: 5, high: 8 }
+    this.labelThresholds = labelThresholds ?? {
+      ai_likely: 70,
+      ai_possibly: 40,
+      spray_score: 60,
+      new_account_days: 30,
+      activity_burst_prs: 10
+    }
     this.rules = rules ?? {
       require_description: false,
       require_linked_issue: false,
@@ -86,14 +95,14 @@ export class LabelComputer {
     }
 
     if (authorProfile) {
-      if (authorProfile.spray_score > 60) labels.push('slopper/spray-and-pray')
-      if (authorProfile.activity_burst) labels.push('slopper/activity-burst')
-      if (authorProfile.is_new_account) labels.push('slopper/new-account')
+      if (authorProfile.spray_score > this.labelThresholds.spray_score) labels.push('slopper/spray-and-pray')
+      if (authorProfile.prs_last_7d > this.labelThresholds.activity_burst_prs) labels.push('slopper/activity-burst')
+      if (authorProfile.account_age_days < this.labelThresholds.new_account_days) labels.push('slopper/new-account')
     }
 
     if (aiFingerprint) {
-      if (aiFingerprint.score >= 70) labels.push('slopper/likely-ai-generated')
-      else if (aiFingerprint.score >= 40) labels.push('slopper/possibly-ai-generated')
+      if (aiFingerprint.score >= this.labelThresholds.ai_likely) labels.push('slopper/likely-ai-generated')
+      else if (aiFingerprint.score >= this.labelThresholds.ai_possibly) labels.push('slopper/possibly-ai-generated')
     }
 
     if (riskyUser) labels.push('slopper/risky-user')

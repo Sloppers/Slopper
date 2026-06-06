@@ -86,6 +86,33 @@ rules:
       expect(config.rules.require_description).toBe(true)
       expect(config.rules.max_files_changed).toBe(50)
       expect(config.rules.block_first_time_contributors).toBe(true)
+      expect(config.label_thresholds).toEqual({
+        ai_likely: 70, ai_possibly: 40, spray_score: 60,
+        new_account_days: 30, activity_burst_prs: 10
+      })
+    })
+
+    it('parses custom label_thresholds', async () => {
+      const yaml = `
+vouched: []
+label_thresholds:
+  ai_likely: 80
+  ai_possibly: 50
+  spray_score: 40
+  new_account_days: 60
+  activity_burst_prs: 5
+`
+      const gh = makeMockGitHub(yaml)
+      const loader = new ConfigLoader(gh)
+      const config = await loader.load()
+
+      expect(config.label_thresholds).toEqual({
+        ai_likely: 80,
+        ai_possibly: 50,
+        spray_score: 40,
+        new_account_days: 60,
+        activity_burst_prs: 5
+      })
     })
 
     it('fills missing fields with defaults', async () => {
@@ -109,6 +136,7 @@ actions:
       expect(config.thresholds).toEqual({ low: 2, medium: 5, high: 8 })
       expect(config.ignore_paths).toEqual([])
       expect(config.rules.require_description).toBe(false)
+      expect(config.label_thresholds.ai_likely).toBe(70)
     })
   })
 
@@ -124,6 +152,10 @@ actions:
       expect(config.thresholds).toEqual({ low: 2, medium: 5, high: 8 })
       expect(config.ignore_paths).toEqual([])
       expect(config.rules.block_first_time_contributors).toBe(false)
+      expect(config.label_thresholds).toEqual({
+        ai_likely: 70, ai_possibly: 40, spray_score: 60,
+        new_account_days: 30, activity_burst_prs: 10
+      })
     })
   })
 })

@@ -23,6 +23,14 @@ thresholds:
   medium: 5
   high: 8
 
+# Tune when each label fires
+label_thresholds:
+  ai_likely: 70           # slopper/likely-ai-generated
+  ai_possibly: 40         # slopper/possibly-ai-generated
+  spray_score: 60         # slopper/spray-and-pray
+  new_account_days: 30    # slopper/new-account
+  activity_burst_prs: 10  # slopper/activity-burst
+
 ignore_paths:
   - "*.md"
   - "docs/**"

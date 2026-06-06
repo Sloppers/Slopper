@@ -76,6 +76,13 @@ thresholds:
   medium: 5
   high: 8
 
+label_thresholds:
+  ai_likely: 70
+  ai_possibly: 40
+  spray_score: 60
+  new_account_days: 30
+  activity_burst_prs: 10
+
 ignore_paths:
   - "*.md"
   - "docs/**"
@@ -103,18 +110,18 @@ Slopper fetches a [community-maintained list](https://github.com/malvads/slopper
 
 All labels are deterministic — the AI never picks them.
 
-| Label | Trigger |
-|-------|---------|
-| `slopper/risk/low` ... `critical` | Score thresholds (configurable) |
-| `slopper/likely-ai-generated` | AI fingerprint score >= 70 |
-| `slopper/possibly-ai-generated` | AI fingerprint score >= 40 |
-| `slopper/spray-and-pray` | Spray score > 60 |
-| `slopper/new-account` | Account < 30 days old |
-| `slopper/activity-burst` | > 10 PRs in 7 days |
-| `slopper/risky-user` | On community risky users list |
-| `slopper/banned` | On repo banned list or reported |
-| `slopper/ci-modified` | CI/CD files changed |
-| `slopper/dependencies-modified` | Lockfiles or manifests changed |
+| Label | Default Trigger | Config key |
+|-------|----------------|------------|
+| `slopper/risk/low` ... `critical` | Score thresholds | `thresholds.low/medium/high` |
+| `slopper/likely-ai-generated` | Fingerprint >= 70 | `label_thresholds.ai_likely` |
+| `slopper/possibly-ai-generated` | Fingerprint >= 40 | `label_thresholds.ai_possibly` |
+| `slopper/spray-and-pray` | Spray score > 60 | `label_thresholds.spray_score` |
+| `slopper/new-account` | Account < 30 days | `label_thresholds.new_account_days` |
+| `slopper/activity-burst` | > 10 PRs in 7 days | `label_thresholds.activity_burst_prs` |
+| `slopper/risky-user` | On community list | — |
+| `slopper/banned` | Banned or reported | — |
+| `slopper/ci-modified` | CI/CD files changed | — |
+| `slopper/dependencies-modified` | Lockfiles changed | — |
 
 ## Outputs
 
