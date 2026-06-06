@@ -70,43 +70,44 @@ export class PrCommentManager {
     }
     const badge = riskEmoji[result.risk_level] ?? '⚪'
 
+    const confidenceEmoji: Record<string, string> = {
+      high: '🟢', medium: '🟡', low: '🔴'
+    }
+    const confBadge = confidenceEmoji[result.confidence] ?? '⚪'
+
     let md = `${COMMENT_MARKER}\n`
     md += `## ${badge} Slopper — PR Trust Analysis\n\n`
     md += `${result.summary}\n\n`
 
-    md += `| Metric | Value |\n`
-    md += `|--------|-------|\n`
-    md += `| Risk Score | **${result.risk_score}** / 10 |\n`
-    md += `| Risk Level | **${result.risk_level}** |\n`
-    md += `| Confidence | **${result.confidence}** |\n`
-    md += `| Provider | ${result.provider ?? 'unknown'} |\n\n`
+    md += `> **Risk:** ${badge} **${result.risk_score}**/10 (${result.risk_level})`
+    md += ` · **Confidence:** ${confBadge} ${result.confidence}`
+    md += ` · **Provider:** ${result.provider ?? 'unknown'}\n\n`
 
     md += `<details>\n<summary>Walkthrough</summary>\n\n`
 
     if (result.author_assessment) {
-      md += `### Author Assessment\n`
+      md += `#### 👤 Author\n`
       md += `**Trust level:** ${result.author_assessment.trust_level}\n\n`
       md += `${result.author_assessment.reasoning}\n\n`
     }
 
     if (result.commit_assessment) {
-      md += `### Commit Assessment\n`
+      md += `#### 📝 Commits\n`
       md += `**Quality:** ${result.commit_assessment.quality}\n\n`
       md += `${result.commit_assessment.reasoning}\n\n`
     }
 
     if (result.code_assessment) {
       const cats = result.code_assessment.categories_flagged?.join(', ') || 'none'
-      md += `### Code Assessment\n`
+      md += `#### 🔍 Code\n`
       md += `**Categories flagged:** ${cats}\n\n`
       md += `${result.code_assessment.reasoning}\n\n`
 
       if (result.code_assessment.suspicious_patterns?.length > 0) {
-        md += `#### Suspicious Patterns\n\n`
-        md += `| File | Description | Severity |\n`
-        md += `|------|-------------|----------|\n`
+        md += `**Suspicious patterns:**\n\n`
         for (const p of result.code_assessment.suspicious_patterns) {
-          md += `| \`${p.file}\` | ${p.description} | ${p.severity} |\n`
+          const sevEmoji: Record<string, string> = { critical: '🔴', high: '🟠', medium: '🟡', low: '⚪' }
+          md += `- ${sevEmoji[p.severity] ?? '⚪'} \`${p.file}\` — ${p.description}\n`
         }
         md += '\n'
       }
@@ -114,7 +115,7 @@ export class PrCommentManager {
 
     if (result.behavioral_signals) {
       const flags = result.behavioral_signals.flags?.join(', ') || 'none'
-      md += `### Behavioral Signals\n`
+      md += `#### 🚩 Behavioral Signals\n`
       md += `**Flags:** ${flags}\n\n`
       md += `${result.behavioral_signals.reasoning}\n\n`
     }
@@ -122,7 +123,7 @@ export class PrCommentManager {
     md += `</details>\n\n`
 
     if (result.review_suggestions?.length > 0) {
-      md += `<details>\n<summary>Review Suggestions</summary>\n\n`
+      md += `<details>\n<summary>📋 Review Suggestions</summary>\n\n`
       for (const s of result.review_suggestions) {
         md += `- [ ] ${s}\n`
       }
@@ -134,7 +135,7 @@ export class PrCommentManager {
     }
 
     if (suggestVouch) {
-      md += `> **💡 Vouch suggestion:** @${suggestVouch.author} has a strong trust record. `
+      md += `> 💡 **Vouch suggestion** — @${suggestVouch.author} has a strong trust record. `
       md += `A code owner can comment \`/slopper vouch\` to permanently approve this contributor `
       md += `and skip future AI analysis.\n\n`
     }

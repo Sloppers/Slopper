@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Slopper" width="200" />
+  <img src="assets/logo.png" alt="Slopper" width="400" />
 </p>
 
 <h3 align="center">Keep AI slop out of your pull requests.</h3>
