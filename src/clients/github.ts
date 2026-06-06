@@ -13,8 +13,6 @@ export class GitHubClient {
     this.repo = repo
   }
 
-  // --- PR operations ---
-
   async getPr(prNumber: number) {
     const { data } = await this.octokit.rest.pulls.get({
       owner: this.owner,
@@ -85,8 +83,6 @@ export class GitHubClient {
       reviewers
     })
   }
-
-  // --- Comments & labels ---
 
   async upsertComment(issueNumber: number, marker: string, body: string): Promise<void> {
     const { data: comments } = await this.octokit.rest.issues.listComments({
@@ -176,8 +172,6 @@ export class GitHubClient {
     }
   }
 
-  // --- Repository ---
-
   async getFileContent(path: string): Promise<string | null> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
@@ -244,8 +238,6 @@ export class GitHubClient {
       return 'none'
     }
   }
-
-  // --- Users & search ---
 
   async getUser(username: string) {
     const { data } = await this.octokit.rest.users.getByUsername({ username })

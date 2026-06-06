@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build --no-workspaces)",
+      "Bash(npm run test --no-workspaces)",
+      "Bash(npm run all --no-workspaces)",
+      "Bash(npx --no-workspaces tsc --noEmit)",
+      "Bash(npx --no-workspaces jest*)",
+      "Bash(npx --no-workspaces ncc build*)"
+    ]
+  }
+}
