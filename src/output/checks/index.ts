@@ -88,10 +88,8 @@ export function computeScore(checks: Check[], ctx: import('./check').CheckContex
   let total = 0
 
   for (const check of checks) {
-    if (check.defaultWeight === 0 && !weights) continue
     const key = check.label.replace('slopper/', '').replace(/\//g, '_')
     const weight = weights?.[key] ?? check.defaultWeight
-    if (weight === 0) continue
     const factor = check.scoreFactor(ctx)
     const points = factor * weight
     total += points

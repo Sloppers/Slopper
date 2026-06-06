@@ -25,7 +25,6 @@ export interface CommentOptions {
   signalBreakdown?: ScoreResult[]
   agenticResults?: AgenticCheckResult[]
   stepResults?: StepResult[]
-  pipelineGistUrl?: string
   labels: string[]
   suggestVouch?: { author: string }
   authorProfile?: {
@@ -50,7 +49,7 @@ export class PrCommentManager {
   }
 
   buildCommentBody(opts: CommentOptions): string {
-    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, stepResults, pipelineGistUrl, labels, suggestVouch, authorProfile, aiFingerprint } = opts
+    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, stepResults, labels, suggestVouch, authorProfile, aiFingerprint } = opts
     const riskEmoji: Record<string, string> = {
       low: '🟢', medium: '🟡', high: '🟠', critical: '🔴', unknown: '⚪'
     }
@@ -75,17 +74,43 @@ export class PrCommentManager {
 
     if (stepResults && stepResults.length > 0) {
       md += `<details>\n<summary>Pipeline</summary>\n\n`
-      md += `| Status | Task | Start Time | Duration |\n`
-      md += `|--------|------|------------|----------|\n`
+      md += `#### Steps\n`
+      md += `| Status | Task | Duration |\n`
+      md += `|--------|------|----------|\n`
       for (const s of stepResults) {
         const icon = s.status === 'success' ? '✔️' : '❌'
-        const time = s.startTime.toISOString().replace('T', ' ').replace(/\.\d+Z$/, '+00:00')
         const dur = formatDuration(s.durationMs)
-        md += `| ${icon} | ${s.name} | ${time} | ${dur} |\n`
+        md += `| ${icon} | ${s.name} | ${dur} |\n`
       }
-      if (pipelineGistUrl) {
-        md += `\nPipeline logs: ${pipelineGistUrl}\n`
+      md += '\n'
+
+      if (signalBreakdown && signalBreakdown.length > 0) {
+        const passed = signalBreakdown.filter(s => s.factor === 0).length
+        const failed = signalBreakdown.filter(s => s.factor > 0).length
+        md += `#### Checks (${signalBreakdown.length} checks — ${passed} passed, ${failed} flagged)\n`
+        md += `| Status | Check | Factor | Weight | Points |\n`
+        md += `|--------|-------|--------|--------|--------|\n`
+        for (const s of signalBreakdown) {
+          let icon: string
+          if (s.factor === 0) icon = '✔️ PASS'
+          else if (s.weight < 0) icon = '🟢 TRUST'
+          else icon = '❌ FAIL'
+          const pts = s.points === 0 ? '—' : `${s.points > 0 ? '+' : ''}${Math.round(s.points * 10) / 10}`
+          md += `| ${icon} | ${s.key} | ${Math.round(s.factor * 100)}% | ${s.weight} | ${pts} |\n`
+        }
+        md += '\n'
       }
+
+      md += `<details>\n<summary>Full pipeline log</summary>\n\n`
+      md += '```\n'
+      for (const s of stepResults) {
+        const tag = s.status === 'success' ? 'PASS' : 'FAIL'
+        const dur = `${s.durationMs}ms`
+        md += `[${tag}] ${s.name} (${dur})\n`
+        if (s.error) md += `       Error: ${s.error}\n`
+      }
+      md += '```\n</details>\n'
+
       md += `\n</details>\n\n`
     }
 

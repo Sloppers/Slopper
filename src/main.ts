@@ -89,7 +89,7 @@ async function run(): Promise<void> {
     new AutoActionsStep(gh)
   )
 
-  await new AnalysisPipeline(steps).run({ prNumber, config: vouchResult.config })
+  await new AnalysisPipeline(steps).run({ prNumber, config: vouchResult.config, stepResults: vouchResult.stepResults })
 }
 
 run().catch((error: unknown) => {

@@ -10,7 +10,6 @@ export interface CommentOptions {
     signalBreakdown?: ScoreResult[];
     agenticResults?: AgenticCheckResult[];
     stepResults?: StepResult[];
-    pipelineGistUrl?: string;
     labels: string[];
     suggestVouch?: {
         author: string;

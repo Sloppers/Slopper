@@ -5,7 +5,6 @@ export declare class PostResultsStep extends PipelineStep {
     private readonly commentManager;
     private readonly github;
     constructor(github: GitHubClient);
-    private buildPipelineLog;
     private riskLevel;
     execute(ctx: PipelineContext): Promise<PipelineContext>;
 }
