@@ -51,7 +51,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: malvads/slopper@v1
+      - uses: malvads/slopper@v0.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -61,7 +61,7 @@ That's it. No API keys needed — Slopper scores PRs using deterministic heurist
 For deeper AI-powered analysis, add a provider:
 
 ```yaml
-      - uses: malvads/slopper@v1
+      - uses: malvads/slopper@v0.1.0
         with:
           ai-provider: 'gemini'
           gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
