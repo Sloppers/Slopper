@@ -8,18 +8,15 @@ export class ComputeLabelsStep extends PipelineStep {
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     const computer = new LabelComputer(ctx.config?.thresholds, ctx.config?.rules, ctx.config?.label_thresholds)
 
-    if (ctx.analysisFailed) {
-      ctx.labels = computer.computeFailedLabels()
-      return ctx
-    }
-
     if (!ctx.prData) {
       ctx.labels = computer.computeFailedLabels()
       return ctx
     }
 
+    const analysis = ctx.analysisFailed ? undefined : ctx.analysisResult
+
     const opts = {
-      analysis: ctx.analysisResult,
+      analysis,
       files: ctx.prData.files,
       firstTimeContributor: ctx.prData.author.first_time_contributor,
       prData: ctx.prData,
@@ -29,16 +26,17 @@ export class ComputeLabelsStep extends PipelineStep {
       trustedOrg: ctx.trustedOrg
     }
 
-    const isDeterministic = !ctx.analysisResult
-    if (isDeterministic) {
-      const result = computer.computeScoreFromChecks(opts)
-      ctx.deterministicScore = result.score
-      ctx.signalBreakdown = result.breakdown
-      const active = result.breakdown.filter(s => s.points !== 0).map(s => `${s.key}=${s.points > 0 ? '+' : ''}${s.points}`).join(', ')
-      core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10 [${active}]`)
-    }
+    const result = computer.computeScoreFromChecks(opts)
+    ctx.deterministicScore = result.score
+    ctx.signalBreakdown = result.breakdown
+    const active = result.breakdown.filter(s => s.points !== 0).map(s => `${s.key}=${s.points > 0 ? '+' : ''}${s.points}`).join(', ')
+    core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10 [${active}]`)
 
     ctx.labels = computer.compute(opts)
+
+    if (ctx.analysisFailed) {
+      ctx.labels.push('slopper/analysis-failed')
+    }
 
     if (ctx.agenticResults) {
       for (const result of ctx.agenticResults) {

@@ -48,7 +48,8 @@ export class PostResultsStep extends PipelineStep {
       throw new Error('labels and prData are required but missing from context')
     }
 
-    const { analysisResult, labels, prNumber, prData } = ctx
+    const { labels, prNumber, prData } = ctx
+    const analysisResult = ctx.analysisFailed ? undefined : ctx.analysisResult
 
     const score = analysisResult?.risk_score ?? ctx.deterministicScore ?? 0
     const level = analysisResult?.risk_level ?? this.riskLevel(score, ctx.config?.thresholds)
@@ -60,7 +61,7 @@ export class PostResultsStep extends PipelineStep {
     core.setOutput('labels', labels.join(','))
 
     const labelComputer = new LabelComputer()
-    const suggestVouch = analysisResult
+    const suggestVouch = analysisResult && !ctx.analysisFailed
       ? (labelComputer.shouldSuggestVouch(analysisResult, prData.author) ? { author: prData.author.login } : undefined)
       : undefined
 
