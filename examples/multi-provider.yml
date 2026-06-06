@@ -1,0 +1,35 @@
+# Run Slopper with different providers per environment.
+# Uses Groq (free tier) for draft PRs, Anthropic for ready PRs.
+name: Slopper (Multi-Provider)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+jobs:
+  analyze-draft:
+    if: github.event.pull_request.draft == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: malvads/slopper@v1
+        with:
+          ai-provider: 'groq'
+          groq-api-key: ${{ secrets.GROQ_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  analyze-ready:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: malvads/slopper@v1
+        with:
+          ai-provider: 'anthropic'
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

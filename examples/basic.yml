@@ -1,0 +1,20 @@
+# Minimal setup — analyzes PRs with Gemini, no auto-actions.
+name: Slopper
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: malvads/slopper@v1
+        with:
+          ai-provider: 'gemini'
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

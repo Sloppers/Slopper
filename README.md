@@ -45,7 +45,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Swap `ai-provider` and the matching key for any supported provider: `openai`, `anthropic`, `vertex`, `groq`, or `gemini`. Override the default model with the `model` input.
+Swap `ai-provider` and the matching key for any supported provider: `openai`, `anthropic`, `vertex`, `groq`, or `gemini`. Override the default model with the `model` input. See [`examples/`](examples/) for more setups (strict mode, merge gating, multi-provider).
 
 ## Configuration
 

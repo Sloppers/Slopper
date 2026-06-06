@@ -1,0 +1,48 @@
+# Strict mode — auto-closes critical PRs, requests review for high-risk,
+# auto-approves clean PRs from trusted contributors.
+name: Slopper (Strict)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: malvads/slopper@v1
+        with:
+          ai-provider: 'anthropic'
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+# Pair with this .slopper config:
+#
+# vouched:
+#   - dependabot[bot]
+#   - renovate[bot]
+#
+# banned:
+#   - known-slop-account
+#
+# actions:
+#   auto_close:
+#     enabled: true
+#     threshold: 9
+#   auto_approve:
+#     enabled: true
+#     threshold: 2
+#   auto_request_review:
+#     enabled: true
+#     threshold: 6
+#     reviewers:
+#       - senior-maintainer
+#
+# rules:
+#   require_description: true
+#   require_linked_issue: true
+#   max_files_changed: 50

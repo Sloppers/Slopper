@@ -1,0 +1,31 @@
+# Use Slopper outputs to gate merging via branch protection.
+# Set this workflow as a required status check.
+name: Slopper Gate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      risk-score: ${{ steps.slopper.outputs.risk-score }}
+      risk-level: ${{ steps.slopper.outputs.risk-level }}
+    steps:
+      - id: slopper
+        uses: malvads/slopper@v1
+        with:
+          ai-provider: 'openai'
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Block high-risk PRs
+        if: steps.slopper.outputs.risk-score >= 8
+        run: |
+          echo "::error::Slopper scored this PR ${{ steps.slopper.outputs.risk-score }}/10 — requires manual review"
+          exit 1

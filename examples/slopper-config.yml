@@ -1,0 +1,34 @@
+# Example .slopper config file — copy to your repo root as ".slopper"
+
+vouched:
+  - dependabot[bot]
+  - renovate[bot]
+
+banned: []
+
+actions:
+  auto_close:
+    enabled: false
+    threshold: 9
+  auto_approve:
+    enabled: false
+    threshold: 2
+  auto_request_review:
+    enabled: false
+    threshold: 6
+    reviewers: []
+
+thresholds:
+  low: 2
+  medium: 5
+  high: 8
+
+ignore_paths:
+  - "*.md"
+  - "docs/**"
+  - "*.lock"
+
+rules:
+  require_description: true
+  require_linked_issue: false
+  max_files_changed: 0
