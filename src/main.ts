@@ -3,12 +3,14 @@ import * as github from '@actions/github'
 import { AnalysisPipeline } from './pipeline'
 import { AiProvider } from './providers'
 import {
+  LoadConfigStep,
   VouchCheckStep,
   VouchApplyStep,
   CollectDataStep,
   AiAnalysisStep,
   ComputeLabelsStep,
-  PostResultsStep
+  PostResultsStep,
+  AutoActionsStep
 } from './steps'
 
 const VALID_PROVIDERS: readonly AiProvider[] = ['openai', 'anthropic', 'vertex', 'groq', 'gemini']
@@ -45,7 +47,10 @@ async function run(): Promise<void> {
   const octokit = github.getOctokit(githubToken)
   const { owner, repo } = github.context.repo
 
+  const loadConfigStep = new LoadConfigStep(octokit, owner, repo)
+
   const vouchPipeline = new AnalysisPipeline([
+    loadConfigStep,
     new VouchCheckStep(octokit, owner, repo),
     new VouchApplyStep(octokit, owner, repo)
   ])
@@ -66,9 +71,10 @@ async function run(): Promise<void> {
       model
     }),
     new ComputeLabelsStep(),
-    new PostResultsStep(octokit, owner, repo)
+    new PostResultsStep(octokit, owner, repo),
+    new AutoActionsStep(octokit, owner, repo)
   ])
-  await analysisPipeline.run({ prNumber })
+  await analysisPipeline.run({ prNumber, config: vouchResult.config })
 }
 
 run().catch((error: unknown) => {

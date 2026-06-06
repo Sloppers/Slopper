@@ -1,9 +1,11 @@
 import * as core from '@actions/core'
 import { AnalysisResult, PrData } from './types'
+import { SlopperConfig } from './config'
 
 /** Strongly-typed context passed through the analysis pipeline. */
 export interface PipelineContext {
   prNumber: number
+  config?: SlopperConfig
   prAuthor?: string
   prData?: PrData
   analysisResult?: AnalysisResult

@@ -30,7 +30,7 @@ export class VouchCheckStep extends PipelineStep {
     const prAuthor = await this.getPrAuthor(ctx.prNumber)
     ctx.prAuthor = prAuthor
 
-    const vouchedUsers = await this.getVouchedUsers()
+    const vouchedUsers = ctx.config?.vouched ?? []
 
     if (vouchedUsers.includes(prAuthor)) {
       core.info(`Author "${prAuthor}" is in .slopper vouched users — skipping analysis`)
@@ -62,27 +62,6 @@ export class VouchCheckStep extends PipelineStep {
       pull_number: prNumber
     })
     return pr.user?.login ?? 'unknown'
-  }
-
-  private async getVouchedUsers(): Promise<string[]> {
-    try {
-      const { data } = await this.octokit.rest.repos.getContent({
-        owner: this.owner,
-        repo: this.repo,
-        path: '.slopper'
-      })
-
-      if ('content' in data && data.content) {
-        const content = Buffer.from(data.content, 'base64').toString('utf-8')
-        return content
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line && !line.startsWith('#'))
-      }
-    } catch {
-      // .slopper file doesn't exist yet.
-    }
-    return []
   }
 
   private async findVouchCommand(

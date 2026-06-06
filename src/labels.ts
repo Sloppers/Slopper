@@ -1,4 +1,5 @@
-import { AnalysisResult, AuthorProfile, FileInfo } from './types'
+import { AnalysisResult, AuthorProfile, FileInfo, PrData } from './types'
+import { ThresholdsConfig, RulesConfig } from './config'
 
 /** File path patterns that indicate CI/CD infrastructure. */
 const CI_PATTERNS = [
@@ -36,17 +37,27 @@ const DEPENDENCY_FILES = new Set([
  * This ensures consistent, predictable labeling regardless of AI provider.
  */
 export class LabelComputer {
-  /**
-   * Computes the full set of labels for a PR.
-   * @param analysis - The AI analysis result.
-   * @param files - List of changed files in the PR.
-   * @param firstTimeContributor - Whether the author is a first-time contributor.
-   * @returns Array of label names to apply.
-   */
+  private readonly thresholds: ThresholdsConfig
+  private readonly rules: RulesConfig
+
+  constructor(
+    thresholds?: ThresholdsConfig,
+    rules?: RulesConfig
+  ) {
+    this.thresholds = thresholds ?? { low: 2, medium: 5, high: 8 }
+    this.rules = rules ?? {
+      require_description: false,
+      require_linked_issue: false,
+      max_files_changed: 0,
+      block_first_time_contributors: false
+    }
+  }
+
   compute(
     analysis: AnalysisResult,
     files: FileInfo[],
-    firstTimeContributor: boolean
+    firstTimeContributor: boolean,
+    prData?: PrData
   ): string[] {
     const labels: string[] = []
     const score = analysis.risk_score
@@ -54,7 +65,7 @@ export class LabelComputer {
     labels.push(this.riskLabel(score))
     labels.push(`slopper/confidence/${analysis.confidence}`)
 
-    if (score <= 2 && analysis.confidence === 'high') {
+    if (score <= this.thresholds.low && analysis.confidence === 'high') {
       labels.push('slopper/approved')
     }
 
@@ -70,8 +81,12 @@ export class LabelComputer {
       labels.push('slopper/dependencies-modified')
     }
 
-    if (score >= 6) labels.push('slopper/needs-security-review')
-    if (score >= 8) labels.push('slopper/suspicious')
+    if (score >= this.thresholds.medium + 1) labels.push('slopper/needs-security-review')
+    if (score >= this.thresholds.high) labels.push('slopper/suspicious')
+
+    if (prData) {
+      labels.push(...this.ruleLabels(prData))
+    }
 
     return labels
   }
@@ -111,10 +126,32 @@ export class LabelComputer {
    * Maps a numeric risk score to the corresponding risk label.
    * @param score - Risk score (0-10).
    */
+  private ruleLabels(prData: PrData): string[] {
+    const labels: string[] = []
+
+    if (this.rules.require_description && !prData.body.trim()) {
+      labels.push('slopper/missing-description')
+    }
+
+    if (this.rules.require_linked_issue && !this.hasLinkedIssue(prData.body)) {
+      labels.push('slopper/no-linked-issue')
+    }
+
+    if (this.rules.max_files_changed > 0 && prData.changed_files_count > this.rules.max_files_changed) {
+      labels.push('slopper/too-many-files')
+    }
+
+    return labels
+  }
+
+  private hasLinkedIssue(body: string): boolean {
+    return /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+/i.test(body) || /#\d+/.test(body)
+  }
+
   private riskLabel(score: number): string {
-    if (score <= 2) return 'slopper/risk/low'
-    if (score <= 5) return 'slopper/risk/medium'
-    if (score <= 8) return 'slopper/risk/high'
+    if (score <= this.thresholds.low) return 'slopper/risk/low'
+    if (score <= this.thresholds.medium) return 'slopper/risk/medium'
+    if (score <= this.thresholds.high) return 'slopper/risk/high'
     return 'slopper/risk/critical'
   }
 

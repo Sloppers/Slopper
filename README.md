@@ -152,22 +152,85 @@ Slopper's detection patterns are based on real incidents reported by maintainers
 | CI tampering | Changes to CI/CD pipelines that could enable code execution |
 | Dependency hijack | Unexpected packages, changed registries, typosquatting |
 
+## Configuration
+
+Create a `.slopper` file in your repository root to customize behavior. Supports full YAML or plain text (legacy).
+
+```yaml
+# .slopper
+
+# Vouched contributors bypass AI analysis entirely
+vouched:
+  - octocat
+  - trusted-contributor
+  - dependabot[bot]
+
+# Automated actions based on analysis results
+actions:
+  auto_close:
+    enabled: false
+    threshold: 9          # Close PRs with risk score >= this value
+    comment: "This PR was automatically closed by Slopper due to critical risk score."
+  auto_approve:
+    enabled: false
+    threshold: 2          # Approve PRs with risk score <= this value (requires high confidence)
+  auto_request_review:
+    enabled: false
+    threshold: 6          # Request reviewers for PRs with risk score >= this value
+    reviewers:
+      - security-team-lead
+      - senior-maintainer
+
+# Customize risk score boundaries for labels
+thresholds:
+  low: 2                  # 0–2 = low risk
+  medium: 5               # 3–5 = medium risk
+  high: 8                 # 6–8 = high risk, 9–10 = critical
+
+# Glob patterns for files to exclude from analysis
+ignore_paths:
+  - "*.md"
+  - "docs/**"
+  - "LICENSE"
+  - "**/*.test.ts"
+
+# PR hygiene rules — violations get their own labels
+rules:
+  require_description: false       # Label PRs with empty body
+  require_linked_issue: false      # Label PRs with no issue reference (#123, fixes #123, etc.)
+  max_files_changed: 0             # Label PRs exceeding this file count (0 = disabled)
+  block_first_time_contributors: false  # Auto-close PRs from first-time contributors
+```
+
+**Legacy format** — a plain text list of vouched usernames is still supported:
+
+```
+# .slopper — vouched contributors bypass AI analysis
+octocat
+trusted-contributor
+dependabot[bot]
+```
+
+Slopper auto-detects the format. If no `.slopper` file exists, all defaults are used.
+
 ## Pipeline
 
 Each analysis step is a discrete, testable `PipelineStep` class:
 
 ```
-PR opened → Vouch check → Data collection → AI analysis → Labels computed → Comment posted
+PR opened → Load config → Vouch check → Data collection → AI analysis → Labels → Comment → Auto-actions
 ```
 
 | Step | What it does |
 |------|-------------|
-| `VouchCheckStep` | Checks `.slopper` file and `/slopper vouch` commands |
+| `LoadConfigStep` | Loads and parses the `.slopper` configuration file |
+| `VouchCheckStep` | Checks vouched users from config and `/slopper vouch` commands |
 | `VouchApplyStep` | If vouched, applies labels and skips analysis |
-| `CollectDataStep` | Gathers PR metadata, author profile, commits, files, diff |
+| `CollectDataStep` | Gathers PR metadata, filters files by `ignore_paths` |
 | `AiAnalysisStep` | Sends context to the AI provider via structured tool calling |
-| `ComputeLabelsStep` | Deterministically computes labels from the analysis result |
+| `ComputeLabelsStep` | Deterministically computes labels using configured thresholds and rules |
 | `PostResultsStep` | Posts the analysis comment and applies labels |
+| `AutoActionsStep` | Executes auto-close, auto-approve, and auto-request-review actions |
 
 All providers use **structured tool calling** — the AI calls a `submit_analysis` tool with a strict JSON schema. No raw JSON parsing.
 
@@ -191,6 +254,9 @@ Labels are computed deterministically from the analysis — never suggested by t
 | `slopper/dependencies-modified` | Dependency/lockfiles changed |
 | `slopper/needs-security-review` | Risk score ≥ 6 |
 | `slopper/suspicious` | Risk score ≥ 8 |
+| `slopper/missing-description` | PR body is empty (`require_description: true`) |
+| `slopper/no-linked-issue` | No issue reference in body (`require_linked_issue: true`) |
+| `slopper/too-many-files` | Files changed exceeds `max_files_changed` |
 | `slopper/analysis-failed` | AI analysis encountered an error |
 
 ## Vouching
@@ -201,13 +267,6 @@ Code owners can permanently whitelist trusted contributors:
 2. Slopper verifies the commenter is in `CODEOWNERS` or has admin/maintain permissions
 3. The author is added to the `.slopper` file
 4. Future PRs from that author skip AI analysis
-
-```
-# .slopper — vouched contributors bypass AI analysis
-octocat
-trusted-contributor
-dependabot[bot]
-```
 
 When an author has a perfect score (risk 0, high confidence, trusted), Slopper proactively suggests vouching them.
 

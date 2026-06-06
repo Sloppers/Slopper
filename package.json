@@ -29,10 +29,13 @@
     "@anthropic-ai/vertex-sdk": "^0.6.0",
     "@google/genai": "^2.8.0",
     "groq-sdk": "^1.2.1",
-    "openai": "^4.77.0"
+    "minimatch": "^10.2.5",
+    "openai": "^4.77.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "@types/minimatch": "^5.1.2",
     "@types/node": "^22.10.0",
     "@vercel/ncc": "^0.38.3",
     "jest": "^30.4.2",

@@ -1,5 +1,5 @@
 import { LabelComputer } from '../src/labels'
-import { AnalysisResult, AuthorProfile, FileInfo } from '../src/types'
+import { AnalysisResult, AuthorProfile, FileInfo, PrData } from '../src/types'
 
 function makeResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
   return {
@@ -265,6 +265,107 @@ describe('LabelComputer', () => {
     it('does not suggest for non-collaborator with < 3 merged PRs', () => {
       const author = makeAuthor({ is_collaborator: false, past_merged_prs_in_repo: 2 })
       expect(computer.shouldSuggestVouch(trustedResult, author)).toBe(false)
+    })
+  })
+
+  describe('custom thresholds', () => {
+    const custom = new LabelComputer({ low: 3, medium: 6, high: 9 })
+
+    it('uses custom low threshold for risk label', () => {
+      const labels = custom.compute(makeResult({ risk_score: 3 }), [], false)
+      expect(labels).toContain('slopper/risk/low')
+    })
+
+    it('uses custom medium threshold', () => {
+      const labels = custom.compute(makeResult({ risk_score: 6 }), [], false)
+      expect(labels).toContain('slopper/risk/medium')
+    })
+
+    it('uses custom high threshold', () => {
+      const labels = custom.compute(makeResult({ risk_score: 9 }), [], false)
+      expect(labels).toContain('slopper/risk/high')
+    })
+
+    it('uses custom threshold for approved label', () => {
+      const labels = custom.compute(makeResult({ risk_score: 3, confidence: 'high' }), [], false)
+      expect(labels).toContain('slopper/approved')
+    })
+  })
+
+  describe('rule-based labels', () => {
+    function makePrData(overrides: Partial<PrData> = {}): PrData {
+      return {
+        repo: 'owner/repo',
+        pr_number: 1,
+        title: 'Test PR',
+        body: 'Fixes #42',
+        base_branch: 'main',
+        head_branch: 'feature',
+        changed_files_count: 3,
+        additions: 100,
+        deletions: 50,
+        author: {
+          login: 'dev', created_at: '2020-01-01T00:00:00Z', public_repos: 10,
+          followers: 5, following: 5, bio: '', company: '', is_bot: false,
+          is_collaborator: true, past_merged_prs_in_repo: 5,
+          past_issues_in_repo: 2, first_time_contributor: false
+        },
+        commits: { count: 1, messages: ['fix bug'], unsigned_count: 0, author_committer_mismatches: 0 },
+        files: [makeFile('src/index.ts')],
+        diff: 'diff content',
+        ...overrides
+      }
+    }
+
+    const withRules = new LabelComputer(undefined, {
+      require_description: true,
+      require_linked_issue: true,
+      max_files_changed: 10,
+      block_first_time_contributors: false
+    })
+
+    it('adds missing-description label when body is empty', () => {
+      const prData = makePrData({ body: '' })
+      const labels = withRules.compute(makeResult(), [], false, prData)
+      expect(labels).toContain('slopper/missing-description')
+    })
+
+    it('does not add missing-description when body has content', () => {
+      const prData = makePrData({ body: 'This PR adds a feature' })
+      const labels = withRules.compute(makeResult(), [], false, prData)
+      expect(labels).not.toContain('slopper/missing-description')
+    })
+
+    it('adds no-linked-issue when body has no issue reference', () => {
+      const prData = makePrData({ body: 'Just some changes with no issue ref' })
+      const labels = withRules.compute(makeResult(), [], false, prData)
+      expect(labels).toContain('slopper/no-linked-issue')
+    })
+
+    it('does not add no-linked-issue when body references an issue', () => {
+      const prData = makePrData({ body: 'Fixes #123' })
+      const labels = withRules.compute(makeResult(), [], false, prData)
+      expect(labels).not.toContain('slopper/no-linked-issue')
+    })
+
+    it('adds too-many-files when changed_files_count exceeds max', () => {
+      const prData = makePrData({ changed_files_count: 15 })
+      const labels = withRules.compute(makeResult(), [], false, prData)
+      expect(labels).toContain('slopper/too-many-files')
+    })
+
+    it('does not add too-many-files when within limit', () => {
+      const prData = makePrData({ changed_files_count: 5 })
+      const labels = withRules.compute(makeResult(), [], false, prData)
+      expect(labels).not.toContain('slopper/too-many-files')
+    })
+
+    it('does not add rule labels when rules are disabled', () => {
+      const noRules = new LabelComputer()
+      const prData = makePrData({ body: '', changed_files_count: 100 })
+      const labels = noRules.compute(makeResult(), [], false, prData)
+      expect(labels).not.toContain('slopper/missing-description')
+      expect(labels).not.toContain('slopper/too-many-files')
     })
   })
 })
