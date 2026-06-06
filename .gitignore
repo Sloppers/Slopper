@@ -1,0 +1,8 @@
+node_modules/
+lib/
+*.js.map
+*.d.ts
+*.d.ts.map
+
+# Keep dist/ committed (required for GitHub Actions)
+!dist/
