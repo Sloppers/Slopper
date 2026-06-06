@@ -1,6 +1,6 @@
 {
   "name": "slopper",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "AI-powered PR trust analysis GitHub Action",
   "main": "lib/main.js",
   "scripts": {
