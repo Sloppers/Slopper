@@ -38,6 +38,15 @@ export interface SprayWeightsConfig {
   account_age: number
 }
 
+export interface ScoreWeightsConfig {
+  fingerprint: number
+  spray: number
+  new_account: number
+  low_merge_ratio: number
+  risky_user: number
+  trusted_org: number
+}
+
 export interface LabelThresholdsConfig {
   ai_likely: number
   ai_possibly: number
@@ -49,6 +58,7 @@ export interface LabelThresholdsConfig {
   merge_ratio_suspect: number
   security_review_score: number
   suspicious_score: number
+  score_weights: ScoreWeightsConfig
 }
 
 export interface RulesConfig {
@@ -61,6 +71,7 @@ export interface RulesConfig {
 export interface SlopperConfig {
   vouched: string[]
   banned: string[]
+  trusted_orgs: string[]
   actions: ActionsConfig
   thresholds: ThresholdsConfig
   label_thresholds: LabelThresholdsConfig
@@ -71,6 +82,7 @@ export interface SlopperConfig {
 const DEFAULT_CONFIG: SlopperConfig = {
   vouched: [],
   banned: [],
+  trusted_orgs: [],
   actions: {
     auto_close: {
       enabled: false,
@@ -107,7 +119,15 @@ const DEFAULT_CONFIG: SlopperConfig = {
     },
     merge_ratio_suspect: 0.4,
     security_review_score: 6,
-    suspicious_score: 8
+    suspicious_score: 8,
+    score_weights: {
+      fingerprint: 4,
+      spray: 3,
+      new_account: 1,
+      low_merge_ratio: 1,
+      risky_user: 1,
+      trusted_org: -2
+    }
   },
   ignore_paths: [],
   rules: {
@@ -140,7 +160,7 @@ export class ConfigLoader {
   }
 
   private isYaml(content: string): boolean {
-    return /^\s*(vouched|banned|actions|thresholds|label_thresholds|ignore_paths|rules)\s*:/m.test(content)
+    return /^\s*(vouched|banned|trusted_orgs|actions|thresholds|label_thresholds|ignore_paths|rules)\s*:/m.test(content)
   }
 
   private parseYamlConfig(content: string): SlopperConfig {
@@ -165,6 +185,10 @@ export class ConfigLoader {
     const banned = Array.isArray(parsed.banned)
       ? (parsed.banned as string[])
       : DEFAULT_CONFIG.banned
+
+    const trusted_orgs = Array.isArray(parsed.trusted_orgs)
+      ? (parsed.trusted_orgs as string[])
+      : DEFAULT_CONFIG.trusted_orgs
 
     const parsedActions = (parsed.actions ?? {}) as Record<string, unknown>
     const parsedAutoClose = (parsedActions.auto_close ?? {}) as Record<string, unknown>
@@ -217,7 +241,19 @@ export class ConfigLoader {
       })(),
       merge_ratio_suspect: Number(parsedLabelThresholds.merge_ratio_suspect ?? DEFAULT_CONFIG.label_thresholds.merge_ratio_suspect),
       security_review_score: Number(parsedLabelThresholds.security_review_score ?? DEFAULT_CONFIG.label_thresholds.security_review_score),
-      suspicious_score: Number(parsedLabelThresholds.suspicious_score ?? DEFAULT_CONFIG.label_thresholds.suspicious_score)
+      suspicious_score: Number(parsedLabelThresholds.suspicious_score ?? DEFAULT_CONFIG.label_thresholds.suspicious_score),
+      score_weights: (() => {
+        const pw = (parsedLabelThresholds.score_weights ?? {}) as Record<string, unknown>
+        const dw = DEFAULT_CONFIG.label_thresholds.score_weights
+        return {
+          fingerprint: Number(pw.fingerprint ?? dw.fingerprint),
+          spray: Number(pw.spray ?? dw.spray),
+          new_account: Number(pw.new_account ?? dw.new_account),
+          low_merge_ratio: Number(pw.low_merge_ratio ?? dw.low_merge_ratio),
+          risky_user: Number(pw.risky_user ?? dw.risky_user),
+          trusted_org: Number(pw.trusted_org ?? dw.trusted_org)
+        }
+      })()
     }
 
     const ignore_paths = Array.isArray(parsed.ignore_paths)
@@ -232,6 +268,6 @@ export class ConfigLoader {
       block_first_time_contributors: Boolean(parsedRules.block_first_time_contributors ?? DEFAULT_CONFIG.rules.block_first_time_contributors)
     }
 
-    return { vouched, banned, actions, thresholds, label_thresholds, ignore_paths, rules }
+    return { vouched, banned, trusted_orgs, actions, thresholds, label_thresholds, ignore_paths, rules }
   }
 }

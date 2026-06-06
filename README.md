@@ -73,14 +73,16 @@ See [`examples/`](examples/) for more setups (strict mode, merge gating, multi-p
 
 In deterministic mode (default), the risk score is derived from:
 
-| Signal | Max Points | What it measures |
-|--------|-----------|-----------------|
-| AI Fingerprint | 4 | 6 heuristic signals detecting machine-generated code patterns |
-| Spray Score | 3 | Cross-repo PR volume, distinct repos, merge ratio, account age |
-| New Account | 1 | Account younger than configurable threshold (default 30 days) |
-| Low Merge Ratio | 1 | Below configurable threshold (default 40%) |
-| Risky User | 1 | Listed in community blocklist |
-| **Total** | **10** | |
+| Signal | Default Weight | What it measures |
+|--------|---------------|-----------------|
+| AI Fingerprint | +4 | 6 heuristic signals detecting machine-generated code patterns |
+| Spray Score | +3 | Cross-repo PR volume, distinct repos, merge ratio, account age |
+| New Account | +1 | Account younger than configurable threshold (default 30 days) |
+| Low Merge Ratio | +1 | Below configurable threshold (default 40%) |
+| Risky User | +1 | Listed in community blocklist |
+| Trusted Org | **-2** | Public member of a trusted GitHub organization |
+
+All weights are configurable via `label_thresholds.score_weights` in `.slopper`. Negative weights reduce the score. Final score is clamped to 0–10.
 
 When an AI provider is configured, the score comes from the AI analysis instead, with richer context from commit messages, code diffs, and behavioral signals.
 
@@ -95,6 +97,10 @@ vouched:
 
 banned:
   - known-slop-account
+
+trusted_orgs:
+  - nodejs
+  - kubernetes
 
 actions:
   auto_close:
@@ -129,6 +135,13 @@ label_thresholds:
     volume: 30
     merge_ratio: 20
     account_age: 10
+  score_weights:
+    fingerprint: 4
+    spray: 3
+    new_account: 1
+    low_merge_ratio: 1
+    risky_user: 1
+    trusted_org: -2
 
 ignore_paths:
   - "*.md"
@@ -163,6 +176,7 @@ All labels are deterministic — the AI never picks them.
 | `slopper/new-account` | Account < 30 days | `label_thresholds.new_account_days` |
 | `slopper/activity-burst` | > 10 PRs in 7 days | `label_thresholds.activity_burst_prs` |
 | `slopper/risky-user` | On community list | — |
+| `slopper/trusted-org` | Member of trusted org | `trusted_orgs` |
 | `slopper/mode/deterministic` | No AI provider set | — |
 | `slopper/banned` | Banned or reported | — |
 | `slopper/ci-modified` | CI/CD files changed | — |

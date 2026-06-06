@@ -23,7 +23,9 @@ export class ComputeLabelsStep extends PipelineStep {
       ctx.deterministicScore = LabelComputer.computeDeterministicScore({
         authorProfile: ctx.authorProfile,
         aiFingerprint: ctx.aiFingerprint,
-        riskyUser: ctx.riskyUser
+        riskyUser: ctx.riskyUser,
+        trustedOrg: ctx.trustedOrg,
+        weights: ctx.config?.label_thresholds?.score_weights
       })
       core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10`)
     }
@@ -35,7 +37,8 @@ export class ComputeLabelsStep extends PipelineStep {
       prData: ctx.prData,
       authorProfile: ctx.authorProfile,
       aiFingerprint: ctx.aiFingerprint,
-      riskyUser: ctx.riskyUser
+      riskyUser: ctx.riskyUser,
+      trustedOrg: ctx.trustedOrg
     })
 
     return ctx

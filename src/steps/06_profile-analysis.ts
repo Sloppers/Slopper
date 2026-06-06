@@ -6,10 +6,12 @@ import { GitHubClient } from '../clients/github'
 export class ProfileAnalysisStep extends PipelineStep {
   readonly name = 'profile-analysis'
   private readonly analyzer: AuthorProfileAnalyzer
+  private readonly github: GitHubClient
 
   constructor(github: GitHubClient) {
     super()
     this.analyzer = new AuthorProfileAnalyzer(github)
+    this.github = github
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
@@ -40,6 +42,21 @@ export class ProfileAnalysisStep extends PipelineStep {
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
       core.warning(`[profile-analysis] Failed: ${msg} — continuing without profile data`)
+    }
+
+    const trustedOrgs = ctx.config?.trusted_orgs ?? []
+    if (trustedOrgs.length > 0) {
+      for (const org of trustedOrgs) {
+        try {
+          if (await this.github.isOrgPublicMember(org, author)) {
+            ctx.trustedOrg = true
+            core.info(`[profile-analysis] ${author} is a public member of trusted org: ${org}`)
+            break
+          }
+        } catch {
+          core.warning(`[profile-analysis] Failed to check org membership for ${org}`)
+        }
+      }
     }
 
     return ctx

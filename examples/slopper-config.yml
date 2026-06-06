@@ -6,6 +6,10 @@ vouched:
 
 banned: []
 
+trusted_orgs:
+  - nodejs
+  - kubernetes
+
 actions:
   auto_close:
     enabled: false
@@ -39,6 +43,13 @@ label_thresholds:
     volume: 30               # PR volume in 30d
     merge_ratio: 20          # low merge ratio penalty
     account_age: 10          # new account penalty
+  score_weights:             # deterministic score weights (max points per signal)
+    fingerprint: 4           # AI fingerprint (0-100 scaled to 0-weight)
+    spray: 3                 # spray score (0-100 scaled to 0-weight)
+    new_account: 1           # bonus if account is new
+    low_merge_ratio: 1       # bonus if merge ratio < threshold
+    risky_user: 1            # bonus if on community list
+    trusted_org: -2          # reduction if member of trusted org
 
 ignore_paths:
   - "*.md"

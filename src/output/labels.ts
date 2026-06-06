@@ -1,5 +1,5 @@
 import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
-import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig } from '../core/config'
+import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config'
 
 const CI_PATTERNS = [
   '.github/workflows/',
@@ -35,6 +35,7 @@ export interface ComputeLabelsOptions {
   authorProfile?: AuthorProfileAnalysis
   aiFingerprint?: AiFingerprintResult
   riskyUser?: boolean
+  trustedOrg?: boolean
 }
 
 export class LabelComputer {
@@ -58,7 +59,11 @@ export class LabelComputer {
       spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
       merge_ratio_suspect: 0.4,
       security_review_score: 6,
-      suspicious_score: 8
+      suspicious_score: 8,
+      score_weights: {
+        fingerprint: 4, spray: 3, new_account: 1,
+        low_merge_ratio: 1, risky_user: 1, trusted_org: -2
+      }
     }
     this.rules = rules ?? {
       require_description: false,
@@ -69,11 +74,14 @@ export class LabelComputer {
   }
 
   compute(opts: ComputeLabelsOptions): string[] {
-    const { analysis, files, firstTimeContributor, prData, authorProfile, aiFingerprint, riskyUser } = opts
+    const { analysis, files, firstTimeContributor, prData, authorProfile, aiFingerprint, riskyUser, trustedOrg } = opts
     const labels: string[] = []
     const score = analysis
       ? analysis.risk_score
-      : LabelComputer.computeDeterministicScore({ authorProfile, aiFingerprint, riskyUser })
+      : LabelComputer.computeDeterministicScore({
+          authorProfile, aiFingerprint, riskyUser, trustedOrg,
+          weights: this.labelThresholds.score_weights
+        })
 
     labels.push(this.riskLabel(score))
 
@@ -117,6 +125,7 @@ export class LabelComputer {
     }
 
     if (riskyUser) labels.push('slopper/risky-user')
+    if (trustedOrg) labels.push('slopper/trusted-org')
 
     return labels
   }
@@ -125,17 +134,24 @@ export class LabelComputer {
     authorProfile?: AuthorProfileAnalysis
     aiFingerprint?: AiFingerprintResult
     riskyUser?: boolean
+    trustedOrg?: boolean
+    weights?: ScoreWeightsConfig
   }): number {
-    const { authorProfile, aiFingerprint, riskyUser } = opts
-    let score = 0
-    if (aiFingerprint) score += (aiFingerprint.score / 100) * 4
-    if (authorProfile) {
-      score += (authorProfile.spray_score / 100) * 3
-      if (authorProfile.account_age_days < 30) score += 1
-      if (authorProfile.merge_ratio < 0.4) score += 1
+    const { authorProfile, aiFingerprint, riskyUser, trustedOrg, weights } = opts
+    const w = weights ?? {
+      fingerprint: 4, spray: 3, new_account: 1,
+      low_merge_ratio: 1, risky_user: 1, trusted_org: -2
     }
-    if (riskyUser) score += 1
-    return Math.min(10, Math.round(score * 10) / 10)
+    let score = 0
+    if (aiFingerprint) score += (aiFingerprint.score / 100) * w.fingerprint
+    if (authorProfile) {
+      score += (authorProfile.spray_score / 100) * w.spray
+      if (authorProfile.account_age_days < 30) score += w.new_account
+      if (authorProfile.merge_ratio < 0.4) score += w.low_merge_ratio
+    }
+    if (riskyUser) score += w.risky_user
+    if (trustedOrg) score += w.trusted_org
+    return Math.max(0, Math.min(10, Math.round(score * 10) / 10))
   }
 
   computeFailedLabels(): string[] {

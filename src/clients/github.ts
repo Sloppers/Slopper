@@ -239,6 +239,15 @@ export class GitHubClient {
     }
   }
 
+  async isOrgPublicMember(org: string, username: string): Promise<boolean> {
+    try {
+      await this.octokit.rest.orgs.checkPublicMembershipForUser({ org, username })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async getUser(username: string) {
     const { data } = await this.octokit.rest.users.getByUsername({ username })
     return data

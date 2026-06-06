@@ -18,6 +18,7 @@ export interface PipelineContext {
   addToSlopperFile?: string
   banned?: boolean
   riskyUser?: boolean
+  trustedOrg?: boolean
 }
 
 export abstract class PipelineStep {

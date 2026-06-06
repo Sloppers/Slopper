@@ -90,7 +90,8 @@ rules:
         ai_likely: 70, ai_possibly: 40, spray_score: 60,
         new_account_days: 30, activity_burst_prs: 10, activity_burst_days: 7,
         spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
-        merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8
+        merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8,
+        score_weights: { fingerprint: 4, spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
       })
     })
 
@@ -127,7 +128,8 @@ label_thresholds:
         spray_weights: { repos: 50, volume: 25, merge_ratio: 15, account_age: 10 },
         merge_ratio_suspect: 0.3,
         security_review_score: 7,
-        suspicious_score: 9
+        suspicious_score: 9,
+        score_weights: { fingerprint: 4, spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
       })
     })
 
@@ -172,7 +174,8 @@ actions:
         ai_likely: 70, ai_possibly: 40, spray_score: 60,
         new_account_days: 30, activity_burst_prs: 10, activity_burst_days: 7,
         spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
-        merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8
+        merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8,
+        score_weights: { fingerprint: 4, spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
       })
     })
   })

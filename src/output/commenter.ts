@@ -29,6 +29,7 @@ const LABEL_COLORS: Record<string, string> = {
   'slopper/no-linked-issue': 'e4e669',
   'slopper/too-many-files': 'e4e669',
   'slopper/risky-user': 'b60205',
+  'slopper/trusted-org': '0e8a16',
   'slopper/mode/deterministic': '1d76db'
 }
 
