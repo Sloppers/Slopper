@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/malvads/slopper.git
+git clone https://github.com/Sloppers/Slopper.git
 cd slopper
 npm install --no-workspaces
 ```

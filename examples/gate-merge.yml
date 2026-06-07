@@ -18,7 +18,7 @@ jobs:
       risk-level: ${{ steps.slopper.outputs.risk-level }}
     steps:
       - id: slopper
-        uses: malvads/slopper@v1
+        uses: Sloppers/Slopper@v1
         with:
           ai-provider: 'openai'
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}

@@ -1,9 +1,9 @@
 <h1 align="center">SLOPPER</h1>
 
 <p align="center">
-  <a href="https://github.com/malvads/slopper/actions"><img src="https://github.com/malvads/slopper/workflows/CI/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/Sloppers/Slopper/actions"><img src="https://github.com/Sloppers/Slopper/workflows/CI/badge.svg" alt="CI" /></a>
   <a href="https://github.com/marketplace/actions/slopper-ai-slop-detector"><img src="https://img.shields.io/badge/Marketplace-Slopper-blue?logo=github" alt="GitHub Marketplace" /></a>
-  <a href="https://github.com/malvads/slopper/blob/main/LICENSE"><img src="https://img.shields.io/github/license/malvads/slopper" alt="License" /></a>
+  <a href="https://github.com/Sloppers/Slopper/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Sloppers/Slopper" alt="License" /></a>
 </p>
 
 <p align="center"><strong>Very experimental</strong> — expect rough edges, false positives, and breaking changes.</p>
@@ -31,7 +31,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: malvads/slopper@v0.1.0
+      - uses: Sloppers/Slopper@v0.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -39,7 +39,7 @@ jobs:
 For deeper AI-powered analysis, add a provider:
 
 ```yaml
-      - uses: malvads/slopper@v0.1.0
+      - uses: Sloppers/Slopper@v0.1.0
         with:
           ai-provider: 'gemini'
           gemini-api-key: ${{ secrets.GEMINI_API_KEY }}

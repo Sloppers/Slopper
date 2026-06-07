@@ -15,7 +15,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: malvads/slopper@v1
+      - uses: Sloppers/Slopper@v1
         with:
           ai-provider: 'groq'
           groq-api-key: ${{ secrets.GROQ_API_KEY }}
@@ -28,7 +28,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: malvads/slopper@v1
+      - uses: Sloppers/Slopper@v1
         with:
           ai-provider: 'anthropic'
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -13,6 +13,6 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: malvads/slopper@v1
+      - uses: Sloppers/Slopper@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
