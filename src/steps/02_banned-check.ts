@@ -5,6 +5,8 @@ import { SlopperClient } from '../clients/slopper'
 import { Labels } from '../output/label-factory'
 import { errorMessage, buildMetadataEntry } from '../core/utils'
 
+const BOT_API = 'https://slopper-bot.thegexi.workers.dev/api/report'
+
 export class BannedCheckStep extends PipelineStep {
   readonly name = 'banned-check'
   private readonly github: GitHubClient
@@ -21,51 +23,57 @@ export class BannedCheckStep extends PipelineStep {
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     if (!ctx.prAuthor) return ctx
 
-    const reportedBy = await this.findReportCommand(ctx.prNumber)
-    if (reportedBy) {
-      const isAuthorized = await this.github.isMaintainer(reportedBy)
+    const report = await this.findReportCommand(ctx.prNumber)
+    if (report) {
+      const isAuthorized = await this.github.isMaintainer(report.reporter)
       if (isAuthorized) {
-        this.log(` Maintainer "${reportedBy}" reported "${ctx.prAuthor}" via /slopper report`)
+        this.log(`Maintainer "${report.reporter}" reported "${ctx.prAuthor}" via /slopper report`)
         await this.addUserToBannedList(ctx.prAuthor, {
-          reporter: reportedBy,
+          reporter: report.reporter,
           pr: ctx.prNumber,
           repo: `${this.github.owner}/${this.github.repo}`,
         })
+        await this.reportToBot(ctx.prAuthor, ctx.prNumber, report.commentId)
         return this.banAndClose(ctx,
-          `reported by maintainer **@${reportedBy}** via \`/slopper report\`.\n\n` +
-          `> This report has been sent to the [Slopper global community list](https://github.com/Sloppers/community-list) ` +
-          `via the [Slopper Bot](https://github.com/apps/slopper-bot). ` +
+          `reported by maintainer **@${report.reporter}** via \`/slopper report\`.\n\n` +
+          `> This account has been reported to the [Slopper global community list](https://github.com/Sloppers/community-list). ` +
           `All Slopper installations will flag this account going forward.`
         )
       } else {
-        this.log(` "${reportedBy}" used /slopper report but is not a maintainer — ignoring`)
+        this.log(`"${report.reporter}" used /slopper report but is not a maintainer — ignoring`)
       }
     }
 
     const bannedUsers = ctx.config?.banned ?? []
-    const isLocalBan = bannedUsers.includes(ctx.prAuthor)
-
-    let isGlobalBan = false
-    try {
-      const riskyUsers = await this.slopper.fetchRiskyUsers()
-      isGlobalBan = riskyUsers.some(u => u.toLowerCase() === ctx.prAuthor!.toLowerCase())
-    } catch (error: unknown) {
-      this.warn(`Could not check global risky users: ${errorMessage(error)}`)
-    }
-
-    if (isLocalBan) {
-      this.log(` Author "${ctx.prAuthor}" is on the local banned list — closing PR`)
+    if (bannedUsers.length > 0 && bannedUsers.includes(ctx.prAuthor)) {
+      this.log(`Author "${ctx.prAuthor}" is on the banned list — closing PR`)
       return this.banAndClose(ctx, 'the author is on the banned list')
     }
 
-    if (isGlobalBan) {
-      this.log(` Author "${ctx.prAuthor}" is on the global risky users list — closing PR`)
-      return this.banAndClose(ctx,
-        `the author is on the [Slopper global risky users list](https://github.com/Sloppers/community-list/blob/main/risky_users/${ctx.prAuthor})`
-      )
-    }
-
     return ctx
+  }
+
+  private async reportToBot(reportedUser: string, prNumber: number, commentId: number): Promise<void> {
+    try {
+      const res = await fetch(BOT_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner: this.github.owner,
+          repo: this.github.repo,
+          pr: prNumber,
+          reportedUser,
+          commentId
+        })
+      })
+      if (res.ok) {
+        this.log(`Reported "${reportedUser}" to Slopper global community list`)
+      } else {
+        this.warn(`Bot returned ${res.status} — global report may have failed`)
+      }
+    } catch (error: unknown) {
+      this.warn(`Could not reach Slopper bot: ${errorMessage(error)}`)
+    }
   }
 
   private async banAndClose(ctx: PipelineContext, reason: string): Promise<PipelineContext> {
@@ -84,19 +92,20 @@ export class BannedCheckStep extends PipelineStep {
     try {
       await this.github.closePr(ctx.prNumber)
     } catch (error: unknown) {
-      this.warn(` Failed to close PR: ${errorMessage(error)}`)
+      this.warn(`Failed to close PR: ${errorMessage(error)}`)
     }
 
     return ctx
   }
 
-  private async findReportCommand(prNumber: number): Promise<string | null> {
+  private async findReportCommand(prNumber: number): Promise<{ reporter: string; commentId: number } | null> {
     const comments = await this.github.listComments(prNumber)
 
     for (const comment of comments) {
       const body = comment.body?.trim() ?? ''
       if (body.match(/^\/slopper\s+report\s*$/im)) {
-        return comment.user?.login ?? null
+        const login = comment.user?.login
+        if (login) return { reporter: login, commentId: comment.id }
       }
     }
     return null
@@ -106,7 +115,7 @@ export class BannedCheckStep extends PipelineStep {
     const path = `.slopper.d/banned/${username}`
     const existing = await this.github.getFileContent(path)
     if (existing !== null) {
-      this.log(` ${username} already in .slopper.d/banned/`)
+      this.log(`${username} already in .slopper.d/banned/`)
       return
     }
 
@@ -118,9 +127,9 @@ export class BannedCheckStep extends PipelineStep {
 
     try {
       await this.github.createOrUpdateFile(path, `slopper: ban ${username} (reported)`, content)
-      this.log(` Created .slopper.d/banned/${username}`)
+      this.log(`Created .slopper.d/banned/${username}`)
     } catch (error: unknown) {
-      this.warn(` Failed to create banned entry: ${errorMessage(error)}`)
+      this.warn(`Failed to create banned entry: ${errorMessage(error)}`)
     }
   }
 }
