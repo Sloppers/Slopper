@@ -35,8 +35,14 @@ export class VouchApplyStep extends PipelineStep {
       body += `AI analysis was skipped. This PR is automatically approved.\n\n`
     } else {
       body += `**@${prAuthor}** was vouched for by code owner **@${vouchedBy}**.\n\n`
-      body += `AI analysis was skipped. This PR is automatically approved.\n`
-      body += `@${prAuthor} has been added to \`.slopper\` for future PRs.\n\n`
+      body += `AI analysis was skipped. This PR is automatically approved.\n\n`
+
+      if (ctx.addToSlopperFile) {
+        const vouchPrNumber = await this.createVouchPr(ctx.addToSlopperFile, vouchedBy, prNumber)
+        if (vouchPrNumber) {
+          body += `A PR has been created to add @${prAuthor} to the vouched list: #${vouchPrNumber}\n\n`
+        }
+      }
     }
 
     body += `### 🏷️ Labels Applied\n`
@@ -46,36 +52,32 @@ export class VouchApplyStep extends PipelineStep {
     await this.commentManager.upsertComment(prNumber, body)
     await this.commentManager.applyLabels(prNumber, labels)
 
-    if (ctx.addToSlopperFile) {
-      await this.addUserToSlopperFile(ctx.addToSlopperFile, {
-        voucher: vouchedBy,
-        pr: prNumber,
-        repo: `${this.github.owner}/${this.github.repo}`,
-      })
-    }
-
     return ctx
   }
 
-  private async addUserToSlopperFile(username: string, meta: { voucher: string; pr: number; repo: string }): Promise<void> {
+  private async createVouchPr(username: string, voucher: string, prNumber: number): Promise<number | null> {
     const path = `.slopper.d/vouched/${username}`
     const existing = await this.github.getFileContent(path)
     if (existing !== null) {
-      this.log(` ${username} already in .slopper.d/vouched/`)
-      return
+      this.log(`${username} already in .slopper.d/vouched/`)
+      return null
     }
 
     const content = buildMetadataEntry({
-      voucher: meta.voucher, repo: meta.repo,
-      pr: `#${meta.pr}`, reason: '/slopper vouch',
+      voucher,
+      repo: `${this.github.owner}/${this.github.repo}`,
+      pr: `#${prNumber}`,
+      reason: '/slopper vouch',
       date: new Date().toISOString()
     })
 
     try {
-      await this.github.createOrUpdateFile(path, `slopper: vouch ${username}`, content)
-      this.log(` Created .slopper.d/vouched/${username}`)
+      const vouchPr = await this.github.createVouchPr(username, content)
+      this.log(`Created vouch PR #${vouchPr} for ${username}`)
+      return vouchPr
     } catch (error: unknown) {
-      this.warn(` Failed to create vouch entry: ${errorMessage(error)}`)
+      this.warn(`Failed to create vouch PR: ${errorMessage(error)}`)
+      return null
     }
   }
 }

@@ -1239,6 +1239,8 @@ export declare class GitHubClient {
         };
     }[]>;
     isMaintainer(username: string): Promise<boolean>;
+    createVouchPr(username: string, content: string): Promise<number>;
+    private getDefaultBranch;
     listDirectory(path: string): Promise<string[]>;
 }
 //# sourceMappingURL=github.d.ts.map

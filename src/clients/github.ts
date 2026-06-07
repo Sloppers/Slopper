@@ -293,6 +293,48 @@ export class GitHubClient {
     return ['admin', 'maintain'].includes(permission)
   }
 
+  async createVouchPr(username: string, content: string): Promise<number> {
+    const defaultBranch = await this.getDefaultBranch()
+    const branch = `slopper/vouch-${username}`
+    const path = `.slopper.d/vouched/${username}`
+
+    const { data: ref } = await this.octokit.rest.git.getRef({
+      owner: this.owner, repo: this.repo, ref: `heads/${defaultBranch}`
+    })
+
+    await this.octokit.rest.git.createRef({
+      owner: this.owner, repo: this.repo,
+      ref: `refs/heads/${branch}`,
+      sha: ref.object.sha
+    })
+
+    await this.octokit.rest.repos.createOrUpdateFileContents({
+      owner: this.owner, repo: this.repo,
+      path,
+      message: `slopper: vouch ${username}`,
+      content: Buffer.from(content).toString('base64'),
+      branch
+    })
+
+    const { data: pr } = await this.octokit.rest.pulls.create({
+      owner: this.owner, repo: this.repo,
+      title: `slopper: vouch ${username}`,
+      head: branch,
+      base: defaultBranch,
+      body: `Adding **@${username}** to the vouched contributors list.\n\n` +
+        `Requested via \`/slopper vouch\`. This PR was created automatically by Slopper.`
+    })
+
+    return pr.number
+  }
+
+  private async getDefaultBranch(): Promise<string> {
+    const { data } = await this.octokit.rest.repos.get({
+      owner: this.owner, repo: this.repo
+    })
+    return data.default_branch
+  }
+
   async listDirectory(path: string): Promise<string[]> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({

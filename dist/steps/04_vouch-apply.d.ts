@@ -6,6 +6,6 @@ export declare class VouchApplyStep extends PipelineStep {
     private readonly commentManager;
     constructor(github: GitHubClient);
     execute(ctx: PipelineContext): Promise<PipelineContext>;
-    private addUserToSlopperFile;
+    private createVouchPr;
 }
 //# sourceMappingURL=04_vouch-apply.d.ts.map

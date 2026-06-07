@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { GitHubClient } from './clients/github'
+import { BotGitHubClient } from './clients/bot-github'
 import { SlopperClient } from './clients/slopper'
 import { AnalysisPipeline, PipelineStep } from './core/pipeline'
 import { AiProvider } from './ai/providers'
@@ -19,6 +20,8 @@ import {
   PostResultsStep,
   AutoActionsStep
 } from './steps'
+
+const BOT_URL = 'https://slopper-bot.thegexi.workers.dev'
 
 const VALID_PROVIDERS: readonly AiProvider[] = ['openai', 'anthropic', 'vertex', 'groq', 'gemini']
 
@@ -48,7 +51,22 @@ async function run(): Promise<void> {
   }
 
   const { owner, repo } = github.context.repo
-  const gh = new GitHubClient(githubToken, owner, repo)
+
+  let gh: GitHubClient
+  try {
+    const oidcToken = await core.getIDToken(BOT_URL)
+    gh = new BotGitHubClient(githubToken, owner, repo, oidcToken)
+    core.info('[main] Using Slopper Bot for writes (slopper-bot[bot])')
+  } catch (err) {
+    core.setFailed(
+      'Slopper requires the Slopper App to be installed on this repository.\n' +
+      'Install it at: https://github.com/apps/slopper-bot\n' +
+      'Your workflow also needs `permissions: id-token: write`.\n\n' +
+      `Details: ${errorMessage(err)}`
+    )
+    return
+  }
+
   const slopper = new SlopperClient()
 
   const vouchPipeline = new AnalysisPipeline([
