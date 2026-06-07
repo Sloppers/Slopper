@@ -29,13 +29,7 @@ export interface SprayWeightsConfig {
     merge_ratio: number;
     account_age: number;
 }
-export interface ScoreWeightsConfig {
-    spray: number;
-    new_account: number;
-    low_merge_ratio: number;
-    risky_user: number;
-    trusted_org: number;
-}
+export type ScoreWeightsConfig = Record<string, number>;
 export interface LabelThresholdsConfig {
     spray_score: number;
     spray_weights: SprayWeightsConfig;

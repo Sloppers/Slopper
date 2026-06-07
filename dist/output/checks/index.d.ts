@@ -1,13 +1,9 @@
 export { Check, StaticCheck, CheckContext, ScoreResult } from './check';
 export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic-check';
 export { allAgenticChecks } from './agentic';
-export { ApprovedCheck } from './approved';
-export { DeterministicModeCheck } from './deterministic-mode';
 export { FirstTimeContributorCheck } from './first-time-contributor';
 export { CiModifiedCheck } from './ci-modified';
 export { DependenciesModifiedCheck } from './dependencies-modified';
-export { SecurityReviewCheck } from './security-review';
-export { SuspiciousCheck } from './suspicious';
 export { SprayAndPrayCheck } from './spray-and-pray';
 export { ActivityBurstCheck } from './activity-burst';
 export { NewAccountCheck } from './new-account';

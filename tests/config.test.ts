@@ -92,7 +92,13 @@ rules:
         new_account_days: 30, activity_burst_prs: 10, activity_burst_days: 7,
         spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
         merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8,
-        score_weights: { spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
+        score_weights: {
+          spray_and_pray: 3, supply_chain: 2, activity_burst: 2,
+          new_account: 1, low_merge_ratio: 1, risky_user: 1, unsigned_commits: 1, no_tests: 1,
+          first_time_contributor: 1, ci_modified: 1, dependencies_modified: 1, missing_description: 1,
+          no_linked_issue: 1, too_many_files: 1, heavy_changes: 1, large_file: 1, code_duplication: 1,
+          trusted_org: -2
+        }
       })
     })
 
@@ -126,7 +132,13 @@ label_thresholds:
         merge_ratio_suspect: 0.3,
         security_review_score: 7,
         suspicious_score: 9,
-        score_weights: { spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
+        score_weights: {
+          spray_and_pray: 3, supply_chain: 2, activity_burst: 2,
+          new_account: 1, low_merge_ratio: 1, risky_user: 1, unsigned_commits: 1, no_tests: 1,
+          first_time_contributor: 1, ci_modified: 1, dependencies_modified: 1, missing_description: 1,
+          no_linked_issue: 1, too_many_files: 1, heavy_changes: 1, large_file: 1, code_duplication: 1,
+          trusted_org: -2
+        }
       })
     })
 
@@ -172,7 +184,13 @@ actions:
         new_account_days: 30, activity_burst_prs: 10, activity_burst_days: 7,
         spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
         merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8,
-        score_weights: { spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
+        score_weights: {
+          spray_and_pray: 3, supply_chain: 2, activity_burst: 2,
+          new_account: 1, low_merge_ratio: 1, risky_user: 1, unsigned_commits: 1, no_tests: 1,
+          first_time_contributor: 1, ci_modified: 1, dependencies_modified: 1, missing_description: 1,
+          no_linked_issue: 1, too_many_files: 1, heavy_changes: 1, large_file: 1, code_duplication: 1,
+          trusted_org: -2
+        }
       })
     })
   })

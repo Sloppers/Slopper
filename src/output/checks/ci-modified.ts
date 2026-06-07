@@ -8,6 +8,7 @@ const CI_PATTERNS = [
 
 export class CiModifiedCheck extends Check {
   readonly label = Indicators.CI_MODIFIED
+  readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {
     return ctx.files.some(f => CI_PATTERNS.some(p => f.filename.includes(p)))

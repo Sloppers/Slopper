@@ -3,6 +3,7 @@ import { Indicators } from '../label-factory'
 
 export class ActivityBurstCheck extends Check {
   readonly label = Indicators.ACTIVITY_BURST
+  readonly defaultWeight = 2
 
   evaluate(ctx: CheckContext): boolean {
     if (!ctx.authorProfile) return false

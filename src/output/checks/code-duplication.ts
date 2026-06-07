@@ -6,6 +6,7 @@ const MIN_DUPLICATE_BLOCKS = 2
 
 export class CodeDuplicationCheck extends Check {
   readonly label = Indicators.CODE_DUPLICATION
+  readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {
     if (!ctx.prData) return false

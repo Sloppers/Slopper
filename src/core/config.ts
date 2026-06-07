@@ -38,13 +38,7 @@ export interface SprayWeightsConfig {
   account_age: number
 }
 
-export interface ScoreWeightsConfig {
-  spray: number
-  new_account: number
-  low_merge_ratio: number
-  risky_user: number
-  trusted_org: number
-}
+export type ScoreWeightsConfig = Record<string, number>
 
 export interface LabelThresholdsConfig {
   spray_score: number
@@ -118,10 +112,23 @@ const DEFAULT_CONFIG: SlopperConfig = {
     security_review_score: 6,
     suspicious_score: 8,
     score_weights: {
-      spray: 3,
+      spray_and_pray: 3,
+      supply_chain: 2,
+      activity_burst: 2,
       new_account: 1,
       low_merge_ratio: 1,
       risky_user: 1,
+      unsigned_commits: 1,
+      no_tests: 1,
+      first_time_contributor: 1,
+      ci_modified: 1,
+      dependencies_modified: 1,
+      missing_description: 1,
+      no_linked_issue: 1,
+      too_many_files: 1,
+      heavy_changes: 1,
+      large_file: 1,
+      code_duplication: 1,
       trusted_org: -2
     }
   },
@@ -270,14 +277,11 @@ export class ConfigLoader {
       suspicious_score: Number(parsedLabelThresholds.suspicious_score ?? DEFAULT_CONFIG.label_thresholds.suspicious_score),
       score_weights: (() => {
         const pw = (parsedLabelThresholds.score_weights ?? {}) as Record<string, unknown>
-        const dw = DEFAULT_CONFIG.label_thresholds.score_weights
-        return {
-          spray: Number(pw.spray ?? dw.spray),
-          new_account: Number(pw.new_account ?? dw.new_account),
-          low_merge_ratio: Number(pw.low_merge_ratio ?? dw.low_merge_ratio),
-          risky_user: Number(pw.risky_user ?? dw.risky_user),
-          trusted_org: Number(pw.trusted_org ?? dw.trusted_org)
+        const merged: Record<string, number> = { ...DEFAULT_CONFIG.label_thresholds.score_weights }
+        for (const [k, v] of Object.entries(pw)) {
+          merged[k] = Number(v)
         }
+        return merged
       })()
     }
 

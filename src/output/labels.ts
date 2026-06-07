@@ -38,10 +38,7 @@ export class LabelComputer {
       merge_ratio_suspect: 0.4,
       security_review_score: 6,
       suspicious_score: 8,
-      score_weights: {
-        spray: 3, new_account: 1,
-        low_merge_ratio: 1, risky_user: 1, trusted_org: -2
-      }
+      score_weights: {}
     }
     this.rules = rules ?? {
       require_description: false,
@@ -92,7 +89,36 @@ export class LabelComputer {
       }
     }
 
+    if (this.isApproved(score, opts.analysis)) {
+      indicators.push(Indicators.APPROVED)
+    }
+    if (this.isDeterministic(opts.analysis)) {
+      indicators.push(Indicators.DETERMINISTIC_MODE)
+    }
+    if (this.needsSecurityReview(score)) {
+      indicators.push(Indicators.SECURITY_REVIEW)
+    }
+    if (this.isSuspicious(score)) {
+      indicators.push(Indicators.SUSPICIOUS)
+    }
+
     return indicators
+  }
+
+  private isApproved(score: number, analysis?: AnalysisResult): boolean {
+    return !!analysis && score <= this.thresholds.low && analysis.confidence === 'high'
+  }
+
+  private isDeterministic(analysis?: AnalysisResult): boolean {
+    return !analysis
+  }
+
+  private needsSecurityReview(score: number): boolean {
+    return score >= this.labelThresholds.security_review_score
+  }
+
+  private isSuspicious(score: number): boolean {
+    return score >= this.labelThresholds.suspicious_score
   }
 
   computeFailedLabels(): string[] {

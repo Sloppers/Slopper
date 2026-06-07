@@ -9,6 +9,7 @@ const DEPENDENCY_FILES = new Set([
 
 export class DependenciesModifiedCheck extends Check {
   readonly label = Indicators.DEPENDENCIES_MODIFIED
+  readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {
     return ctx.files.some(f => DEPENDENCY_FILES.has(f.filename.split('/').pop() ?? ''))

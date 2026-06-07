@@ -1,13 +1,9 @@
 export { Check, StaticCheck, CheckContext, ScoreResult } from './check'
 export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic-check'
 export { allAgenticChecks } from './agentic'
-export { ApprovedCheck } from './approved'
-export { DeterministicModeCheck } from './deterministic-mode'
 export { FirstTimeContributorCheck } from './first-time-contributor'
 export { CiModifiedCheck } from './ci-modified'
 export { DependenciesModifiedCheck } from './dependencies-modified'
-export { SecurityReviewCheck } from './security-review'
-export { SuspiciousCheck } from './suspicious'
 export { SprayAndPrayCheck } from './spray-and-pray'
 export { ActivityBurstCheck } from './activity-burst'
 export { NewAccountCheck } from './new-account'
@@ -25,13 +21,9 @@ export { NoTestsCheck } from './no-tests'
 export { CodeDuplicationCheck } from './code-duplication'
 
 import { Check, ScoreResult } from './check'
-import { ApprovedCheck } from './approved'
-import { DeterministicModeCheck } from './deterministic-mode'
 import { FirstTimeContributorCheck } from './first-time-contributor'
 import { CiModifiedCheck } from './ci-modified'
 import { DependenciesModifiedCheck } from './dependencies-modified'
-import { SecurityReviewCheck } from './security-review'
-import { SuspiciousCheck } from './suspicious'
 import { SprayAndPrayCheck } from './spray-and-pray'
 import { ActivityBurstCheck } from './activity-burst'
 import { NewAccountCheck } from './new-account'
@@ -49,13 +41,9 @@ import { NoTestsCheck } from './no-tests'
 import { CodeDuplicationCheck } from './code-duplication'
 
 const ALL_CHECKS: Check[] = [
-  new ApprovedCheck(),
-  new DeterministicModeCheck(),
   new FirstTimeContributorCheck(),
   new CiModifiedCheck(),
   new DependenciesModifiedCheck(),
-  new SecurityReviewCheck(),
-  new SuspiciousCheck(),
   new SprayAndPrayCheck(),
   new ActivityBurstCheck(),
   new NewAccountCheck(),
@@ -82,7 +70,7 @@ export function computeScore(checks: Check[], ctx: import('./check').CheckContex
   let total = 0
 
   for (const check of checks) {
-    const key = check.label.replace('slopper/', '').replace(/\//g, '_')
+    const key = check.label.replace('slopper/', '').replace(/[-/]/g, '_')
     const weight = weights?.[key] ?? check.defaultWeight
     const factor = check.scoreFactor(ctx)
     const points = factor * weight

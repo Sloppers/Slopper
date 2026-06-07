@@ -3,6 +3,7 @@ import { Indicators } from '../label-factory'
 
 export class NoLinkedIssueCheck extends Check {
   readonly label = Indicators.NO_LINKED_ISSUE
+  readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {
     if (!ctx.rules.require_linked_issue || !ctx.prData) return false

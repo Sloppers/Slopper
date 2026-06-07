@@ -1,42 +1,44 @@
 # Checks & Scoring
 
-Slopper runs **two check suites** that feed into a single unified score. Every check has a `defaultWeight` and a `scoreFactor()`. The risk score is `sum(factor * weight)`, clamped to 0-10. Checks with weight 0 only produce indicators — they flag something without affecting the score.
+Slopper runs **two check suites** that feed into a single unified score. Every check has a `defaultWeight` and a `scoreFactor()`. The risk score is `sum(factor * weight)`, clamped to 0-10. All checks contribute to the score — there are no indicator-only checks.
 
 ## Static checks — deterministic, always run, zero cost
 
 Static checks are pure heuristics: they look at the PR metadata, diff, author profile, and commit history. No API calls, no tokens, no latency. They run on every PR regardless of configuration.
 
-There are **22 static checks** total. The ones that contribute to the score:
+There are **18 static checks**:
 
-| Check | Weight | Factor | What it measures |
-|-------|--------|--------|-----------------|
-| Spray Score | +3 | continuous (0-1) | Cross-repo PR volume, distinct repos, merge ratio, account age |
-| Supply Chain | +2 | binary | Lockfile changes without manifest, suspicious resolved URLs, version downgrades |
-| New Account | +1 | binary | Account younger than configurable threshold (default 30 days) |
-| Low Merge Ratio | +1 | binary | Below configurable threshold (default 40%) |
-| Risky User | +1 | binary | Listed in community blocklist |
-| Unsigned Commits | +1 | continuous (0-1) | Unsigned commits or author/committer mismatches |
-| No Tests | +1 | binary | PR adds source code but no test files |
-| Trusted Org | **-2** | binary | Public member of a trusted GitHub organization (reduces score) |
+| Check | Key | Weight | Factor | What it measures |
+|-------|-----|--------|--------|-----------------|
+| Spray Score | `spray_and_pray` | +3 | continuous (0-1) | Cross-repo PR volume, distinct repos, merge ratio, account age |
+| Supply Chain | `supply_chain` | +2 | binary | Lockfile changes without manifest, suspicious resolved URLs, version downgrades |
+| Activity Burst | `activity_burst` | +2 | binary | Unusual spike in PR activity (> threshold in burst window) |
+| New Account | `new_account` | +1 | binary | Account younger than configurable threshold (default 30 days) |
+| Low Merge Ratio | `low_merge_ratio` | +1 | binary | Below configurable threshold (default 40%) |
+| Risky User | `risky_user` | +1 | binary | Listed in community blocklist |
+| Unsigned Commits | `unsigned_commits` | +1 | continuous (0-1) | Unsigned commits or author/committer mismatches |
+| No Tests | `no_tests` | +1 | binary | PR adds source code but no test files |
+| First Time Contributor | `first_time_contributor` | +1 | binary | First PR to this repo |
+| CI Modified | `ci_modified` | +1 | binary | CI/CD config files changed |
+| Dependencies Modified | `dependencies_modified` | +1 | binary | Lockfiles or manifests changed |
+| Missing Description | `missing_description` | +1 | binary | PR body is empty (requires `rules.require_description: true`) |
+| No Linked Issue | `no_linked_issue` | +1 | binary | No issue reference in PR body (requires `rules.require_linked_issue: true`) |
+| Too Many Files | `too_many_files` | +1 | binary | PR changes more files than threshold |
+| Heavy Changes | `heavy_changes` | +1 | binary | Total line changes exceed threshold |
+| Large File | `large_file` | +1 | binary | Single file diff exceeds threshold |
+| Code Duplication | `code_duplication` | +1 | binary | Duplicated code blocks in the diff |
+| Trusted Org | `trusted_org` | **-2** | binary | Public member of a trusted GitHub organization (reduces score) |
 
-The remaining static checks are **indicator-only** (weight 0) — they flag patterns without changing the score:
+## Derived indicators
 
-| Check | Indicator | What it flags |
-|-------|-----------|---------------|
-| First Time Contributor | `slopper/first-time-contributor` | First PR to this repo |
-| CI Modified | `slopper/ci-modified` | CI/CD config files changed |
-| Dependencies Modified | `slopper/dependencies-modified` | Lockfiles or manifests changed |
-| Activity Burst | `slopper/activity-burst` | Unusual spike in PR activity |
-| Missing Description | `slopper/missing-description` | PR body is empty |
-| No Linked Issue | `slopper/no-linked-issue` | No issue reference in PR body |
-| Too Many Files | `slopper/too-many-files` | PR changes more files than threshold |
-| Heavy Changes | `slopper/heavy-changes` | Total line changes exceed threshold |
-| Large File | `slopper/large-file` | Single file diff exceeds threshold |
-| Code Duplication | `slopper/code-duplication` | Duplicated code blocks in the diff |
-| Security Review | `slopper/needs-security-review` | Score is high enough to warrant security review |
-| Suspicious | `slopper/suspicious` | Score is very high |
-| Approved | `slopper/approved` | Low score + high confidence |
-| Deterministic Mode | `slopper/mode/deterministic` | No AI provider configured |
+These are not checks — they're computed from the final score and shown in the PR comment:
+
+| Indicator | Trigger |
+|-----------|---------|
+| `slopper/approved` | Score ≤ low threshold AND high AI confidence |
+| `slopper/mode/deterministic` | No AI provider configured |
+| `slopper/needs-security-review` | Score ≥ security review threshold (default 6) |
+| `slopper/suspicious` | Score ≥ suspicious threshold (default 8) |
 
 ## Agentic checks — AI-powered, only with a provider
 
@@ -64,7 +66,7 @@ The PR comment shows triggered agentic checks with confidence level, reasoning, 
 
 ## Unified scoring
 
-Both suites feed the same score formula. All weights are configurable via `label_thresholds.score_weights` in `.slopper`. Final score is clamped to 0-10.
+Both suites feed the same score formula. All weights are configurable via `label_thresholds.score_weights` in `.slopper` — the key is the check's snake_case name (see the Key column above). Final score is clamped to 0-10.
 
 ## Labels
 
