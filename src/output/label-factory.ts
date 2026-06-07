@@ -41,6 +41,7 @@ export const Indicators = {
   TOO_MANY_FILES: 'slopper/too-many-files',
   RISKY_USER: 'slopper/risky-user',
   TRUSTED_ORG: 'slopper/trusted-org',
+  VERIFIED_ORG: 'slopper/verified-org',
   HEAVY_CHANGES: 'slopper/heavy-changes',
   LARGE_FILE: 'slopper/large-file',
   LOW_MERGE_RATIO: 'slopper/low-merge-ratio',

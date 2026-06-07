@@ -10,6 +10,7 @@ export interface CheckContext {
   authorProfile?: AuthorProfileAnalysis
   riskyUser?: boolean
   trustedOrg?: boolean
+  verifiedOrg?: boolean
   thresholds: ThresholdsConfig
   labelThresholds: LabelThresholdsConfig
   rules: RulesConfig

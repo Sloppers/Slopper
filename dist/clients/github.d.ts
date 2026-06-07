@@ -689,6 +689,7 @@ export declare class GitHubClient {
     checkCollaborator(username: string): Promise<boolean>;
     getPermissionLevel(username: string): Promise<string>;
     isOrgPublicMember(org: string, username: string): Promise<boolean>;
+    isVerifiedOrgMember(username: string): Promise<boolean>;
     getUser(username: string): Promise<{
         login: string;
         id: number;

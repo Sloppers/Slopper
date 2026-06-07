@@ -21,7 +21,8 @@ export class ComputeLabelsStep extends PipelineStep {
       prData: ctx.prData,
       authorProfile: ctx.authorProfile,
       riskyUser: ctx.riskyUser,
-      trustedOrg: ctx.trustedOrg
+      trustedOrg: ctx.trustedOrg,
+      verifiedOrg: ctx.verifiedOrg
     }
 
     const result = computer.computeScoreFromChecks(opts)

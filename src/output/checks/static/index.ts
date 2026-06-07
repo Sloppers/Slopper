@@ -16,6 +16,7 @@ export { SupplyChainCheck } from './supply-chain'
 export { UnsignedCommitsCheck } from './unsigned-commits'
 export { NoTestsCheck } from './no-tests'
 export { CodeDuplicationCheck } from './code-duplication'
+export { VerifiedOrgCheck } from './verified-org'
 
 import { StaticCheck } from '../check'
 import { FirstTimeContributorCheck } from './first-time-contributor'
@@ -36,6 +37,7 @@ import { SupplyChainCheck } from './supply-chain'
 import { UnsignedCommitsCheck } from './unsigned-commits'
 import { NoTestsCheck } from './no-tests'
 import { CodeDuplicationCheck } from './code-duplication'
+import { VerifiedOrgCheck } from './verified-org'
 
 const ALL_STATIC_CHECKS: StaticCheck[] = [
   new FirstTimeContributorCheck(),
@@ -55,7 +57,8 @@ const ALL_STATIC_CHECKS: StaticCheck[] = [
   new SupplyChainCheck(),
   new UnsignedCommitsCheck(),
   new NoTestsCheck(),
-  new CodeDuplicationCheck()
+  new CodeDuplicationCheck(),
+  new VerifiedOrgCheck()
 ]
 
 export function allStaticChecks(): StaticCheck[] {

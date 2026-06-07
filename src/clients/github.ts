@@ -248,6 +248,18 @@ export class GitHubClient {
     }
   }
 
+  async isVerifiedOrgMember(username: string): Promise<boolean> {
+    try {
+      const { data: orgs } = await this.octokit.rest.orgs.listForUser({
+        username,
+        per_page: 100
+      })
+      return orgs.some(org => (org as Record<string, unknown>).is_verified === true)
+    } catch {
+      return false
+    }
+  }
+
   async getUser(username: string) {
     const { data } = await this.octokit.rest.users.getByUsername({ username })
     return data

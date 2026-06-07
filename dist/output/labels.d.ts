@@ -11,6 +11,7 @@ export interface ComputeLabelsOptions {
     authorProfile?: AuthorProfileAnalysis;
     riskyUser?: boolean;
     trustedOrg?: boolean;
+    verifiedOrg?: boolean;
 }
 export declare class LabelComputer {
     private readonly thresholds;
@@ -31,12 +32,14 @@ export declare class LabelComputer {
         authorProfile?: AuthorProfileAnalysis;
         riskyUser?: boolean;
         trustedOrg?: boolean;
+        verifiedOrg?: boolean;
         weights?: ScoreWeightsConfig;
     }): number;
     static computeDeterministicResult(opts: {
         authorProfile?: AuthorProfileAnalysis;
         riskyUser?: boolean;
         trustedOrg?: boolean;
+        verifiedOrg?: boolean;
         weights?: ScoreWeightsConfig;
     }): {
         score: number;

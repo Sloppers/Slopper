@@ -3,7 +3,7 @@ export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic
 export { DerivedIndicator, allDerivedIndicators } from './derived-indicator';
 export { allAgenticChecks } from './agentic';
 export { allStaticChecks } from './static';
-export { FirstTimeContributorCheck, CiModifiedCheck, DependenciesModifiedCheck, SprayAndPrayCheck, ActivityBurstCheck, NewAccountCheck, MissingDescriptionCheck, NoLinkedIssueCheck, TooManyFilesCheck, RiskyUserCheck, TrustedOrgCheck, HeavyChangesCheck, LargeFileCheck, LowMergeRatioCheck, SupplyChainCheck, UnsignedCommitsCheck, NoTestsCheck, CodeDuplicationCheck } from './static';
+export { FirstTimeContributorCheck, CiModifiedCheck, DependenciesModifiedCheck, SprayAndPrayCheck, ActivityBurstCheck, NewAccountCheck, MissingDescriptionCheck, NoLinkedIssueCheck, TooManyFilesCheck, RiskyUserCheck, TrustedOrgCheck, HeavyChangesCheck, LargeFileCheck, LowMergeRatioCheck, SupplyChainCheck, UnsignedCommitsCheck, NoTestsCheck, CodeDuplicationCheck, VerifiedOrgCheck } from './static';
 import { Check, ScoreResult } from './check';
 export declare function allChecks(): Check[];
 export declare function computeScore(checks: Check[], ctx: import('./check').CheckContext, weights?: Record<string, number>): {

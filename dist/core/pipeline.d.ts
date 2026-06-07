@@ -29,6 +29,7 @@ export interface PipelineContext {
     banned?: boolean;
     riskyUser?: boolean;
     trustedOrg?: boolean;
+    verifiedOrg?: boolean;
 }
 export declare abstract class PipelineStep {
     abstract readonly name: string;

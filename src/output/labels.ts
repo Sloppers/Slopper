@@ -14,6 +14,7 @@ export interface ComputeLabelsOptions {
   authorProfile?: AuthorProfileAnalysis
   riskyUser?: boolean
   trustedOrg?: boolean
+  verifiedOrg?: boolean
 }
 
 export class LabelComputer {
@@ -129,6 +130,7 @@ export class LabelComputer {
     authorProfile?: AuthorProfileAnalysis
     riskyUser?: boolean
     trustedOrg?: boolean
+    verifiedOrg?: boolean
     weights?: ScoreWeightsConfig
   }): number {
     const { score } = LabelComputer.computeDeterministicResult(opts)
@@ -139,6 +141,7 @@ export class LabelComputer {
     authorProfile?: AuthorProfileAnalysis
     riskyUser?: boolean
     trustedOrg?: boolean
+    verifiedOrg?: boolean
     weights?: ScoreWeightsConfig
   }): { score: number; breakdown: ScoreResult[] } {
     const computer = new LabelComputer()
@@ -147,7 +150,8 @@ export class LabelComputer {
       firstTimeContributor: false,
       authorProfile: opts.authorProfile,
       riskyUser: opts.riskyUser,
-      trustedOrg: opts.trustedOrg
+      trustedOrg: opts.trustedOrg,
+      verifiedOrg: opts.verifiedOrg
     })
   }
 }

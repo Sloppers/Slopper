@@ -9,7 +9,8 @@ export {
   MissingDescriptionCheck, NoLinkedIssueCheck, TooManyFilesCheck,
   RiskyUserCheck, TrustedOrgCheck, HeavyChangesCheck,
   LargeFileCheck, LowMergeRatioCheck, SupplyChainCheck,
-  UnsignedCommitsCheck, NoTestsCheck, CodeDuplicationCheck
+  UnsignedCommitsCheck, NoTestsCheck, CodeDuplicationCheck,
+  VerifiedOrgCheck
 } from './static'
 
 import { Check, ScoreResult } from './check'

@@ -33,6 +33,7 @@ export declare const Indicators: {
     readonly TOO_MANY_FILES: "slopper/too-many-files";
     readonly RISKY_USER: "slopper/risky-user";
     readonly TRUSTED_ORG: "slopper/trusted-org";
+    readonly VERIFIED_ORG: "slopper/verified-org";
     readonly HEAVY_CHANGES: "slopper/heavy-changes";
     readonly LARGE_FILE: "slopper/large-file";
     readonly LOW_MERGE_RATIO: "slopper/low-merge-ratio";

@@ -129,7 +129,8 @@ const DEFAULT_CONFIG: SlopperConfig = {
       heavy_changes: 1,
       large_file: 1,
       code_duplication: 1,
-      trusted_org: -2
+      trusted_org: -2,
+      verified_org: -1
     }
   },
   ignore_paths: [],

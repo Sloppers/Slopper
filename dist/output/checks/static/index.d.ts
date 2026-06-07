@@ -16,6 +16,7 @@ export { SupplyChainCheck } from './supply-chain';
 export { UnsignedCommitsCheck } from './unsigned-commits';
 export { NoTestsCheck } from './no-tests';
 export { CodeDuplicationCheck } from './code-duplication';
+export { VerifiedOrgCheck } from './verified-org';
 import { StaticCheck } from '../check';
 export declare function allStaticChecks(): StaticCheck[];
 //# sourceMappingURL=index.d.ts.map

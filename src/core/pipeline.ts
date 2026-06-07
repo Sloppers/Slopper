@@ -33,6 +33,7 @@ export interface PipelineContext {
   banned?: boolean
   riskyUser?: boolean
   trustedOrg?: boolean
+  verifiedOrg?: boolean
 }
 
 export abstract class PipelineStep {

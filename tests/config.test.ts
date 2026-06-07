@@ -97,7 +97,8 @@ rules:
           new_account: 1, low_merge_ratio: 1, risky_user: 1, unsigned_commits: 1, no_tests: 1,
           first_time_contributor: 1, ci_modified: 1, dependencies_modified: 1, missing_description: 1,
           no_linked_issue: 1, too_many_files: 1, heavy_changes: 1, large_file: 1, code_duplication: 1,
-          trusted_org: -2
+          trusted_org: -2,
+          verified_org: -1
         }
       })
     })
@@ -137,7 +138,8 @@ label_thresholds:
           new_account: 1, low_merge_ratio: 1, risky_user: 1, unsigned_commits: 1, no_tests: 1,
           first_time_contributor: 1, ci_modified: 1, dependencies_modified: 1, missing_description: 1,
           no_linked_issue: 1, too_many_files: 1, heavy_changes: 1, large_file: 1, code_duplication: 1,
-          trusted_org: -2
+          trusted_org: -2,
+          verified_org: -1
         }
       })
     })
@@ -189,7 +191,8 @@ actions:
           new_account: 1, low_merge_ratio: 1, risky_user: 1, unsigned_commits: 1, no_tests: 1,
           first_time_contributor: 1, ci_modified: 1, dependencies_modified: 1, missing_description: 1,
           no_linked_issue: 1, too_many_files: 1, heavy_changes: 1, large_file: 1, code_duplication: 1,
-          trusted_org: -2
+          trusted_org: -2,
+          verified_org: -1
         }
       })
     })

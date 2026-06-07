@@ -62,6 +62,15 @@ export class ProfileAnalysisStep extends PipelineStep {
       }
     }
 
+    try {
+      ctx.verifiedOrg = await this.github.isVerifiedOrgMember(author)
+      if (ctx.verifiedOrg) {
+        this.log(`${author} is a member of a GitHub-verified organization`)
+      }
+    } catch {
+      this.warn('Failed to check verified org membership')
+    }
+
     return ctx
   }
 
