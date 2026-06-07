@@ -52,6 +52,7 @@ export class PostResultsStep extends PipelineStep {
       agenticResults: ctx.agenticResults,
       stepResults: ctx.stepResults,
       labels,
+      indicators: ctx.indicators,
       suggestVouch,
       authorProfile: ctx.authorProfile,
       aiFingerprint: ctx.aiFingerprint

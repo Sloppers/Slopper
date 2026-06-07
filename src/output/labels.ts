@@ -62,6 +62,17 @@ export class LabelComputer {
       ? opts.analysis.risk_score
       : this.computeScoreFromChecks(opts).score
 
+    if (score >= this.thresholds.medium) {
+      return [Labels.SLOP.name]
+    }
+    return [Labels.LEGIT.name]
+  }
+
+  computeIndicators(opts: ComputeLabelsOptions): string[] {
+    const score = opts.analysis
+      ? opts.analysis.risk_score
+      : this.computeScoreFromChecks(opts).score
+
     const ctx: CheckContext = {
       score,
       ...opts,
@@ -70,21 +81,21 @@ export class LabelComputer {
       rules: this.rules
     }
 
-    const labels: string[] = []
+    const indicators: string[] = []
 
-    labels.push(riskLabel(score, this.thresholds).name)
+    indicators.push(riskLabel(score, this.thresholds).name)
 
     if (opts.analysis) {
-      labels.push(confidenceLabel(opts.analysis.confidence).name)
+      indicators.push(confidenceLabel(opts.analysis.confidence).name)
     }
 
     for (const check of this.checks) {
       if (check.evaluate(ctx)) {
-        labels.push(check.label)
+        indicators.push(check.label)
       }
     }
 
-    return labels
+    return indicators
   }
 
   computeFailedLabels(): string[] {

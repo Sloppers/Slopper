@@ -26,6 +26,7 @@ export interface PipelineContext {
   agenticResults?: AgenticCheckResult[]
   stepResults?: StepResult[]
   labels?: string[]
+  indicators?: string[]
   vouched?: boolean
   vouchedBy?: string
   addToSlopperFile?: string

@@ -11,6 +11,8 @@ export declare const Labels: {
     readonly CONFIDENCE_HIGH: LabelDef;
     readonly CONFIDENCE_MEDIUM: LabelDef;
     readonly CONFIDENCE_LOW: LabelDef;
+    readonly SLOP: LabelDef;
+    readonly LEGIT: LabelDef;
     readonly APPROVED: LabelDef;
     readonly VOUCHED: LabelDef;
     readonly BANNED: LabelDef;

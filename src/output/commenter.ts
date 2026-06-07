@@ -21,6 +21,7 @@ export interface CommentOptions {
   agenticResults?: AgenticCheckResult[]
   stepResults?: StepResult[]
   labels: string[]
+  indicators?: string[]
   suggestVouch?: { author: string }
   authorProfile?: {
     account_age_days: number
@@ -44,7 +45,7 @@ export class PrCommentManager {
   }
 
   buildCommentBody(opts: CommentOptions): string {
-    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, stepResults, labels, suggestVouch, authorProfile, aiFingerprint } = opts
+    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, stepResults, labels, indicators, suggestVouch, authorProfile, aiFingerprint } = opts
 
     const score = result?.risk_score ?? deterministicScore ?? 0
     const level = result?.risk_level ?? riskLevel ?? 'unknown'
@@ -175,7 +176,11 @@ export class PrCommentManager {
     }
 
     if (labels.length > 0) {
-      md += `**Labels:** ${labels.map(l => `\`${l}\``).join(' ')}\n\n`
+      md += `**Verdict:** ${labels.map(l => `\`${l}\``).join(' ')}\n\n`
+    }
+
+    if (indicators && indicators.length > 0) {
+      md += `**Indicators:** ${indicators.map(l => `\`${l}\``).join(' ')}\n\n`
     }
 
     if (suggestVouch) {

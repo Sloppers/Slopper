@@ -34,17 +34,21 @@ export class ComputeLabelsStep extends PipelineStep {
 
     ctx.labels = computer.compute(opts)
 
+    const indicators = computer.computeIndicators(opts)
+
     if (ctx.analysisFailed) {
-      ctx.labels.push('slopper/analysis-failed')
+      indicators.push('slopper/analysis-failed')
     }
 
     if (ctx.agenticResults) {
       for (const result of ctx.agenticResults) {
         if (result.triggered) {
-          ctx.labels.push(result.label)
+          indicators.push(result.label)
         }
       }
     }
+
+    ctx.indicators = indicators
 
     return ctx
   }

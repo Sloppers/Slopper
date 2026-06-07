@@ -11,6 +11,7 @@ export interface CommentOptions {
     agenticResults?: AgenticCheckResult[];
     stepResults?: StepResult[];
     labels: string[];
+    indicators?: string[];
     suggestVouch?: {
         author: string;
     };

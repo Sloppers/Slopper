@@ -20,143 +20,159 @@ function makeFile(filename: string): FileInfo {
   return { filename, status: 'modified', additions: 10, deletions: 5, is_binary: false }
 }
 
-function compute(computer: LabelComputer, result: AnalysisResult, files: FileInfo[] = [], firstTime = false, prData?: PrData) {
+function computeLabels(computer: LabelComputer, result: AnalysisResult, files: FileInfo[] = [], firstTime = false, prData?: PrData) {
   return computer.compute({ analysis: result, files, firstTimeContributor: firstTime, prData })
+}
+
+function computeIndicators(computer: LabelComputer, result: AnalysisResult, files: FileInfo[] = [], firstTime = false, prData?: PrData) {
+  return computer.computeIndicators({ analysis: result, files, firstTimeContributor: firstTime, prData })
 }
 
 describe('LabelComputer', () => {
   const computer = new LabelComputer()
 
-  describe('risk labels', () => {
-    it('assigns slopper/risk/low for scores 0-2', () => {
-      const labels = compute(computer, makeResult({ risk_score: 0 }))
-      expect(labels).toContain('slopper/risk/low')
+  describe('verdict labels', () => {
+    it('assigns slopper/legit for low scores', () => {
+      const labels = computeLabels(computer, makeResult({ risk_score: 0 }))
+      expect(labels).toEqual(['slopper/legit'])
     })
 
-    it('assigns slopper/risk/low for score 2', () => {
-      const labels = compute(computer, makeResult({ risk_score: 2 }))
-      expect(labels).toContain('slopper/risk/low')
+    it('assigns slopper/legit for scores below medium threshold', () => {
+      const labels = computeLabels(computer, makeResult({ risk_score: 4 }))
+      expect(labels).toEqual(['slopper/legit'])
     })
 
-    it('assigns slopper/risk/medium for scores 3-5', () => {
-      const labels = compute(computer, makeResult({ risk_score: 4 }))
-      expect(labels).toContain('slopper/risk/medium')
+    it('assigns slopper/slop for scores at medium threshold', () => {
+      const labels = computeLabels(computer, makeResult({ risk_score: 5 }))
+      expect(labels).toEqual(['slopper/slop'])
     })
 
-    it('assigns slopper/risk/high for scores 6-8', () => {
-      const labels = compute(computer, makeResult({ risk_score: 7 }))
-      expect(labels).toContain('slopper/risk/high')
-    })
-
-    it('assigns slopper/risk/critical for scores 9-10', () => {
-      const labels = compute(computer, makeResult({ risk_score: 9 }))
-      expect(labels).toContain('slopper/risk/critical')
+    it('assigns slopper/slop for high scores', () => {
+      const labels = computeLabels(computer, makeResult({ risk_score: 9 }))
+      expect(labels).toEqual(['slopper/slop'])
     })
   })
 
-  describe('confidence labels', () => {
-    it('assigns slopper/confidence/high', () => {
-      const labels = compute(computer, makeResult({ confidence: 'high' }))
-      expect(labels).toContain('slopper/confidence/high')
+  describe('risk indicators', () => {
+    it('includes slopper/risk/low for scores 0-2', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 0 }))
+      expect(indicators).toContain('slopper/risk/low')
     })
 
-    it('assigns slopper/confidence/medium', () => {
-      const labels = compute(computer, makeResult({ confidence: 'medium' }))
-      expect(labels).toContain('slopper/confidence/medium')
+    it('includes slopper/risk/medium for scores 3-5', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 4 }))
+      expect(indicators).toContain('slopper/risk/medium')
     })
 
-    it('assigns slopper/confidence/low', () => {
-      const labels = compute(computer, makeResult({ confidence: 'low' }))
-      expect(labels).toContain('slopper/confidence/low')
-    })
-  })
-
-  describe('approved label', () => {
-    it('assigns slopper/approved when score <= 2 and confidence is high', () => {
-      const labels = compute(computer, makeResult({ risk_score: 1, confidence: 'high' }))
-      expect(labels).toContain('slopper/approved')
+    it('includes slopper/risk/high for scores 6-8', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 7 }))
+      expect(indicators).toContain('slopper/risk/high')
     })
 
-    it('does not assign slopper/approved when score > 2', () => {
-      const labels = compute(computer, makeResult({ risk_score: 3, confidence: 'high' }))
-      expect(labels).not.toContain('slopper/approved')
-    })
-
-    it('does not assign slopper/approved when confidence is not high', () => {
-      const labels = compute(computer, makeResult({ risk_score: 1, confidence: 'medium' }))
-      expect(labels).not.toContain('slopper/approved')
+    it('includes slopper/risk/critical for scores 9-10', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 9 }))
+      expect(indicators).toContain('slopper/risk/critical')
     })
   })
 
-  describe('first-time contributor', () => {
-    it('assigns slopper/first-time-contributor when true', () => {
-      const labels = compute(computer, makeResult(), [], true)
-      expect(labels).toContain('slopper/first-time-contributor')
+  describe('confidence indicators', () => {
+    it('includes slopper/confidence/high', () => {
+      const indicators = computeIndicators(computer, makeResult({ confidence: 'high' }))
+      expect(indicators).toContain('slopper/confidence/high')
     })
 
-    it('does not assign when false', () => {
-      const labels = compute(computer, makeResult(), [], false)
-      expect(labels).not.toContain('slopper/first-time-contributor')
+    it('includes slopper/confidence/medium', () => {
+      const indicators = computeIndicators(computer, makeResult({ confidence: 'medium' }))
+      expect(indicators).toContain('slopper/confidence/medium')
+    })
+
+    it('includes slopper/confidence/low', () => {
+      const indicators = computeIndicators(computer, makeResult({ confidence: 'low' }))
+      expect(indicators).toContain('slopper/confidence/low')
     })
   })
 
-  describe('CI/dependency file detection', () => {
+  describe('approved indicator', () => {
+    it('includes slopper/approved when score <= 2 and confidence is high', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 1, confidence: 'high' }))
+      expect(indicators).toContain('slopper/approved')
+    })
+
+    it('does not include slopper/approved when score > 2', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 3, confidence: 'high' }))
+      expect(indicators).not.toContain('slopper/approved')
+    })
+  })
+
+  describe('first-time contributor indicator', () => {
+    it('includes slopper/first-time-contributor when true', () => {
+      const indicators = computeIndicators(computer, makeResult(), [], true)
+      expect(indicators).toContain('slopper/first-time-contributor')
+    })
+
+    it('does not include when false', () => {
+      const indicators = computeIndicators(computer, makeResult(), [], false)
+      expect(indicators).not.toContain('slopper/first-time-contributor')
+    })
+  })
+
+  describe('CI/dependency file indicators', () => {
     it('detects .github/workflows/ changes', () => {
       const files = [makeFile('.github/workflows/ci.yml')]
-      const labels = compute(computer, makeResult(), files)
-      expect(labels).toContain('slopper/ci-modified')
+      const indicators = computeIndicators(computer, makeResult(), files)
+      expect(indicators).toContain('slopper/ci-modified')
     })
 
     it('detects Jenkinsfile changes', () => {
       const files = [makeFile('Jenkinsfile')]
-      const labels = compute(computer, makeResult(), files)
-      expect(labels).toContain('slopper/ci-modified')
+      const indicators = computeIndicators(computer, makeResult(), files)
+      expect(indicators).toContain('slopper/ci-modified')
     })
 
     it('does not flag non-CI files', () => {
       const files = [makeFile('src/index.ts')]
-      const labels = compute(computer, makeResult(), files)
-      expect(labels).not.toContain('slopper/ci-modified')
+      const indicators = computeIndicators(computer, makeResult(), files)
+      expect(indicators).not.toContain('slopper/ci-modified')
     })
 
     it('detects package.json changes', () => {
       const files = [makeFile('package.json')]
-      const labels = compute(computer, makeResult(), files)
-      expect(labels).toContain('slopper/dependencies-modified')
+      const indicators = computeIndicators(computer, makeResult(), files)
+      expect(indicators).toContain('slopper/dependencies-modified')
     })
 
     it('detects nested dependency files', () => {
       const files = [makeFile('services/api/requirements.txt')]
-      const labels = compute(computer, makeResult(), files)
-      expect(labels).toContain('slopper/dependencies-modified')
+      const indicators = computeIndicators(computer, makeResult(), files)
+      expect(indicators).toContain('slopper/dependencies-modified')
     })
 
     it('does not flag non-dependency files', () => {
       const files = [makeFile('src/utils.ts')]
-      const labels = compute(computer, makeResult(), files)
-      expect(labels).not.toContain('slopper/dependencies-modified')
+      const indicators = computeIndicators(computer, makeResult(), files)
+      expect(indicators).not.toContain('slopper/dependencies-modified')
     })
   })
 
-  describe('security review thresholds', () => {
-    it('assigns needs-security-review at score >= 6', () => {
-      const labels = compute(computer, makeResult({ risk_score: 6 }))
-      expect(labels).toContain('slopper/needs-security-review')
+  describe('security review indicators', () => {
+    it('includes needs-security-review at score >= 6', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 6 }))
+      expect(indicators).toContain('slopper/needs-security-review')
     })
 
-    it('does not assign needs-security-review below 6', () => {
-      const labels = compute(computer, makeResult({ risk_score: 5 }))
-      expect(labels).not.toContain('slopper/needs-security-review')
+    it('does not include needs-security-review below 6', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 5 }))
+      expect(indicators).not.toContain('slopper/needs-security-review')
     })
 
-    it('assigns suspicious at score >= 8', () => {
-      const labels = compute(computer, makeResult({ risk_score: 8 }))
-      expect(labels).toContain('slopper/suspicious')
+    it('includes suspicious at score >= 8', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 8 }))
+      expect(indicators).toContain('slopper/suspicious')
     })
 
-    it('does not assign suspicious below 8', () => {
-      const labels = compute(computer, makeResult({ risk_score: 7 }))
-      expect(labels).not.toContain('slopper/suspicious')
+    it('does not include suspicious below 8', () => {
+      const indicators = computeIndicators(computer, makeResult({ risk_score: 7 }))
+      expect(indicators).not.toContain('slopper/suspicious')
     })
   })
 
@@ -168,31 +184,39 @@ describe('LabelComputer', () => {
   })
 
   describe('combined scenarios', () => {
-    it('high-risk PR with CI and deps gets all relevant labels', () => {
+    it('high-risk PR gets slopper/slop label', () => {
+      const result = makeResult({ risk_score: 9, confidence: 'high' })
+      const labels = computeLabels(computer, result, [], true)
+      expect(labels).toEqual(['slopper/slop'])
+    })
+
+    it('high-risk PR gets all relevant indicators', () => {
       const files = [
         makeFile('.github/workflows/deploy.yml'),
         makeFile('package.json'),
         makeFile('src/hack.ts')
       ]
       const result = makeResult({ risk_score: 9, confidence: 'high' })
-      const labels = compute(computer, result, files, true)
+      const indicators = computeIndicators(computer, result, files, true)
 
-      expect(labels).toContain('slopper/risk/critical')
-      expect(labels).toContain('slopper/confidence/high')
-      expect(labels).toContain('slopper/first-time-contributor')
-      expect(labels).toContain('slopper/ci-modified')
-      expect(labels).toContain('slopper/dependencies-modified')
-      expect(labels).toContain('slopper/needs-security-review')
-      expect(labels).toContain('slopper/suspicious')
-      expect(labels).not.toContain('slopper/approved')
+      expect(indicators).toContain('slopper/risk/critical')
+      expect(indicators).toContain('slopper/confidence/high')
+      expect(indicators).toContain('slopper/first-time-contributor')
+      expect(indicators).toContain('slopper/ci-modified')
+      expect(indicators).toContain('slopper/dependencies-modified')
+      expect(indicators).toContain('slopper/needs-security-review')
+      expect(indicators).toContain('slopper/suspicious')
+      expect(indicators).not.toContain('slopper/approved')
     })
 
-    it('clean PR from known contributor gets minimal labels', () => {
+    it('clean PR gets slopper/legit and minimal indicators', () => {
       const files = [makeFile('src/feature.ts'), makeFile('src/__tests__/feature.test.ts')]
       const result = makeResult({ risk_score: 0, confidence: 'high' })
-      const labels = compute(computer, result, files)
+      const labels = computeLabels(computer, result, files)
+      const indicators = computeIndicators(computer, result, files)
 
-      expect(labels).toEqual([
+      expect(labels).toEqual(['slopper/legit'])
+      expect(indicators).toEqual([
         'slopper/risk/low',
         'slopper/confidence/high',
         'slopper/approved'
@@ -275,28 +299,18 @@ describe('LabelComputer', () => {
   describe('custom thresholds', () => {
     const custom = new LabelComputer({ low: 3, medium: 6, high: 9 })
 
-    it('uses custom low threshold for risk label', () => {
-      const labels = compute(custom, makeResult({ risk_score: 3 }))
-      expect(labels).toContain('slopper/risk/low')
+    it('uses custom medium threshold for slop/legit', () => {
+      expect(computeLabels(custom, makeResult({ risk_score: 5 }))).toEqual(['slopper/legit'])
+      expect(computeLabels(custom, makeResult({ risk_score: 6 }))).toEqual(['slopper/slop'])
     })
 
-    it('uses custom medium threshold', () => {
-      const labels = compute(custom, makeResult({ risk_score: 6 }))
-      expect(labels).toContain('slopper/risk/medium')
-    })
-
-    it('uses custom high threshold', () => {
-      const labels = compute(custom, makeResult({ risk_score: 9 }))
-      expect(labels).toContain('slopper/risk/high')
-    })
-
-    it('uses custom threshold for approved label', () => {
-      const labels = compute(custom, makeResult({ risk_score: 3, confidence: 'high' }))
-      expect(labels).toContain('slopper/approved')
+    it('uses custom thresholds for risk indicators', () => {
+      const indicators = computeIndicators(custom, makeResult({ risk_score: 3 }))
+      expect(indicators).toContain('slopper/risk/low')
     })
   })
 
-  describe('rule-based labels', () => {
+  describe('rule-based indicators', () => {
     function makePrData(overrides: Partial<PrData> = {}): PrData {
       return {
         repo: 'owner/repo',
@@ -330,54 +344,42 @@ describe('LabelComputer', () => {
       block_first_time_contributors: false
     })
 
-    it('adds missing-description label when body is empty', () => {
+    it('includes missing-description indicator when body is empty', () => {
       const prData = makePrData({ body: '' })
-      const labels = compute(withRules, makeResult(), [], false, prData)
-      expect(labels).toContain('slopper/missing-description')
+      const indicators = computeIndicators(withRules, makeResult(), [], false, prData)
+      expect(indicators).toContain('slopper/missing-description')
     })
 
-    it('does not add missing-description when body has content', () => {
+    it('does not include missing-description when body has content', () => {
       const prData = makePrData({ body: 'This PR adds a feature' })
-      const labels = compute(withRules, makeResult(), [], false, prData)
-      expect(labels).not.toContain('slopper/missing-description')
+      const indicators = computeIndicators(withRules, makeResult(), [], false, prData)
+      expect(indicators).not.toContain('slopper/missing-description')
     })
 
-    it('adds no-linked-issue when body has no issue reference', () => {
+    it('includes no-linked-issue when body has no issue reference', () => {
       const prData = makePrData({ body: 'Just some changes with no issue ref' })
-      const labels = compute(withRules, makeResult(), [], false, prData)
-      expect(labels).toContain('slopper/no-linked-issue')
+      const indicators = computeIndicators(withRules, makeResult(), [], false, prData)
+      expect(indicators).toContain('slopper/no-linked-issue')
     })
 
-    it('does not add no-linked-issue when body references an issue', () => {
-      const prData = makePrData({ body: 'Fixes #123' })
-      const labels = compute(withRules, makeResult(), [], false, prData)
-      expect(labels).not.toContain('slopper/no-linked-issue')
-    })
-
-    it('adds too-many-files when changed_files_count exceeds max', () => {
+    it('includes too-many-files when changed_files_count exceeds max', () => {
       const prData = makePrData({ changed_files_count: 15 })
-      const labels = compute(withRules, makeResult(), [], false, prData)
-      expect(labels).toContain('slopper/too-many-files')
+      const indicators = computeIndicators(withRules, makeResult(), [], false, prData)
+      expect(indicators).toContain('slopper/too-many-files')
     })
 
-    it('does not add too-many-files when within limit', () => {
-      const prData = makePrData({ changed_files_count: 5 })
-      const labels = compute(withRules, makeResult(), [], false, prData)
-      expect(labels).not.toContain('slopper/too-many-files')
-    })
-
-    it('does not add rule labels when rules are disabled', () => {
+    it('does not include rule indicators when rules are disabled', () => {
       const noRules = new LabelComputer()
       const prData = makePrData({ body: '', changed_files_count: 100 })
-      const labels = compute(noRules, makeResult(), [], false, prData)
-      expect(labels).not.toContain('slopper/missing-description')
-      expect(labels).not.toContain('slopper/too-many-files')
+      const indicators = computeIndicators(noRules, makeResult(), [], false, prData)
+      expect(indicators).not.toContain('slopper/missing-description')
+      expect(indicators).not.toContain('slopper/too-many-files')
     })
   })
 
-  describe('author profile labels', () => {
-    it('adds spray-and-pray label when spray_score > 60', () => {
-      const labels = computer.compute({
+  describe('author profile indicators', () => {
+    it('includes spray-and-pray when spray_score > 60', () => {
+      const indicators = computer.computeIndicators({
         analysis: makeResult(),
         files: [],
         firstTimeContributor: false,
@@ -388,11 +390,11 @@ describe('LabelComputer', () => {
           total_stars: 10, total_issues: 5, spray_score: 75, activity_burst: false
         }
       })
-      expect(labels).toContain('slopper/spray-and-pray')
+      expect(indicators).toContain('slopper/spray-and-pray')
     })
 
-    it('adds new-account label for accounts < 30 days', () => {
-      const labels = computer.compute({
+    it('includes new-account for accounts < 30 days', () => {
+      const indicators = computer.computeIndicators({
         analysis: makeResult(),
         files: [],
         firstTimeContributor: false,
@@ -403,11 +405,11 @@ describe('LabelComputer', () => {
           total_stars: 0, total_issues: 0, spray_score: 20, activity_burst: false
         }
       })
-      expect(labels).toContain('slopper/new-account')
+      expect(indicators).toContain('slopper/new-account')
     })
 
-    it('adds activity-burst label when > 10 PRs in 7d', () => {
-      const labels = computer.compute({
+    it('includes activity-burst when > 10 PRs in 7d', () => {
+      const indicators = computer.computeIndicators({
         analysis: makeResult(),
         files: [],
         firstTimeContributor: false,
@@ -418,41 +420,41 @@ describe('LabelComputer', () => {
           total_stars: 50, total_issues: 10, spray_score: 30, activity_burst: true
         }
       })
-      expect(labels).toContain('slopper/activity-burst')
+      expect(indicators).toContain('slopper/activity-burst')
     })
   })
 
-  describe('AI fingerprint labels', () => {
-    it('adds likely-ai-generated when score >= 70', () => {
-      const labels = computer.compute({
+  describe('AI fingerprint indicators', () => {
+    it('includes likely-ai-generated when score >= 70', () => {
+      const indicators = computer.computeIndicators({
         analysis: makeResult(),
         files: [],
         firstTimeContributor: false,
         aiFingerprint: { score: 75, signals: [] }
       })
-      expect(labels).toContain('slopper/likely-ai-generated')
+      expect(indicators).toContain('slopper/likely-ai-generated')
     })
 
-    it('adds possibly-ai-generated when score >= 40 and < 70', () => {
-      const labels = computer.compute({
+    it('includes possibly-ai-generated when score >= 40 and < 70', () => {
+      const indicators = computer.computeIndicators({
         analysis: makeResult(),
         files: [],
         firstTimeContributor: false,
         aiFingerprint: { score: 50, signals: [] }
       })
-      expect(labels).toContain('slopper/possibly-ai-generated')
-      expect(labels).not.toContain('slopper/likely-ai-generated')
+      expect(indicators).toContain('slopper/possibly-ai-generated')
+      expect(indicators).not.toContain('slopper/likely-ai-generated')
     })
 
-    it('adds no fingerprint label when score < 40', () => {
-      const labels = computer.compute({
+    it('no fingerprint indicator when score < 40', () => {
+      const indicators = computer.computeIndicators({
         analysis: makeResult(),
         files: [],
         firstTimeContributor: false,
         aiFingerprint: { score: 20, signals: [] }
       })
-      expect(labels).not.toContain('slopper/likely-ai-generated')
-      expect(labels).not.toContain('slopper/possibly-ai-generated')
+      expect(indicators).not.toContain('slopper/likely-ai-generated')
+      expect(indicators).not.toContain('slopper/possibly-ai-generated')
     })
   })
 })

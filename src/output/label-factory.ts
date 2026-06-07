@@ -18,6 +18,8 @@ export const Labels = {
   CONFIDENCE_MEDIUM: def('slopper/confidence/medium', 'fbca04', 'Medium confidence analysis'),
   CONFIDENCE_LOW: def('slopper/confidence/low', 'e4e669', 'Low confidence analysis'),
 
+  SLOP: def('slopper/slop', 'b60205', 'PR flagged as likely AI slop'),
+  LEGIT: def('slopper/legit', '0e8a16', 'PR appears legitimate'),
   APPROVED: def('slopper/approved', '0e8a16', 'PR is approved by a reviewer'),
   VOUCHED: def('slopper/vouched', '0e8a16', 'Author is vouched by a code owner'),
   BANNED: def('slopper/banned', 'b60205', 'Author is on the banned list'),

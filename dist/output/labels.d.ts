@@ -20,6 +20,7 @@ export declare class LabelComputer {
     private readonly checks;
     constructor(thresholds?: ThresholdsConfig, rules?: RulesConfig, labelThresholds?: LabelThresholdsConfig, checks?: Check[]);
     compute(opts: ComputeLabelsOptions): string[];
+    computeIndicators(opts: ComputeLabelsOptions): string[];
     computeFailedLabels(): string[];
     shouldSuggestVouch(analysis: AnalysisResult, author: AuthorProfile): boolean;
     computeScoreFromChecks(opts: ComputeLabelsOptions): {
