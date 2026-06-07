@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { GitHubClient } from './clients/github'
+import { SlopperClient } from './clients/slopper'
 import { AnalysisPipeline, PipelineStep } from './core/pipeline'
 import { AiProvider } from './ai/providers'
 import { errorMessage } from './core/utils'
@@ -48,12 +49,13 @@ async function run(): Promise<void> {
 
   const { owner, repo } = github.context.repo
   const gh = new GitHubClient(githubToken, owner, repo)
+  const slopper = new SlopperClient()
 
   const vouchPipeline = new AnalysisPipeline([
     new LoadConfigStep(gh),
     new VouchCheckStep(gh),
     new BannedCheckStep(gh),
-    new RiskyUserCheckStep(),
+    new RiskyUserCheckStep(slopper),
     new VouchApplyStep(gh)
   ])
   const vouchResult = await vouchPipeline.run({ prNumber })
@@ -62,7 +64,7 @@ async function run(): Promise<void> {
 
   const steps: PipelineStep[] = [
     new CollectDataStep(gh),
-    new ProfileAnalysisStep(gh),
+    new ProfileAnalysisStep(gh, slopper),
   ]
 
   if (useAi) {

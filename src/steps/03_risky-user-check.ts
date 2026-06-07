@@ -1,25 +1,24 @@
 import { PipelineStep, PipelineContext } from '../core/pipeline'
-import { errorMessage, parseTextList } from '../core/utils'
-
-const RISKY_USERS_URL =
-  'https://raw.githubusercontent.com/malvads/slopper/main/.slopper_risky_users'
+import { SlopperClient } from '../clients/slopper'
+import { errorMessage } from '../core/utils'
 
 export class RiskyUserCheckStep extends PipelineStep {
   readonly name = 'risky-user-check'
+  private readonly slopper: SlopperClient
+
+  constructor(slopper: SlopperClient) {
+    super()
+    this.slopper = slopper
+  }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     if (!ctx.prAuthor) return ctx
 
     let users: string[] = []
     try {
-      const res = await fetch(RISKY_USERS_URL)
-      if (res.ok) {
-        users = parseTextList(await res.text())
-      } else {
-        this.warn(` Failed to fetch risky users list: ${res.status}`)
-      }
+      users = await this.slopper.fetchRiskyUsers()
     } catch (error: unknown) {
-      this.warn(` Could not reach risky users list: ${errorMessage(error)}`)
+      this.warn(`Could not fetch risky users list: ${errorMessage(error)}`)
       return ctx
     }
 
@@ -30,7 +29,7 @@ export class RiskyUserCheckStep extends PipelineStep {
     )
 
     if (isRisky) {
-      this.warn(` Author "${ctx.prAuthor}" is on the community risky users list`)
+      this.warn(`Author "${ctx.prAuthor}" is on the community risky users list`)
       ctx.riskyUser = true
     }
 

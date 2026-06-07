@@ -1,20 +1,20 @@
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { AuthorProfileAnalyzer } from '../analysis/author-profile'
 import { GitHubClient } from '../clients/github'
-import { errorMessage, parseTextList } from '../core/utils'
-
-const TRUSTED_ORGS_URL =
-  'https://raw.githubusercontent.com/malvads/slopper/main/.slopper_trusted_orgs'
+import { SlopperClient } from '../clients/slopper'
+import { errorMessage } from '../core/utils'
 
 export class ProfileAnalysisStep extends PipelineStep {
   readonly name = 'profile-analysis'
   private readonly analyzer: AuthorProfileAnalyzer
   private readonly github: GitHubClient
+  private readonly slopper: SlopperClient
 
-  constructor(github: GitHubClient) {
+  constructor(github: GitHubClient, slopper: SlopperClient) {
     super()
     this.analyzer = new AuthorProfileAnalyzer(github)
     this.github = github
+    this.slopper = slopper
   }
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
@@ -25,7 +25,7 @@ export class ProfileAnalysisStep extends PipelineStep {
 
     const author = ctx.prData.author.login
     if (ctx.prData.author.is_bot) {
-      this.log(` Skipping profile analysis for bot: ${author}`)
+      this.log(`Skipping profile analysis for bot: ${author}`)
       return ctx
     }
 
@@ -43,7 +43,7 @@ export class ProfileAnalysisStep extends PipelineStep {
         `repos_30d=${ctx.authorProfile.distinct_repos_30d}`
       )
     } catch (error: unknown) {
-      this.warn(` Failed: ${errorMessage(error)} — continuing without profile data`)
+      this.warn(`Failed: ${errorMessage(error)} — continuing without profile data`)
     }
 
     const globalOrgs = await this.fetchGlobalTrustedOrgs()
@@ -67,15 +67,11 @@ export class ProfileAnalysisStep extends PipelineStep {
 
   private async fetchGlobalTrustedOrgs(): Promise<string[]> {
     try {
-      const res = await fetch(TRUSTED_ORGS_URL)
-      if (res.ok) {
-        return parseTextList(await res.text())
-      }
-      this.warn(`Failed to fetch global trusted orgs list: ${res.status}`)
+      return await this.slopper.fetchTrustedOrgs()
     } catch (error: unknown) {
-      this.warn(`Could not reach global trusted orgs list: ${errorMessage(error)}`)
+      this.warn(`Could not fetch global trusted orgs: ${errorMessage(error)}`)
+      return []
     }
-    return []
   }
 
   private deduplicateOrgs(orgs: string[]): string[] {
