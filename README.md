@@ -50,8 +50,7 @@ See [`examples/`](examples/) for more setups (strict mode, merge gating, multi-p
 
 ## What it does
 
-- **Scores PRs 0-10** from 24 deterministic checks and 5 optional AI-powered agentic checks
-- **Detects AI-generated code** using heuristic fingerprinting (comment density, slop vocabulary, verbose identifiers, docstring bloat, boilerplate ratio, structural patterns)
+- **Scores PRs 0-10** from 22 deterministic checks and 5 optional AI-powered agentic checks
 - **Profiles contributors** across GitHub — account age, PR volume, merge ratio, spray score
 - **Labels PRs** as `slopper/slop` or `slopper/legit`
 - **Auto-closes, auto-approves, or requests review** based on configurable thresholds
@@ -95,8 +94,6 @@ thresholds:
   high: 8
 
 label_thresholds:
-  ai_likely: 70
-  ai_possibly: 40
   spray_score: 60
   new_account_days: 30
   activity_burst_prs: 10
@@ -110,7 +107,6 @@ label_thresholds:
     merge_ratio: 20
     account_age: 10
   score_weights:
-    fingerprint: 4
     spray: 3
     supply_chain: 2
     new_account: 1

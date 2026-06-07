@@ -87,13 +87,4 @@ export interface AuthorProfileAnalysis {
     spray_score: number;
     activity_burst: boolean;
 }
-export interface AiFingerprintSignal {
-    name: string;
-    score: number;
-    detail: string;
-}
-export interface AiFingerprintResult {
-    score: number;
-    signals: AiFingerprintSignal[];
-}
 //# sourceMappingURL=types.d.ts.map

@@ -11,8 +11,6 @@ export { SuspiciousCheck } from './suspicious'
 export { SprayAndPrayCheck } from './spray-and-pray'
 export { ActivityBurstCheck } from './activity-burst'
 export { NewAccountCheck } from './new-account'
-export { LikelyAiCheck } from './likely-ai'
-export { PossiblyAiCheck } from './possibly-ai'
 export { MissingDescriptionCheck } from './missing-description'
 export { NoLinkedIssueCheck } from './no-linked-issue'
 export { TooManyFilesCheck } from './too-many-files'
@@ -37,8 +35,6 @@ import { SuspiciousCheck } from './suspicious'
 import { SprayAndPrayCheck } from './spray-and-pray'
 import { ActivityBurstCheck } from './activity-burst'
 import { NewAccountCheck } from './new-account'
-import { LikelyAiCheck } from './likely-ai'
-import { PossiblyAiCheck } from './possibly-ai'
 import { MissingDescriptionCheck } from './missing-description'
 import { NoLinkedIssueCheck } from './no-linked-issue'
 import { TooManyFilesCheck } from './too-many-files'
@@ -63,8 +59,6 @@ const ALL_CHECKS: Check[] = [
   new SprayAndPrayCheck(),
   new ActivityBurstCheck(),
   new NewAccountCheck(),
-  new LikelyAiCheck(),
-  new PossiblyAiCheck(),
   new MissingDescriptionCheck(),
   new NoLinkedIssueCheck(),
   new TooManyFilesCheck(),

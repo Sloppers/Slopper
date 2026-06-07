@@ -31,10 +31,6 @@ export interface CommentOptions {
     merge_ratio: number
     spray_score: number
   }
-  aiFingerprint?: {
-    score: number
-    signals: { name: string; score: number; detail: string }[]
-  }
 }
 
 export class PrCommentManager {
@@ -45,7 +41,7 @@ export class PrCommentManager {
   }
 
   buildCommentBody(opts: CommentOptions): string {
-    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, stepResults, labels, indicators, suggestVouch, authorProfile, aiFingerprint } = opts
+    const { result, deterministicScore, riskLevel, signalBreakdown, agenticResults, stepResults, labels, indicators, suggestVouch, authorProfile } = opts
 
     const score = result?.risk_score ?? deterministicScore ?? 0
     const level = result?.risk_level ?? riskLevel ?? 'unknown'
@@ -134,21 +130,6 @@ export class PrCommentManager {
       md += `### Behavioral Signals\n`
       md += `**Flags:** ${flags}\n\n`
       md += `${result.behavioral_signals.reasoning}\n\n`
-    }
-
-    if (aiFingerprint) {
-      md += `### AI Fingerprint\n`
-      md += `**Score:** ${aiFingerprint.score}/100`
-      if (aiFingerprint.score >= 70) md += ` (likely AI-generated)`
-      else if (aiFingerprint.score >= 40) md += ` (possibly AI-generated)`
-      else md += ` (likely human)`
-      md += '\n\n'
-      if (aiFingerprint.signals.length > 0) {
-        for (const s of aiFingerprint.signals.filter(s => s.score > 20)) {
-          md += `- **${s.name}** (${s.score}/100): ${s.detail}\n`
-        }
-        md += '\n'
-      }
     }
 
     if (agenticResults && agenticResults.length > 0) {

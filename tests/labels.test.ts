@@ -424,37 +424,4 @@ describe('LabelComputer', () => {
     })
   })
 
-  describe('AI fingerprint indicators', () => {
-    it('includes likely-ai-generated when score >= 70', () => {
-      const indicators = computer.computeIndicators({
-        analysis: makeResult(),
-        files: [],
-        firstTimeContributor: false,
-        aiFingerprint: { score: 75, signals: [] }
-      })
-      expect(indicators).toContain('slopper/likely-ai-generated')
-    })
-
-    it('includes possibly-ai-generated when score >= 40 and < 70', () => {
-      const indicators = computer.computeIndicators({
-        analysis: makeResult(),
-        files: [],
-        firstTimeContributor: false,
-        aiFingerprint: { score: 50, signals: [] }
-      })
-      expect(indicators).toContain('slopper/possibly-ai-generated')
-      expect(indicators).not.toContain('slopper/likely-ai-generated')
-    })
-
-    it('no fingerprint indicator when score < 40', () => {
-      const indicators = computer.computeIndicators({
-        analysis: makeResult(),
-        files: [],
-        firstTimeContributor: false,
-        aiFingerprint: { score: 20, signals: [] }
-      })
-      expect(indicators).not.toContain('slopper/likely-ai-generated')
-      expect(indicators).not.toContain('slopper/possibly-ai-generated')
-    })
-  })
 })

@@ -1,4 +1,4 @@
-import { AnalysisResult, PrData, AuthorProfileAnalysis, AiFingerprintResult } from './types';
+import { AnalysisResult, PrData, AuthorProfileAnalysis } from './types';
 import { SlopperConfig } from './config';
 import { ScoreResult } from '../output/checks/check';
 import { AgenticCheckResult } from '../output/checks/agentic-check';
@@ -15,7 +15,6 @@ export interface PipelineContext {
     prAuthor?: string;
     prData?: PrData;
     authorProfile?: AuthorProfileAnalysis;
-    aiFingerprint?: AiFingerprintResult;
     analysisResult?: AnalysisResult;
     analysisFailed?: boolean;
     deterministicScore?: number;

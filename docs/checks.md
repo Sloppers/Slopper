@@ -6,11 +6,10 @@ Slopper runs **two check suites** that feed into a single unified score. Every c
 
 Static checks are pure heuristics: they look at the PR metadata, diff, author profile, and commit history. No API calls, no tokens, no latency. They run on every PR regardless of configuration.
 
-There are **24 static checks** total. The ones that contribute to the score:
+There are **22 static checks** total. The ones that contribute to the score:
 
 | Check | Weight | Factor | What it measures |
 |-------|--------|--------|-----------------|
-| AI Fingerprint | +4 | continuous (0-1) | 6 heuristic signals detecting machine-generated code patterns |
 | Spray Score | +3 | continuous (0-1) | Cross-repo PR volume, distinct repos, merge ratio, account age |
 | Supply Chain | +2 | binary | Lockfile changes without manifest, suspicious resolved URLs, version downgrades |
 | New Account | +1 | binary | Account younger than configurable threshold (default 30 days) |
@@ -28,7 +27,6 @@ The remaining static checks are **indicator-only** (weight 0) — they flag patt
 | CI Modified | `slopper/ci-modified` | CI/CD config files changed |
 | Dependencies Modified | `slopper/dependencies-modified` | Lockfiles or manifests changed |
 | Activity Burst | `slopper/activity-burst` | Unusual spike in PR activity |
-| Possibly AI | `slopper/possibly-ai-generated` | Moderate AI fingerprint score (40-70) |
 | Missing Description | `slopper/missing-description` | PR body is empty |
 | No Linked Issue | `slopper/no-linked-issue` | No issue reference in PR body |
 | Too Many Files | `slopper/too-many-files` | PR changes more files than threshold |
@@ -77,7 +75,7 @@ Only two GitHub labels are applied to PRs:
 | `slopper/slop` | Score >= medium threshold (default 5) |
 | `slopper/legit` | Score < medium threshold |
 
-All other signals (risk level, AI fingerprint results, check triggers, agentic findings) are shown as **indicators** in the PR comment body — they inform you without cluttering the label sidebar.
+All other signals (risk level, check triggers, agentic findings) are shown as **indicators** in the PR comment body — they inform you without cluttering the label sidebar.
 
 ## Outputs
 

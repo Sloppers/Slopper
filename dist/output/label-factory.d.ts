@@ -28,8 +28,6 @@ export declare const Indicators: {
     readonly SPRAY_AND_PRAY: "slopper/spray-and-pray";
     readonly ACTIVITY_BURST: "slopper/activity-burst";
     readonly NEW_ACCOUNT: "slopper/new-account";
-    readonly LIKELY_AI: "slopper/likely-ai-generated";
-    readonly POSSIBLY_AI: "slopper/possibly-ai-generated";
     readonly MISSING_DESCRIPTION: "slopper/missing-description";
     readonly NO_LINKED_ISSUE: "slopper/no-linked-issue";
     readonly TOO_MANY_FILES: "slopper/too-many-files";

@@ -1,4 +1,4 @@
-import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types';
+import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis } from '../core/types';
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config';
 import { Check, CheckContext, ScoreResult } from './checks';
 export type { CheckContext, ScoreResult };
@@ -9,7 +9,6 @@ export interface ComputeLabelsOptions {
     firstTimeContributor: boolean;
     prData?: PrData;
     authorProfile?: AuthorProfileAnalysis;
-    aiFingerprint?: AiFingerprintResult;
     riskyUser?: boolean;
     trustedOrg?: boolean;
 }
@@ -29,14 +28,12 @@ export declare class LabelComputer {
     };
     static computeDeterministicScore(opts: {
         authorProfile?: AuthorProfileAnalysis;
-        aiFingerprint?: AiFingerprintResult;
         riskyUser?: boolean;
         trustedOrg?: boolean;
         weights?: ScoreWeightsConfig;
     }): number;
     static computeDeterministicResult(opts: {
         authorProfile?: AuthorProfileAnalysis;
-        aiFingerprint?: AiFingerprintResult;
         riskyUser?: boolean;
         trustedOrg?: boolean;
         weights?: ScoreWeightsConfig;

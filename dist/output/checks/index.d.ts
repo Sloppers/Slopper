@@ -11,8 +11,6 @@ export { SuspiciousCheck } from './suspicious';
 export { SprayAndPrayCheck } from './spray-and-pray';
 export { ActivityBurstCheck } from './activity-burst';
 export { NewAccountCheck } from './new-account';
-export { LikelyAiCheck } from './likely-ai';
-export { PossiblyAiCheck } from './possibly-ai';
 export { MissingDescriptionCheck } from './missing-description';
 export { NoLinkedIssueCheck } from './no-linked-issue';
 export { TooManyFilesCheck } from './too-many-files';

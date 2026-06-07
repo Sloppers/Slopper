@@ -1,4 +1,4 @@
-import { PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../../core/types'
+import { PrData, AuthorProfileAnalysis } from '../../core/types'
 import { CheckContext } from './check'
 
 export interface AgenticCheckResult {

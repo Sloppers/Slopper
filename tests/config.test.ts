@@ -88,11 +88,11 @@ rules:
       expect(config.rules.max_files_changed).toBe(50)
       expect(config.rules.block_first_time_contributors).toBe(true)
       expect(config.label_thresholds).toEqual({
-        ai_likely: 70, ai_possibly: 40, spray_score: 60,
+        spray_score: 60,
         new_account_days: 30, activity_burst_prs: 10, activity_burst_days: 7,
         spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
         merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8,
-        score_weights: { fingerprint: 4, spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
+        score_weights: { spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
       })
     })
 
@@ -100,8 +100,6 @@ rules:
       const yaml = `
 vouched: []
 label_thresholds:
-  ai_likely: 80
-  ai_possibly: 50
   spray_score: 40
   new_account_days: 60
   activity_burst_prs: 5
@@ -120,8 +118,6 @@ label_thresholds:
       const config = await loader.load()
 
       expect(config.label_thresholds).toEqual({
-        ai_likely: 80,
-        ai_possibly: 50,
         spray_score: 40,
         new_account_days: 60,
         activity_burst_prs: 5,
@@ -130,7 +126,7 @@ label_thresholds:
         merge_ratio_suspect: 0.3,
         security_review_score: 7,
         suspicious_score: 9,
-        score_weights: { fingerprint: 4, spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
+        score_weights: { spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
       })
     })
 
@@ -155,7 +151,7 @@ actions:
       expect(config.thresholds).toEqual({ low: 2, medium: 5, high: 8 })
       expect(config.ignore_paths).toEqual([])
       expect(config.rules.require_description).toBe(false)
-      expect(config.label_thresholds.ai_likely).toBe(70)
+      expect(config.label_thresholds.spray_score).toBe(60)
     })
   })
 
@@ -172,11 +168,11 @@ actions:
       expect(config.ignore_paths).toEqual([])
       expect(config.rules.block_first_time_contributors).toBe(false)
       expect(config.label_thresholds).toEqual({
-        ai_likely: 70, ai_possibly: 40, spray_score: 60,
+        spray_score: 60,
         new_account_days: 30, activity_burst_prs: 10, activity_burst_days: 7,
         spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
         merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8,
-        score_weights: { fingerprint: 4, spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
+        score_weights: { spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
       })
     })
   })

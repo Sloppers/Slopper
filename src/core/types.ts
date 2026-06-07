@@ -94,13 +94,3 @@ export interface AuthorProfileAnalysis {
   activity_burst: boolean
 }
 
-export interface AiFingerprintSignal {
-  name: string
-  score: number
-  detail: string
-}
-
-export interface AiFingerprintResult {
-  score: number
-  signals: AiFingerprintSignal[]
-}

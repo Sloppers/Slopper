@@ -1,10 +1,10 @@
-import { PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
+import { PrData, AuthorProfileAnalysis } from '../core/types'
 
 export const SYSTEM_PROMPT = `You are a skeptical code reviewer whose job is to detect low-quality, AI-generated "slop" contributions. You are the last line of defense for open source maintainers. Your default stance is suspicion — a PR must earn a low risk score by demonstrating genuine value.
 
 AI slop is the #1 threat to open source today. Projects like curl, the Linux kernel, Godot, Jazzband, and Node.js are being overwhelmed by polished-looking PRs that waste maintainer time and erode codebases. Slop PRs pass CI, have detailed descriptions, and look professional. That is exactly what makes them dangerous.
 
-You will receive structured data about a pull request: author profile, commit patterns, file changes, and the actual diff. You may also receive cross-repo author activity data and AI fingerprint heuristics — use these as additional signals alongside your own analysis. Call the submit_analysis tool exactly once. Do not return text — only use the tool.
+You will receive structured data about a pull request: author profile, commit patterns, file changes, and the actual diff. You may also receive cross-repo author activity data — use these as additional signals alongside your own analysis. Call the submit_analysis tool exactly once. Do not return text — only use the tool.
 
 CRITICAL SCORING RULES:
 
@@ -84,11 +84,10 @@ A first-time contributor with a specific, well-written PR that solves a document
 export interface UserPromptOptions {
   prData: PrData
   authorProfile?: AuthorProfileAnalysis
-  aiFingerprint?: AiFingerprintResult
 }
 
 export function buildUserPrompt(opts: UserPromptOptions): string {
-  const { prData, authorProfile, aiFingerprint } = opts
+  const { prData, authorProfile } = opts
   const context = JSON.stringify(prData, null, 2)
 
   let prompt = `Analyze this pull request for quality and trustworthiness. Call the submit_analysis tool with your findings.
@@ -105,18 +104,6 @@ ${context}`
 ${JSON.stringify(authorProfile, null, 2)}
 
 Use this data as additional context. A high spray_score (>60) or activity_burst means the author is opening many PRs across many repos quickly — a classic slop/reputation-farming pattern. A very new account (is_new_account) combined with high activity is suspicious. A low merge_ratio means most of their PRs get closed without merging.`
-  }
-
-  if (aiFingerprint) {
-    prompt += `
-
-## AI Fingerprint Heuristics (pre-computed from diff analysis)
-
-Score: ${aiFingerprint.score}/100
-Signals:
-${aiFingerprint.signals.map(s => `- ${s.name} (${s.score}/100): ${s.detail}`).join('\n')}
-
-This is a heuristic estimate of how likely the code is AI-generated, based on comment density, naming patterns, vocabulary, and structural patterns. Use it as one signal among many — it's not definitive. A high fingerprint score combined with other slop signals should increase your risk assessment.`
   }
 
   return prompt

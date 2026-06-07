@@ -23,14 +23,6 @@ export interface CommentOptions {
         merge_ratio: number;
         spray_score: number;
     };
-    aiFingerprint?: {
-        score: number;
-        signals: {
-            name: string;
-            score: number;
-            detail: string;
-        }[];
-    };
 }
 export declare class PrCommentManager {
     private readonly github;

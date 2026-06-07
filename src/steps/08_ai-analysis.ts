@@ -32,7 +32,6 @@ export class AiAnalysisStep extends PipelineStep {
     const userPrompt = buildUserPrompt({
       prData: ctx.prData,
       authorProfile: ctx.authorProfile,
-      aiFingerprint: ctx.aiFingerprint
     })
 
     try {

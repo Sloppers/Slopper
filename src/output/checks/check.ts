@@ -1,4 +1,4 @@
-import { AnalysisResult, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../../core/types'
+import { AnalysisResult, FileInfo, PrData, AuthorProfileAnalysis } from '../../core/types'
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig } from '../../core/config'
 
 export interface CheckContext {
@@ -8,7 +8,6 @@ export interface CheckContext {
   firstTimeContributor: boolean
   prData?: PrData
   authorProfile?: AuthorProfileAnalysis
-  aiFingerprint?: AiFingerprintResult
   riskyUser?: boolean
   trustedOrg?: boolean
   thresholds: ThresholdsConfig

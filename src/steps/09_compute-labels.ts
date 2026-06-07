@@ -20,7 +20,6 @@ export class ComputeLabelsStep extends PipelineStep {
       firstTimeContributor: ctx.prData.author.first_time_contributor,
       prData: ctx.prData,
       authorProfile: ctx.authorProfile,
-      aiFingerprint: ctx.aiFingerprint,
       riskyUser: ctx.riskyUser,
       trustedOrg: ctx.trustedOrg
     }

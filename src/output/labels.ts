@@ -1,4 +1,4 @@
-import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
+import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis } from '../core/types'
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config'
 import { Check, CheckContext, ScoreResult, allChecks, computeScore } from './checks'
 import { Labels, Indicators, confidenceLabel, riskLabel } from './label-factory'
@@ -12,7 +12,6 @@ export interface ComputeLabelsOptions {
   firstTimeContributor: boolean
   prData?: PrData
   authorProfile?: AuthorProfileAnalysis
-  aiFingerprint?: AiFingerprintResult
   riskyUser?: boolean
   trustedOrg?: boolean
 }
@@ -31,8 +30,6 @@ export class LabelComputer {
   ) {
     this.thresholds = thresholds ?? { low: 2, medium: 5, high: 8 }
     this.labelThresholds = labelThresholds ?? {
-      ai_likely: 70,
-      ai_possibly: 40,
       spray_score: 60,
       new_account_days: 30,
       activity_burst_prs: 10,
@@ -42,7 +39,7 @@ export class LabelComputer {
       security_review_score: 6,
       suspicious_score: 8,
       score_weights: {
-        fingerprint: 4, spray: 3, new_account: 1,
+        spray: 3, new_account: 1,
         low_merge_ratio: 1, risky_user: 1, trusted_org: -2
       }
     }
@@ -125,7 +122,6 @@ export class LabelComputer {
 
   static computeDeterministicScore(opts: {
     authorProfile?: AuthorProfileAnalysis
-    aiFingerprint?: AiFingerprintResult
     riskyUser?: boolean
     trustedOrg?: boolean
     weights?: ScoreWeightsConfig
@@ -136,7 +132,6 @@ export class LabelComputer {
 
   static computeDeterministicResult(opts: {
     authorProfile?: AuthorProfileAnalysis
-    aiFingerprint?: AiFingerprintResult
     riskyUser?: boolean
     trustedOrg?: boolean
     weights?: ScoreWeightsConfig
@@ -146,7 +141,6 @@ export class LabelComputer {
       files: [],
       firstTimeContributor: false,
       authorProfile: opts.authorProfile,
-      aiFingerprint: opts.aiFingerprint,
       riskyUser: opts.riskyUser,
       trustedOrg: opts.trustedOrg
     })

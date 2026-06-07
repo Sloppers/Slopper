@@ -12,7 +12,6 @@ import {
   VouchApplyStep,
   CollectDataStep,
   ProfileAnalysisStep,
-  FingerprintStep,
   AiAnalysisStep,
   AgenticChecksStep,
   ComputeLabelsStep,
@@ -64,7 +63,6 @@ async function run(): Promise<void> {
   const steps: PipelineStep[] = [
     new CollectDataStep(gh),
     new ProfileAnalysisStep(gh),
-    new FingerprintStep()
   ]
 
   if (useAi) {

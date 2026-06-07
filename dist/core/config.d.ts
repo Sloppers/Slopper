@@ -30,7 +30,6 @@ export interface SprayWeightsConfig {
     account_age: number;
 }
 export interface ScoreWeightsConfig {
-    fingerprint: number;
     spray: number;
     new_account: number;
     low_merge_ratio: number;
@@ -38,8 +37,6 @@ export interface ScoreWeightsConfig {
     trusted_org: number;
 }
 export interface LabelThresholdsConfig {
-    ai_likely: number;
-    ai_possibly: number;
     spray_score: number;
     spray_weights: SprayWeightsConfig;
     new_account_days: number;

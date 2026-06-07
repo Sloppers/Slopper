@@ -39,7 +39,6 @@ export interface SprayWeightsConfig {
 }
 
 export interface ScoreWeightsConfig {
-  fingerprint: number
   spray: number
   new_account: number
   low_merge_ratio: number
@@ -48,8 +47,6 @@ export interface ScoreWeightsConfig {
 }
 
 export interface LabelThresholdsConfig {
-  ai_likely: number
-  ai_possibly: number
   spray_score: number
   spray_weights: SprayWeightsConfig
   new_account_days: number
@@ -107,8 +104,6 @@ const DEFAULT_CONFIG: SlopperConfig = {
     high: 8
   },
   label_thresholds: {
-    ai_likely: 70,
-    ai_possibly: 40,
     spray_score: 60,
     new_account_days: 30,
     activity_burst_prs: 10,
@@ -123,7 +118,6 @@ const DEFAULT_CONFIG: SlopperConfig = {
     security_review_score: 6,
     suspicious_score: 8,
     score_weights: {
-      fingerprint: 4,
       spray: 3,
       new_account: 1,
       low_merge_ratio: 1,
@@ -257,8 +251,6 @@ export class ConfigLoader {
 
     const parsedLabelThresholds = (parsed.label_thresholds ?? {}) as Record<string, unknown>
     const label_thresholds: LabelThresholdsConfig = {
-      ai_likely: Number(parsedLabelThresholds.ai_likely ?? DEFAULT_CONFIG.label_thresholds.ai_likely),
-      ai_possibly: Number(parsedLabelThresholds.ai_possibly ?? DEFAULT_CONFIG.label_thresholds.ai_possibly),
       spray_score: Number(parsedLabelThresholds.spray_score ?? DEFAULT_CONFIG.label_thresholds.spray_score),
       new_account_days: Number(parsedLabelThresholds.new_account_days ?? DEFAULT_CONFIG.label_thresholds.new_account_days),
       activity_burst_prs: Number(parsedLabelThresholds.activity_burst_prs ?? DEFAULT_CONFIG.label_thresholds.activity_burst_prs),
@@ -280,7 +272,6 @@ export class ConfigLoader {
         const pw = (parsedLabelThresholds.score_weights ?? {}) as Record<string, unknown>
         const dw = DEFAULT_CONFIG.label_thresholds.score_weights
         return {
-          fingerprint: Number(pw.fingerprint ?? dw.fingerprint),
           spray: Number(pw.spray ?? dw.spray),
           new_account: Number(pw.new_account ?? dw.new_account),
           low_merge_ratio: Number(pw.low_merge_ratio ?? dw.low_merge_ratio),

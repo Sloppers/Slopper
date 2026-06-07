@@ -55,7 +55,6 @@ export class PostResultsStep extends PipelineStep {
       indicators: ctx.indicators,
       suggestVouch,
       authorProfile: ctx.authorProfile,
-      aiFingerprint: ctx.aiFingerprint
     })
     await this.commentManager.upsertComment(prNumber, commentBody)
 

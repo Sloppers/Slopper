@@ -36,8 +36,6 @@ export const Indicators = {
   SPRAY_AND_PRAY: 'slopper/spray-and-pray',
   ACTIVITY_BURST: 'slopper/activity-burst',
   NEW_ACCOUNT: 'slopper/new-account',
-  LIKELY_AI: 'slopper/likely-ai-generated',
-  POSSIBLY_AI: 'slopper/possibly-ai-generated',
   MISSING_DESCRIPTION: 'slopper/missing-description',
   NO_LINKED_ISSUE: 'slopper/no-linked-issue',
   TOO_MANY_FILES: 'slopper/too-many-files',
