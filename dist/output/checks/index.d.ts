@@ -1,5 +1,6 @@
 export { Check, StaticCheck, CheckContext, ScoreResult } from './check';
 export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic-check';
+export { DerivedIndicator, allDerivedIndicators } from './derived-indicator';
 export { allAgenticChecks } from './agentic';
 export { FirstTimeContributorCheck } from './first-time-contributor';
 export { CiModifiedCheck } from './ci-modified';

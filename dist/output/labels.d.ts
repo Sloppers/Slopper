@@ -17,13 +17,10 @@ export declare class LabelComputer {
     private readonly labelThresholds;
     private readonly rules;
     private readonly checks;
+    private readonly derivedIndicators;
     constructor(thresholds?: ThresholdsConfig, rules?: RulesConfig, labelThresholds?: LabelThresholdsConfig, checks?: Check[]);
     compute(opts: ComputeLabelsOptions): string[];
     computeIndicators(opts: ComputeLabelsOptions): string[];
-    private isApproved;
-    private isDeterministic;
-    private needsSecurityReview;
-    private isSuspicious;
     computeFailedLabels(): string[];
     shouldSuggestVouch(analysis: AnalysisResult, author: AuthorProfile): boolean;
     computeScoreFromChecks(opts: ComputeLabelsOptions): {

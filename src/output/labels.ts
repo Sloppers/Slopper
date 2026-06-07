@@ -1,7 +1,7 @@
 import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis } from '../core/types'
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config'
-import { Check, CheckContext, ScoreResult, allChecks, computeScore } from './checks'
-import { Labels, Indicators, confidenceLabel, riskLabel } from './label-factory'
+import { Check, CheckContext, ScoreResult, allChecks, computeScore, DerivedIndicator, allDerivedIndicators } from './checks'
+import { Labels, confidenceLabel, riskLabel } from './label-factory'
 
 export type { CheckContext, ScoreResult }
 export { Check }
@@ -21,6 +21,7 @@ export class LabelComputer {
   private readonly labelThresholds: LabelThresholdsConfig
   private readonly rules: RulesConfig
   private readonly checks: Check[]
+  private readonly derivedIndicators: DerivedIndicator[]
 
   constructor(
     thresholds?: ThresholdsConfig,
@@ -49,6 +50,7 @@ export class LabelComputer {
       block_first_time_contributors: false
     }
     this.checks = checks ?? allChecks()
+    this.derivedIndicators = allDerivedIndicators()
   }
 
   compute(opts: ComputeLabelsOptions): string[] {
@@ -89,36 +91,13 @@ export class LabelComputer {
       }
     }
 
-    if (this.isApproved(score, opts.analysis)) {
-      indicators.push(Indicators.APPROVED)
-    }
-    if (this.isDeterministic(opts.analysis)) {
-      indicators.push(Indicators.DETERMINISTIC_MODE)
-    }
-    if (this.needsSecurityReview(score)) {
-      indicators.push(Indicators.SECURITY_REVIEW)
-    }
-    if (this.isSuspicious(score)) {
-      indicators.push(Indicators.SUSPICIOUS)
+    for (const indicator of this.derivedIndicators) {
+      if (indicator.evaluate(ctx)) {
+        indicators.push(indicator.label)
+      }
     }
 
     return indicators
-  }
-
-  private isApproved(score: number, analysis?: AnalysisResult): boolean {
-    return !!analysis && score <= this.thresholds.low && analysis.confidence === 'high'
-  }
-
-  private isDeterministic(analysis?: AnalysisResult): boolean {
-    return !analysis
-  }
-
-  private needsSecurityReview(score: number): boolean {
-    return score >= this.labelThresholds.security_review_score
-  }
-
-  private isSuspicious(score: number): boolean {
-    return score >= this.labelThresholds.suspicious_score
   }
 
   computeFailedLabels(): string[] {
