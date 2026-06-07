@@ -1,12 +1,14 @@
-import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext } from '../agentic-check'
 import { Indicators } from '../../label-factory'
-import { truncateDiff } from '../../../core/utils'
+import { prHeader, prDescription, filesList, diffBlock } from './prompt-factory'
 
 export class DescriptionMismatchCheck extends AgenticCheck {
   readonly key = 'description-mismatch'
   readonly label = Indicators.AI_DESCRIPTION_MISMATCH
   readonly description = 'Detects when PR description does not match what the diff actually does'
   readonly triggerKey = 'has_mismatch'
+  readonly toolName = 'submit_mismatch_check'
+  readonly triggerDescription = 'Whether the description misrepresents the actual changes'
   readonly defaultWeight = 1
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -25,43 +27,7 @@ Do NOT flag when:
 
 Call the tool with your assessment.`
 
-    const diff = truncateDiff(ctx.prData.diff, 8000)
-
-    const user = `## PR: ${ctx.prData.title}
-
-**Description:**
-${ctx.prData.body || '(no description)'}
-
-**Files changed:** ${ctx.prData.files.map(f => `${f.filename} (+${f.additions}/-${f.deletions})`).join(', ')}
-
-**Diff:**
-\`\`\`
-${diff}
-\`\`\``
-
+    const user = [prHeader(ctx), prDescription(ctx), filesList(ctx), diffBlock(ctx, 8000)].join('\n\n')
     return { system, user }
   }
-
-  buildToolSchema(): AgenticToolSchema {
-    return {
-      name: 'submit_mismatch_check',
-      description: 'Submit description-vs-diff mismatch analysis',
-      schema: {
-        type: 'object' as const,
-        additionalProperties: false,
-        required: ['has_mismatch', 'confidence', 'reasoning', 'evidence'],
-        properties: {
-          has_mismatch: { type: 'boolean' as const, description: 'Whether the description misrepresents the actual changes' },
-          confidence: { type: 'string' as const, enum: ['low', 'medium', 'high'] },
-          reasoning: { type: 'string' as const, description: '2-3 sentence explanation' },
-          evidence: {
-            type: 'array' as const,
-            items: { type: 'string' as const },
-            description: 'Specific mismatches found'
-          }
-        }
-      }
-    }
-  }
-
 }

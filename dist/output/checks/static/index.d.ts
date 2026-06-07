@@ -1,0 +1,21 @@
+export { FirstTimeContributorCheck } from './first-time-contributor';
+export { CiModifiedCheck } from './ci-modified';
+export { DependenciesModifiedCheck } from './dependencies-modified';
+export { SprayAndPrayCheck } from './spray-and-pray';
+export { ActivityBurstCheck } from './activity-burst';
+export { NewAccountCheck } from './new-account';
+export { MissingDescriptionCheck } from './missing-description';
+export { NoLinkedIssueCheck } from './no-linked-issue';
+export { TooManyFilesCheck } from './too-many-files';
+export { RiskyUserCheck } from './risky-user';
+export { TrustedOrgCheck } from './trusted-org';
+export { HeavyChangesCheck } from './heavy-changes';
+export { LargeFileCheck } from './large-file';
+export { LowMergeRatioCheck } from './low-merge-ratio';
+export { SupplyChainCheck } from './supply-chain';
+export { UnsignedCommitsCheck } from './unsigned-commits';
+export { NoTestsCheck } from './no-tests';
+export { CodeDuplicationCheck } from './code-duplication';
+import { StaticCheck } from '../check';
+export declare function allStaticChecks(): StaticCheck[];
+//# sourceMappingURL=index.d.ts.map

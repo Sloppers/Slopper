@@ -1,5 +1,6 @@
 import { PrData, AuthorProfileAnalysis } from '../../core/types'
 import { CheckContext } from './check'
+import { buildCheckSchema } from './agentic/prompt-factory'
 
 export interface AgenticCheckResult {
   triggered: boolean
@@ -24,10 +25,19 @@ export abstract class AgenticCheck {
   abstract readonly label: string
   abstract readonly description: string
   abstract readonly triggerKey: string
+  abstract readonly toolName: string
+  abstract readonly triggerDescription: string
   readonly defaultWeight: number = 0
 
   abstract buildPrompt(ctx: AgenticCheckContext): { system: string; user: string }
-  abstract buildToolSchema(): AgenticToolSchema
+
+  buildToolSchema(): AgenticToolSchema {
+    return buildCheckSchema({
+      toolName: this.toolName,
+      triggerKey: this.triggerKey,
+      triggerDescription: this.triggerDescription,
+    })
+  }
 
   parseResult(raw: Record<string, unknown>): AgenticCheckResult {
     return {

@@ -1,12 +1,14 @@
-import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext } from '../agentic-check'
 import { Indicators } from '../../label-factory'
-import { truncateDiff } from '../../../core/utils'
+import { prHeader, filesList, diffBlock } from './prompt-factory'
 
 export class CodeQualityCheck extends AgenticCheck {
   readonly key = 'code-quality'
   readonly label = Indicators.AI_CODE_QUALITY
   readonly description = 'Detects subtle code quality issues: missing edge cases, unnecessary complexity, duplicate functionality'
   readonly triggerKey = 'has_issues'
+  readonly toolName = 'submit_quality_check'
+  readonly triggerDescription = 'Whether significant quality issues were found'
   readonly defaultWeight = 1
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -26,41 +28,7 @@ Do NOT flag:
 
 Be specific. Vague concerns are not useful. Call the tool with your assessment.`
 
-    const diff = truncateDiff(ctx.prData.diff, 10000)
-
-    const user = `## PR: ${ctx.prData.title}
-
-**Files changed:**
-${ctx.prData.files.map(f => `- ${f.filename} (+${f.additions}/-${f.deletions})`).join('\n')}
-
-**Diff:**
-\`\`\`
-${diff}
-\`\`\``
-
+    const user = [prHeader(ctx), filesList(ctx), diffBlock(ctx, 10000)].join('\n\n')
     return { system, user }
   }
-
-  buildToolSchema(): AgenticToolSchema {
-    return {
-      name: 'submit_quality_check',
-      description: 'Submit code quality analysis',
-      schema: {
-        type: 'object' as const,
-        additionalProperties: false,
-        required: ['has_issues', 'confidence', 'reasoning', 'evidence'],
-        properties: {
-          has_issues: { type: 'boolean' as const, description: 'Whether significant quality issues were found' },
-          confidence: { type: 'string' as const, enum: ['low', 'medium', 'high'] },
-          reasoning: { type: 'string' as const, description: '2-3 sentence summary of findings' },
-          evidence: {
-            type: 'array' as const,
-            items: { type: 'string' as const },
-            description: 'Specific issues found with file and description (e.g. "src/auth.ts: missing null check on user lookup")'
-          }
-        }
-      }
-    }
-  }
-
 }

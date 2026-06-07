@@ -1,12 +1,14 @@
-import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext } from '../agentic-check'
 import { Indicators } from '../../label-factory'
-import { truncateDiff } from '../../../core/utils'
+import { prHeader, filesList, diffBlock } from './prompt-factory'
 
 export class SecurityConcernCheck extends AgenticCheck {
   readonly key = 'security-concern'
   readonly label = Indicators.AI_SECURITY_CONCERN
   readonly description = 'Detects security concerns: obfuscated code, credential patterns, suspicious URLs, backdoors'
   readonly triggerKey = 'has_concerns'
+  readonly toolName = 'submit_security_check'
+  readonly triggerDescription = 'Whether security concerns were found'
   readonly defaultWeight = 2
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -28,41 +30,7 @@ Do NOT flag:
 
 Err on the side of caution — false positives are better than missed security issues. Call the tool with your assessment.`
 
-    const diff = truncateDiff(ctx.prData.diff, 10000)
-
-    const user = `## PR: ${ctx.prData.title}
-
-**Files changed:**
-${ctx.prData.files.map(f => `- ${f.filename} (+${f.additions}/-${f.deletions})${f.is_binary ? ' [BINARY]' : ''}`).join('\n')}
-
-**Diff:**
-\`\`\`
-${diff}
-\`\`\``
-
+    const user = [prHeader(ctx), filesList(ctx, { showBinary: true }), diffBlock(ctx, 10000)].join('\n\n')
     return { system, user }
   }
-
-  buildToolSchema(): AgenticToolSchema {
-    return {
-      name: 'submit_security_check',
-      description: 'Submit security concern analysis',
-      schema: {
-        type: 'object' as const,
-        additionalProperties: false,
-        required: ['has_concerns', 'confidence', 'reasoning', 'evidence'],
-        properties: {
-          has_concerns: { type: 'boolean' as const, description: 'Whether security concerns were found' },
-          confidence: { type: 'string' as const, enum: ['low', 'medium', 'high'] },
-          reasoning: { type: 'string' as const, description: '2-3 sentence summary of findings' },
-          evidence: {
-            type: 'array' as const,
-            items: { type: 'string' as const },
-            description: 'Specific security concerns with file and description (e.g. "scripts/deploy.sh: base64-encoded payload executed via eval")'
-          }
-        }
-      }
-    }
-  }
-
 }

@@ -1,12 +1,14 @@
-import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext } from '../agentic-check'
 import { Indicators } from '../../label-factory'
-import { truncateDiff } from '../../../core/utils'
+import { prHeader, prDescription, commitMessages, prStats, diffBlock } from './prompt-factory'
 
 export class SlopContentCheck extends AgenticCheck {
   readonly key = 'slop-content'
   readonly label = Indicators.AI_SLOP_CONTENT
   readonly description = 'Detects generic AI-generated slop: phantom fixes, boilerplate inflation, templated descriptions'
   readonly triggerKey = 'is_slop'
+  readonly toolName = 'submit_slop_check'
+  readonly triggerDescription = 'Whether this PR appears to be AI-generated slop'
   readonly defaultWeight = 2
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -26,47 +28,7 @@ Signs it's NOT slop:
 
 Be skeptical but fair. Call the tool with your assessment.`
 
-    const diff = truncateDiff(ctx.prData.diff, 8000)
-
-    const user = `## PR: ${ctx.prData.title}
-
-**Description:**
-${ctx.prData.body || '(no description)'}
-
-**Commits (${ctx.prData.commits.count}):**
-${ctx.prData.commits.messages.slice(0, 10).map(m => `- ${m}`).join('\n')}
-
-**Files changed:** ${ctx.prData.changed_files_count}
-**Additions:** ${ctx.prData.additions} | **Deletions:** ${ctx.prData.deletions}
-
-**Diff:**
-\`\`\`
-${diff}
-\`\`\``
-
+    const user = [prHeader(ctx), prDescription(ctx), commitMessages(ctx), prStats(ctx), diffBlock(ctx, 8000)].join('\n\n')
     return { system, user }
   }
-
-  buildToolSchema(): AgenticToolSchema {
-    return {
-      name: 'submit_slop_check',
-      description: 'Submit slop content analysis for a pull request',
-      schema: {
-        type: 'object' as const,
-        additionalProperties: false,
-        required: ['is_slop', 'confidence', 'reasoning', 'evidence'],
-        properties: {
-          is_slop: { type: 'boolean' as const, description: 'Whether this PR appears to be AI-generated slop' },
-          confidence: { type: 'string' as const, enum: ['low', 'medium', 'high'] },
-          reasoning: { type: 'string' as const, description: '2-3 sentence explanation' },
-          evidence: {
-            type: 'array' as const,
-            items: { type: 'string' as const },
-            description: 'Specific indicators found (e.g. "Generic commit message: Fix typo")'
-          }
-        }
-      }
-    }
-  }
-
 }
