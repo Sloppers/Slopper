@@ -13,6 +13,7 @@ export declare class BotGitHubClient extends GitHubClient {
     requestReviewers(prNumber: number, reviewers: string[]): Promise<void>;
     createOrUpdateFile(path: string, message: string, content: string): Promise<void>;
     createVouchPr(username: string, content: string): Promise<number>;
+    reportUser(username: string, reporter: string, pr: number): Promise<void>;
     private callBot;
 }
 //# sourceMappingURL=bot-github.d.ts.map

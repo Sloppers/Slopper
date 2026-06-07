@@ -8,7 +8,7 @@ export declare class BannedCheckStep extends PipelineStep {
     private readonly commentManager;
     constructor(github: GitHubClient, slopper: SlopperClient);
     execute(ctx: PipelineContext): Promise<PipelineContext>;
-    private reportToBot;
+    private reportUserGlobally;
     private banAndClose;
     private findReportCommand;
     private addUserToBannedList;

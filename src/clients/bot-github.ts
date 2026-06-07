@@ -53,6 +53,10 @@ export class BotGitHubClient extends GitHubClient {
     return res.prNumber as number
   }
 
+  override async reportUser(username: string, reporter: string, pr: number): Promise<void> {
+    await this.callBot({ type: 'globalReport', username, reporter, pr })
+  }
+
   private async callBot(action: Record<string, unknown>): Promise<Record<string, unknown>> {
     const res = await fetch(`${this.botUrl}/api/write`, {
       method: 'POST',

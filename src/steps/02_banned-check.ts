@@ -5,8 +5,6 @@ import { SlopperClient } from '../clients/slopper'
 import { Labels } from '../output/label-factory'
 import { errorMessage, buildMetadataEntry } from '../core/utils'
 
-const BOT_API = 'https://slopper-bot.thegexi.workers.dev/api/report'
-
 export class BannedCheckStep extends PipelineStep {
   readonly name = 'banned-check'
   private readonly github: GitHubClient
@@ -33,7 +31,7 @@ export class BannedCheckStep extends PipelineStep {
           pr: ctx.prNumber,
           repo: `${this.github.owner}/${this.github.repo}`,
         })
-        await this.reportToBot(ctx.prAuthor, ctx.prNumber, report.commentId)
+        await this.reportUserGlobally(ctx.prAuthor, report.reporter, ctx.prNumber)
         return this.banAndClose(ctx,
           `reported by maintainer **@${report.reporter}** via \`/slopper report\`.\n\n` +
           `> This account has been reported to the [Slopper global community list](https://github.com/Sloppers/community-list). ` +
@@ -53,26 +51,12 @@ export class BannedCheckStep extends PipelineStep {
     return ctx
   }
 
-  private async reportToBot(reportedUser: string, prNumber: number, commentId: number): Promise<void> {
+  private async reportUserGlobally(reportedUser: string, reporter: string, prNumber: number): Promise<void> {
     try {
-      const res = await fetch(BOT_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          owner: this.github.owner,
-          repo: this.github.repo,
-          pr: prNumber,
-          reportedUser,
-          commentId
-        })
-      })
-      if (res.ok) {
-        this.log(`Reported "${reportedUser}" to Slopper global community list`)
-      } else {
-        this.warn(`Bot returned ${res.status} — global report may have failed`)
-      }
+      await this.github.reportUser(reportedUser, reporter, prNumber)
+      this.log(`Reported "${reportedUser}" to Slopper global community list`)
     } catch (error: unknown) {
-      this.warn(`Could not reach Slopper bot: ${errorMessage(error)}`)
+      this.warn(`Global report failed: ${errorMessage(error)}`)
     }
   }
 

@@ -335,6 +335,10 @@ export class GitHubClient {
     return data.default_branch
   }
 
+  async reportUser(_username: string, _reporter: string, _pr: number): Promise<void> {
+    // no-op in base client — only BotGitHubClient reports globally
+  }
+
   async listDirectory(path: string): Promise<string[]> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
