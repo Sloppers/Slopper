@@ -10,9 +10,20 @@
 
 ---
 
-Open source maintainers are drowning in AI-generated pull requests that look clean but add nothing. Slopper is a GitHub Action that scores every PR using deterministic heuristics to answer one question: **does this PR actually add value?**
+Slopper is an open source initiative to fight back against low-quality contributions flooding GitHub. Maintainers are drowning in AI-generated pull requests that look clean but add nothing — Slopper scores every PR using deterministic heuristics to answer one question: **does this PR actually add value?**
 
 No API keys, no cost, one workflow file.
+
+## Community Lists
+
+Slopper maintains a set of [community-driven lists](https://github.com/Sloppers/community-list) that every installation fetches at runtime:
+
+| List | Purpose |
+|------|---------|
+| [`risky_users/`](https://github.com/Sloppers/community-list/tree/main/risky_users) | Reported accounts flagged for AI slop or spam PRs |
+| [`trusted_orgs/`](https://github.com/Sloppers/community-list/tree/main/trusted_orgs) | GitHub orgs whose members get a score reduction |
+
+Each entry is its own file — no merge conflicts. To report a user or add a trusted org, open an issue or PR on the [community-list](https://github.com/Sloppers/community-list) repo.
 
 ## Quick Start
 
