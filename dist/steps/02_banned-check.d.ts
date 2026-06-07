@@ -1,10 +1,12 @@
 import { PipelineStep, PipelineContext } from '../core/pipeline';
 import { GitHubClient } from '../clients/github';
+import { SlopperClient } from '../clients/slopper';
 export declare class BannedCheckStep extends PipelineStep {
     readonly name = "banned-check";
     private readonly github;
+    private readonly slopper;
     private readonly commentManager;
-    constructor(github: GitHubClient);
+    constructor(github: GitHubClient, slopper: SlopperClient);
     execute(ctx: PipelineContext): Promise<PipelineContext>;
     private banAndClose;
     private findReportCommand;

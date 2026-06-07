@@ -1,17 +1,20 @@
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { PrCommentManager } from '../output/commenter'
 import { GitHubClient } from '../clients/github'
+import { SlopperClient } from '../clients/slopper'
 import { Labels } from '../output/label-factory'
 import { errorMessage, buildMetadataEntry } from '../core/utils'
 
 export class BannedCheckStep extends PipelineStep {
   readonly name = 'banned-check'
   private readonly github: GitHubClient
+  private readonly slopper: SlopperClient
   private readonly commentManager: PrCommentManager
 
-  constructor(github: GitHubClient) {
+  constructor(github: GitHubClient, slopper: SlopperClient) {
     super()
     this.github = github
+    this.slopper = slopper
     this.commentManager = new PrCommentManager(github)
   }
 
@@ -28,18 +31,41 @@ export class BannedCheckStep extends PipelineStep {
           pr: ctx.prNumber,
           repo: `${this.github.owner}/${this.github.repo}`,
         })
-        return this.banAndClose(ctx, `reported by maintainer **@${reportedBy}** via \`/slopper report\``)
+        return this.banAndClose(ctx,
+          `reported by maintainer **@${reportedBy}** via \`/slopper report\`.\n\n` +
+          `> This report has been sent to the [Slopper global community list](https://github.com/Sloppers/community-list) ` +
+          `via the [Slopper Bot](https://github.com/apps/slopper-bot). ` +
+          `All Slopper installations will flag this account going forward.`
+        )
       } else {
         this.log(` "${reportedBy}" used /slopper report but is not a maintainer — ignoring`)
       }
     }
 
     const bannedUsers = ctx.config?.banned ?? []
-    if (bannedUsers.length === 0) return ctx
-    if (!bannedUsers.includes(ctx.prAuthor)) return ctx
+    const isLocalBan = bannedUsers.includes(ctx.prAuthor)
 
-    this.log(` Author "${ctx.prAuthor}" is on the banned list — closing PR`)
-    return this.banAndClose(ctx, 'the author is on the banned list')
+    let isGlobalBan = false
+    try {
+      const riskyUsers = await this.slopper.fetchRiskyUsers()
+      isGlobalBan = riskyUsers.some(u => u.toLowerCase() === ctx.prAuthor!.toLowerCase())
+    } catch (error: unknown) {
+      this.warn(`Could not check global risky users: ${errorMessage(error)}`)
+    }
+
+    if (isLocalBan) {
+      this.log(` Author "${ctx.prAuthor}" is on the local banned list — closing PR`)
+      return this.banAndClose(ctx, 'the author is on the banned list')
+    }
+
+    if (isGlobalBan) {
+      this.log(` Author "${ctx.prAuthor}" is on the global risky users list — closing PR`)
+      return this.banAndClose(ctx,
+        `the author is on the [Slopper global risky users list](https://github.com/Sloppers/community-list/blob/main/risky_users/${ctx.prAuthor})`
+      )
+    }
+
+    return ctx
   }
 
   private async banAndClose(ctx: PipelineContext, reason: string): Promise<PipelineContext> {

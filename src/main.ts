@@ -54,7 +54,7 @@ async function run(): Promise<void> {
   const vouchPipeline = new AnalysisPipeline([
     new LoadConfigStep(gh),
     new VouchCheckStep(gh),
-    new BannedCheckStep(gh),
+    new BannedCheckStep(gh, slopper),
     new RiskyUserCheckStep(slopper),
     new VouchApplyStep(gh)
   ])
