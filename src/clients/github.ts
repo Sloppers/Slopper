@@ -294,9 +294,34 @@ export class GitHubClient {
   }
 
   async createVouchPr(username: string, content: string): Promise<number> {
+    return this.createSlopperPr({
+      action: 'vouch',
+      username,
+      content,
+      dir: 'vouched',
+      body: `Adding **@${username}** to the vouched contributors list.\n\n` +
+        `Requested via \`/slopper vouch\`. This PR was created automatically by Slopper.`
+    })
+  }
+
+  async createBanPr(username: string, content: string): Promise<number> {
+    return this.createSlopperPr({
+      action: 'ban',
+      username,
+      content,
+      dir: 'banned',
+      body: `Adding **@${username}** to the banned contributors list.\n\n` +
+        `Requested via \`/slopper report\`. This PR was created automatically by Slopper.\n\n` +
+        `To unban this user, close this PR (or delete the file if already merged).`
+    })
+  }
+
+  private async createSlopperPr(opts: {
+    action: string; username: string; content: string; dir: string; body: string
+  }): Promise<number> {
     const defaultBranch = await this.getDefaultBranch()
-    const branch = `slopper/vouch-${username}`
-    const path = `.slopper.d/vouched/${username}`
+    const branch = `slopper/${opts.action}-${opts.username}`
+    const path = `.slopper.d/${opts.dir}/${opts.username}`
 
     const { data: ref } = await this.octokit.rest.git.getRef({
       owner: this.owner, repo: this.repo, ref: `heads/${defaultBranch}`
@@ -311,18 +336,17 @@ export class GitHubClient {
     await this.octokit.rest.repos.createOrUpdateFileContents({
       owner: this.owner, repo: this.repo,
       path,
-      message: `slopper: vouch ${username}`,
-      content: Buffer.from(content).toString('base64'),
+      message: `slopper: ${opts.action} ${opts.username}`,
+      content: Buffer.from(opts.content).toString('base64'),
       branch
     })
 
     const { data: pr } = await this.octokit.rest.pulls.create({
       owner: this.owner, repo: this.repo,
-      title: `slopper: vouch ${username}`,
+      title: `slopper: ${opts.action} ${opts.username}`,
       head: branch,
       base: defaultBranch,
-      body: `Adding **@${username}** to the vouched contributors list.\n\n` +
-        `Requested via \`/slopper vouch\`. This PR was created automatically by Slopper.`
+      body: opts.body
     })
 
     return pr.number
@@ -333,42 +357,6 @@ export class GitHubClient {
       owner: this.owner, repo: this.repo
     })
     return data.default_branch
-  }
-
-  async createBanPr(username: string, content: string): Promise<number> {
-    const defaultBranch = await this.getDefaultBranch()
-    const branch = `slopper/ban-${username}`
-    const path = `.slopper.d/banned/${username}`
-
-    const { data: ref } = await this.octokit.rest.git.getRef({
-      owner: this.owner, repo: this.repo, ref: `heads/${defaultBranch}`
-    })
-
-    await this.octokit.rest.git.createRef({
-      owner: this.owner, repo: this.repo,
-      ref: `refs/heads/${branch}`,
-      sha: ref.object.sha
-    })
-
-    await this.octokit.rest.repos.createOrUpdateFileContents({
-      owner: this.owner, repo: this.repo,
-      path,
-      message: `slopper: ban ${username}`,
-      content: Buffer.from(content).toString('base64'),
-      branch
-    })
-
-    const { data: pr } = await this.octokit.rest.pulls.create({
-      owner: this.owner, repo: this.repo,
-      title: `slopper: ban ${username}`,
-      head: branch,
-      base: defaultBranch,
-      body: `Adding **@${username}** to the banned contributors list.\n\n` +
-        `Requested via \`/slopper report\`. This PR was created automatically by Slopper.\n\n` +
-        `To unban this user, close this PR (or delete the file if already merged).`
-    })
-
-    return pr.number
   }
 
   async reportUser(_username: string, _reporter: string, _pr: number): Promise<void> {

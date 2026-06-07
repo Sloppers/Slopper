@@ -1240,8 +1240,9 @@ export declare class GitHubClient {
     }[]>;
     isMaintainer(username: string): Promise<boolean>;
     createVouchPr(username: string, content: string): Promise<number>;
-    private getDefaultBranch;
     createBanPr(username: string, content: string): Promise<number>;
+    private createSlopperPr;
+    private getDefaultBranch;
     reportUser(_username: string, _reporter: string, _pr: number): Promise<void>;
     listDirectory(path: string): Promise<string[]>;
 }
