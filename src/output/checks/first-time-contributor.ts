@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class FirstTimeContributorCheck extends Check {
-  readonly label = Labels.FIRST_TIME_CONTRIBUTOR.name
+  readonly label = Indicators.FIRST_TIME_CONTRIBUTOR
 
   evaluate(ctx: CheckContext): boolean {
     return ctx.firstTimeContributor

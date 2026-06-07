@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class LargeFileCheck extends Check {
-  readonly label = Labels.LARGE_FILE.name
+  readonly label = Indicators.LARGE_FILE
 
   evaluate(ctx: CheckContext): boolean {
     if (ctx.rules.max_file_changes <= 0) return false

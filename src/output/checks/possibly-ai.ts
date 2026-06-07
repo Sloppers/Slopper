@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class PossiblyAiCheck extends Check {
-  readonly label = Labels.POSSIBLY_AI.name
+  readonly label = Indicators.POSSIBLY_AI
 
   evaluate(ctx: CheckContext): boolean {
     if (!ctx.aiFingerprint) return false

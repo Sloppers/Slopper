@@ -1,9 +1,9 @@
 import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
-import { Labels } from '../../label-factory'
+import { Indicators } from '../../label-factory'
 
 export class DescriptionMismatchCheck extends AgenticCheck {
   readonly key = 'description-mismatch'
-  readonly label = Labels.AI_DESCRIPTION_MISMATCH.name
+  readonly label = Indicators.AI_DESCRIPTION_MISMATCH
   readonly description = 'Detects when PR description does not match what the diff actually does'
   readonly defaultWeight = 1
 

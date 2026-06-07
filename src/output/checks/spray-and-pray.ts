@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class SprayAndPrayCheck extends Check {
-  readonly label = Labels.SPRAY_AND_PRAY.name
+  readonly label = Indicators.SPRAY_AND_PRAY
   readonly defaultWeight = 3
 
   evaluate(ctx: CheckContext): boolean {

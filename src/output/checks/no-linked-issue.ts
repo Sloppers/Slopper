@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class NoLinkedIssueCheck extends Check {
-  readonly label = Labels.NO_LINKED_ISSUE.name
+  readonly label = Indicators.NO_LINKED_ISSUE
 
   evaluate(ctx: CheckContext): boolean {
     if (!ctx.rules.require_linked_issue || !ctx.prData) return false

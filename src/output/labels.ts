@@ -1,7 +1,7 @@
 import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis, AiFingerprintResult } from '../core/types'
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config'
 import { Check, CheckContext, ScoreResult, allChecks, computeScore } from './checks'
-import { Labels, confidenceLabel, riskLabel } from './label-factory'
+import { Labels, Indicators, confidenceLabel, riskLabel } from './label-factory'
 
 export type { CheckContext, ScoreResult }
 export { Check }
@@ -83,10 +83,10 @@ export class LabelComputer {
 
     const indicators: string[] = []
 
-    indicators.push(riskLabel(score, this.thresholds).name)
+    indicators.push(riskLabel(score, this.thresholds))
 
     if (opts.analysis) {
-      indicators.push(confidenceLabel(opts.analysis.confidence).name)
+      indicators.push(confidenceLabel(opts.analysis.confidence))
     }
 
     for (const check of this.checks) {

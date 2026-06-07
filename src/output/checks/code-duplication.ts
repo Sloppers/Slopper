@@ -1,11 +1,11 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 const MIN_BLOCK_LINES = 6
 const MIN_DUPLICATE_BLOCKS = 2
 
 export class CodeDuplicationCheck extends Check {
-  readonly label = Labels.CODE_DUPLICATION.name
+  readonly label = Indicators.CODE_DUPLICATION
 
   evaluate(ctx: CheckContext): boolean {
     if (!ctx.prData) return false

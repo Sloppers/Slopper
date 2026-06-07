@@ -1,9 +1,9 @@
 import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
-import { Labels } from '../../label-factory'
+import { Indicators } from '../../label-factory'
 
 export class SuspiciousAuthorCheck extends AgenticCheck {
   readonly key = 'suspicious-author'
-  readonly label = Labels.AI_SUSPICIOUS_AUTHOR.name
+  readonly label = Indicators.AI_SUSPICIOUS_AUTHOR
   readonly description = 'Evaluates the PR author profile for patterns common in slop accounts'
   readonly defaultWeight = 2
 

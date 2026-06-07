@@ -1,9 +1,9 @@
 import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
-import { Labels } from '../../label-factory'
+import { Indicators } from '../../label-factory'
 
 export class SecurityConcernCheck extends AgenticCheck {
   readonly key = 'security-concern'
-  readonly label = Labels.AI_SECURITY_CONCERN.name
+  readonly label = Indicators.AI_SECURITY_CONCERN
   readonly description = 'Detects security concerns: obfuscated code, credential patterns, suspicious URLs, backdoors'
   readonly defaultWeight = 2
 

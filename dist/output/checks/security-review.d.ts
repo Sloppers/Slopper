@@ -1,6 +1,6 @@
 import { Check, CheckContext } from './check';
 export declare class SecurityReviewCheck extends Check {
-    readonly label: string;
+    readonly label: "slopper/needs-security-review";
     evaluate(ctx: CheckContext): boolean;
 }
 //# sourceMappingURL=security-review.d.ts.map

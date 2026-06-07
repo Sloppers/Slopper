@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class UnsignedCommitsCheck extends Check {
-  readonly label = Labels.UNSIGNED_COMMITS.name
+  readonly label = Indicators.UNSIGNED_COMMITS
   readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {

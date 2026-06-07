@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class ActivityBurstCheck extends Check {
-  readonly label = Labels.ACTIVITY_BURST.name
+  readonly label = Indicators.ACTIVITY_BURST
 
   evaluate(ctx: CheckContext): boolean {
     if (!ctx.authorProfile) return false

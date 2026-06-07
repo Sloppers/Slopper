@@ -1,5 +1,5 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 const CI_PATTERNS = [
   '.github/workflows/', '.github/actions/', '.gitlab-ci',
@@ -7,7 +7,7 @@ const CI_PATTERNS = [
 ]
 
 export class CiModifiedCheck extends Check {
-  readonly label = Labels.CI_MODIFIED.name
+  readonly label = Indicators.CI_MODIFIED
 
   evaluate(ctx: CheckContext): boolean {
     return ctx.files.some(f => CI_PATTERNS.some(p => f.filename.includes(p)))

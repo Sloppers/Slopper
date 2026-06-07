@@ -1,5 +1,5 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 const TEST_PATTERNS = [
   /\/__tests__\//,
@@ -15,7 +15,7 @@ const TEST_PATTERNS = [
 const SOURCE_EXTENSIONS = /\.(ts|tsx|js|jsx|py|go|rb|java|rs|cs|cpp|c|swift|kt)$/
 
 export class NoTestsCheck extends Check {
-  readonly label = Labels.NO_TESTS.name
+  readonly label = Indicators.NO_TESTS
   readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {

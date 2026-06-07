@@ -1,6 +1,6 @@
 import { Check, CheckContext } from './check';
 export declare class NoTestsCheck extends Check {
-    readonly label: string;
+    readonly label: "slopper/no-tests";
     readonly defaultWeight = 1;
     evaluate(ctx: CheckContext): boolean;
 }

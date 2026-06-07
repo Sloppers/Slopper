@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class TrustedOrgCheck extends Check {
-  readonly label = Labels.TRUSTED_ORG.name
+  readonly label = Indicators.TRUSTED_ORG
   readonly defaultWeight = -2
 
   evaluate(ctx: CheckContext): boolean {

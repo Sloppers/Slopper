@@ -1,7 +1,7 @@
 import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check';
 export declare class SlopContentCheck extends AgenticCheck {
     readonly key = "slop-content";
-    readonly label: string;
+    readonly label: "slopper/ai/slop-content";
     readonly description = "Detects generic AI-generated slop: phantom fixes, boilerplate inflation, templated descriptions";
     readonly defaultWeight = 2;
     buildPrompt(ctx: AgenticCheckContext): {

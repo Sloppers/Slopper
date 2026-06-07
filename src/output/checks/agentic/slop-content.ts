@@ -1,9 +1,9 @@
 import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
-import { Labels } from '../../label-factory'
+import { Indicators } from '../../label-factory'
 
 export class SlopContentCheck extends AgenticCheck {
   readonly key = 'slop-content'
-  readonly label = Labels.AI_SLOP_CONTENT.name
+  readonly label = Indicators.AI_SLOP_CONTENT
   readonly description = 'Detects generic AI-generated slop: phantom fixes, boilerplate inflation, templated descriptions'
   readonly defaultWeight = 2
 

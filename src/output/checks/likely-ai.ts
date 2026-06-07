@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class LikelyAiCheck extends Check {
-  readonly label = Labels.LIKELY_AI.name
+  readonly label = Indicators.LIKELY_AI
   readonly defaultWeight = 4
 
   evaluate(ctx: CheckContext): boolean {

@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class SuspiciousCheck extends Check {
-  readonly label = Labels.SUSPICIOUS.name
+  readonly label = Indicators.SUSPICIOUS
 
   evaluate(ctx: CheckContext): boolean {
     return ctx.score >= ctx.labelThresholds.suspicious_score

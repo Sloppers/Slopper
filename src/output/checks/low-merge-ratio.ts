@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class LowMergeRatioCheck extends Check {
-  readonly label = Labels.LOW_MERGE_RATIO.name
+  readonly label = Indicators.LOW_MERGE_RATIO
   readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {

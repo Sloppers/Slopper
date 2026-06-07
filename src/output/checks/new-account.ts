@@ -1,8 +1,8 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 export class NewAccountCheck extends Check {
-  readonly label = Labels.NEW_ACCOUNT.name
+  readonly label = Indicators.NEW_ACCOUNT
   readonly defaultWeight = 1
 
   evaluate(ctx: CheckContext): boolean {

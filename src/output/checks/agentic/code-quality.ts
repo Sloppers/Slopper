@@ -1,9 +1,9 @@
 import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
-import { Labels } from '../../label-factory'
+import { Indicators } from '../../label-factory'
 
 export class CodeQualityCheck extends AgenticCheck {
   readonly key = 'code-quality'
-  readonly label = Labels.AI_CODE_QUALITY.name
+  readonly label = Indicators.AI_CODE_QUALITY
   readonly description = 'Detects subtle code quality issues: missing edge cases, unnecessary complexity, duplicate functionality'
   readonly defaultWeight = 1
 

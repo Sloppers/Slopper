@@ -1,5 +1,5 @@
 import { Check, CheckContext } from './check'
-import { Labels } from '../label-factory'
+import { Indicators } from '../label-factory'
 
 const LOCKFILES = new Set([
   'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
@@ -13,7 +13,7 @@ const MANIFEST_FILES = new Set([
 ])
 
 export class SupplyChainCheck extends Check {
-  readonly label = Labels.SUPPLY_CHAIN.name
+  readonly label = Indicators.SUPPLY_CHAIN
   readonly defaultWeight = 2
 
   evaluate(ctx: CheckContext): boolean {
