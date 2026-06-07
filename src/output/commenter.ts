@@ -171,7 +171,7 @@ export class PrCommentManager {
     }
 
     md += `---\n`
-    md += `<sub>Powered by [slopper](https://github.com/malvads/slopper) | `
+    md += `<sub>Powered by [slopper](https://github.com/Sloppers/Slopper) | `
     md += `${result?.provider ?? 'deterministic'} | `
     md += `Never blocks merging</sub>\n`
 

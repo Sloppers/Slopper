@@ -51,7 +51,7 @@ export class BannedCheckStep extends PipelineStep {
     const body = `<!-- pr-trust-analysis -->\n` +
       `## 🔴 Slopper — PR Blocked\n\n` +
       `This PR was automatically closed by Slopper — ${reason}.\n\n` +
-      `---\n<sub>Powered by [slopper](https://github.com/malvads/slopper)</sub>\n`
+      `---\n<sub>Powered by [slopper](https://github.com/Sloppers/Slopper)</sub>\n`
 
     await this.commentManager.upsertComment(ctx.prNumber, body)
 

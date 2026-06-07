@@ -41,7 +41,7 @@ export class VouchApplyStep extends PipelineStep {
 
     body += `### 🏷️ Labels Applied\n`
     body += labels.map(l => `\`${l}\``).join(' ') + '\n\n'
-    body += `---\n*Analysis powered by [slopper](https://github.com/malvads/slopper)*\n`
+    body += `---\n*Analysis powered by [slopper](https://github.com/Sloppers/Slopper)*\n`
 
     await this.commentManager.upsertComment(prNumber, body)
     await this.commentManager.applyLabels(prNumber, labels)

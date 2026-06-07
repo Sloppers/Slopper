@@ -1,14 +1,14 @@
 import { parseTextList } from '../core/utils'
 
-const BASE_URL = 'https://raw.githubusercontent.com/malvads/slopper/main'
+const BASE_URL = 'https://raw.githubusercontent.com/Sloppers/community-list/main'
 
 export class SlopperClient {
   async fetchRiskyUsers(): Promise<string[]> {
-    return this.fetchList('.slopper_risky_users')
+    return this.fetchList('risky_users.txt')
   }
 
   async fetchTrustedOrgs(): Promise<string[]> {
-    return this.fetchList('.slopper_trusted_orgs')
+    return this.fetchList('trusted_orgs.txt')
   }
 
   private async fetchList(filename: string): Promise<string[]> {
