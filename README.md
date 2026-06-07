@@ -15,14 +15,14 @@ Slopper is an open source initiative to fight back against low-quality contribut
 
 ## Community Lists
 
-Slopper maintains a set of [community-driven lists](https://github.com/Sloppers/community-list) that every installation fetches at runtime:
+Slopper maintains a set of [community-driven lists](https://github.com/Sloppers/community-list) that every installation fetches at runtime. These lists are managed automatically by the Slopper bot — when a maintainer runs `/slopper report` on a PR, the bot validates the report and adds the account to the global risky users list. No manual file editing required.
 
 | List | Purpose |
 |------|---------|
-| [`risky_users/`](https://github.com/Sloppers/community-list/tree/main/risky_users) | Reported accounts flagged for AI slop or spam PRs |
+| [`risky_users/`](https://github.com/Sloppers/community-list/tree/main/risky_users) | Accounts reported via `/slopper report` and validated by the bot |
 | [`trusted_orgs/`](https://github.com/Sloppers/community-list/tree/main/trusted_orgs) | GitHub orgs whose members get a score reduction |
 
-Each entry is its own file — no merge conflicts. To report a user or add a trusted org, open an issue or PR on the [community-list](https://github.com/Sloppers/community-list) repo.
+Each entry is its own file — no merge conflicts when the bot adds or removes entries concurrently across thousands of repos.
 
 ## Quick Start
 
