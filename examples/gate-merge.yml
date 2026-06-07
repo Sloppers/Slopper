@@ -11,14 +11,15 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+      pull-requests: read
+      id-token: write
     outputs:
       risk-score: ${{ steps.slopper.outputs.risk-score }}
       risk-level: ${{ steps.slopper.outputs.risk-level }}
     steps:
       - id: slopper
-        uses: Sloppers/Slopper@v1
+        uses: Sloppers/Slopper@main
         with:
           ai-provider: 'openai'
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}

@@ -10,9 +10,10 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+      pull-requests: read
+      id-token: write
     steps:
-      - uses: Sloppers/Slopper@v1
+      - uses: Sloppers/Slopper@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
