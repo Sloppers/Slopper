@@ -53,6 +53,11 @@ export class BotGitHubClient extends GitHubClient {
     return res.prNumber as number
   }
 
+  override async createBanPr(username: string, content: string): Promise<number> {
+    const res = await this.callBot({ type: 'createBanPr', username, content })
+    return res.prNumber as number
+  }
+
   override async reportUser(username: string, reporter: string, pr: number): Promise<void> {
     await this.callBot({ type: 'globalReport', username, reporter, pr })
   }

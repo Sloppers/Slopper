@@ -26,17 +26,20 @@ export class BannedCheckStep extends PipelineStep {
       const isAuthorized = await this.github.isMaintainer(report.reporter)
       if (isAuthorized) {
         this.log(`Maintainer "${report.reporter}" reported "${ctx.prAuthor}" via /slopper report`)
-        await this.addUserToBannedList(ctx.prAuthor, {
+        const banPrNumber = await this.addUserToBannedList(ctx.prAuthor, {
           reporter: report.reporter,
           pr: ctx.prNumber,
           repo: `${this.github.owner}/${this.github.repo}`,
         })
         await this.reportUserGlobally(ctx.prAuthor, report.reporter, ctx.prNumber)
-        return this.banAndClose(ctx,
-          `reported by maintainer **@${report.reporter}** via \`/slopper report\`.\n\n` +
-          `> This account has been reported to the [Slopper global community list](https://github.com/Sloppers/community-list). ` +
+
+        let reason = `reported by maintainer **@${report.reporter}** via \`/slopper report\`.\n\n`
+        if (banPrNumber) {
+          reason += `> A ban PR has been created: #${banPrNumber} — close it to unban.\n\n`
+        }
+        reason += `> This account has been reported to the [Slopper global community list](https://github.com/Sloppers/community-list). ` +
           `All Slopper installations will flag this account going forward.`
-        )
+        return this.banAndClose(ctx, reason)
       } else {
         this.log(`"${report.reporter}" used /slopper report but is not a maintainer — ignoring`)
       }
@@ -95,12 +98,12 @@ export class BannedCheckStep extends PipelineStep {
     return null
   }
 
-  private async addUserToBannedList(username: string, meta: { reporter: string; pr: number; repo: string }): Promise<void> {
+  private async addUserToBannedList(username: string, meta: { reporter: string; pr: number; repo: string }): Promise<number | null> {
     const path = `.slopper.d/banned/${username}`
     const existing = await this.github.getFileContent(path)
     if (existing !== null) {
       this.log(`${username} already in .slopper.d/banned/`)
-      return
+      return null
     }
 
     const content = buildMetadataEntry({
@@ -110,10 +113,12 @@ export class BannedCheckStep extends PipelineStep {
     })
 
     try {
-      await this.github.createOrUpdateFile(path, `slopper: ban ${username} (reported)`, content)
-      this.log(`Created .slopper.d/banned/${username}`)
+      const banPr = await this.github.createBanPr(username, content)
+      this.log(`Created ban PR #${banPr} for ${username}`)
+      return banPr
     } catch (error: unknown) {
-      this.warn(`Failed to create banned entry: ${errorMessage(error)}`)
+      this.warn(`Failed to create ban PR: ${errorMessage(error)}`)
+      return null
     }
   }
 }

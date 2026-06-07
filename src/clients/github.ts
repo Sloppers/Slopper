@@ -335,6 +335,42 @@ export class GitHubClient {
     return data.default_branch
   }
 
+  async createBanPr(username: string, content: string): Promise<number> {
+    const defaultBranch = await this.getDefaultBranch()
+    const branch = `slopper/ban-${username}`
+    const path = `.slopper.d/banned/${username}`
+
+    const { data: ref } = await this.octokit.rest.git.getRef({
+      owner: this.owner, repo: this.repo, ref: `heads/${defaultBranch}`
+    })
+
+    await this.octokit.rest.git.createRef({
+      owner: this.owner, repo: this.repo,
+      ref: `refs/heads/${branch}`,
+      sha: ref.object.sha
+    })
+
+    await this.octokit.rest.repos.createOrUpdateFileContents({
+      owner: this.owner, repo: this.repo,
+      path,
+      message: `slopper: ban ${username}`,
+      content: Buffer.from(content).toString('base64'),
+      branch
+    })
+
+    const { data: pr } = await this.octokit.rest.pulls.create({
+      owner: this.owner, repo: this.repo,
+      title: `slopper: ban ${username}`,
+      head: branch,
+      base: defaultBranch,
+      body: `Adding **@${username}** to the banned contributors list.\n\n` +
+        `Requested via \`/slopper report\`. This PR was created automatically by Slopper.\n\n` +
+        `To unban this user, close this PR (or delete the file if already merged).`
+    })
+
+    return pr.number
+  }
+
   async reportUser(_username: string, _reporter: string, _pr: number): Promise<void> {
     // no-op in base client — only BotGitHubClient reports globally
   }
