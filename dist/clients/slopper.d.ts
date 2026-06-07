@@ -1,6 +1,6 @@
 export declare class SlopperClient {
     fetchRiskyUsers(): Promise<string[]>;
     fetchTrustedOrgs(): Promise<string[]>;
-    private fetchList;
+    private fetchDirectory;
 }
 //# sourceMappingURL=slopper.d.ts.map

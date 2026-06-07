@@ -1,21 +1,29 @@
-import { parseTextList } from '../core/utils'
+const API_BASE = 'https://api.github.com/repos/Sloppers/community-list/contents'
 
-const BASE_URL = 'https://raw.githubusercontent.com/Sloppers/community-list/main'
+interface GitHubContentEntry {
+  name: string
+  type: string
+}
 
 export class SlopperClient {
   async fetchRiskyUsers(): Promise<string[]> {
-    return this.fetchList('risky_users.txt')
+    return this.fetchDirectory('risky_users')
   }
 
   async fetchTrustedOrgs(): Promise<string[]> {
-    return this.fetchList('trusted_orgs.txt')
+    return this.fetchDirectory('trusted_orgs')
   }
 
-  private async fetchList(filename: string): Promise<string[]> {
-    const res = await fetch(`${BASE_URL}/${filename}`)
+  private async fetchDirectory(path: string): Promise<string[]> {
+    const res = await fetch(`${API_BASE}/${path}`, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    })
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status} fetching ${filename}`)
+      throw new Error(`HTTP ${res.status} fetching ${path}`)
     }
-    return parseTextList(await res.text())
+    const entries = await res.json() as GitHubContentEntry[]
+    return entries
+      .filter(e => e.type === 'file' && !e.name.startsWith('.'))
+      .map(e => e.name)
   }
 }
