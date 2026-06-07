@@ -6,7 +6,7 @@
   <a href="https://github.com/Sloppers/Slopper/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Sloppers/Slopper" alt="License" /></a>
 </p>
 
-<p align="center"><strong>Very experimental</strong> — expect rough edges, false positives, and breaking changes.</p>
+<p align="center"><strong>Control low-quality contributions on your open source projects — automatically.</strong></p>
 
 ---
 
@@ -24,6 +24,14 @@ Slopper maintains a set of [community-driven lists](https://github.com/Sloppers/
 
 Each entry is its own file — no merge conflicts when the bot adds or removes entries concurrently across thousands of repos.
 
+## Prerequisites
+
+1. **Install the Slopper App** on your repository or organization: [github.com/apps/slopper-bot](https://github.com/apps/slopper-bot)
+
+   Slopper uses a GitHub App to comment, label, and manage PRs under its own identity (`slopper-bot[bot]`). Without the app installed, the action will fail with an install instruction error. There is no fallback to `GITHUB_TOKEN`.
+
+2. Your workflow must include `id-token: write` permission for OIDC authentication with the Slopper Bot.
+
 ## Quick Start
 
 ```yaml
@@ -38,10 +46,11 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+      pull-requests: read
+      id-token: write
     steps:
-      - uses: Sloppers/Slopper@v0.1.0
+      - uses: Sloppers/Slopper@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -49,7 +58,7 @@ jobs:
 For deeper AI-powered analysis, add a provider:
 
 ```yaml
-      - uses: Sloppers/Slopper@v0.1.0
+      - uses: Sloppers/Slopper@main
         with:
           ai-provider: 'gemini'
           gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
