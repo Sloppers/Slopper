@@ -1,0 +1,33 @@
+# Slopper Global Trusted Organizations
+# -------------------------------------
+# This list is fetched at runtime by anyone using the Slopper action.
+# PR authors who are public members of these orgs get a score reduction
+# (slopper/trusted-org indicator, weight -2).
+#
+# To add an organization, open a PR against this file.
+#
+# Format: one GitHub organization per line. Lines starting with # are comments.
+# Blank lines are ignored.
+
+# Cloud / Infrastructure
+kubernetes
+apache
+hashicorp
+cncf
+
+# Languages & Runtimes
+golang
+nodejs
+python
+rust-lang
+dotnet
+
+# Major OSS Foundations
+linux
+mozilla
+eclipse
+
+# Package Ecosystems
+npm
+pypi
+rubygems

@@ -1,15 +1,8 @@
 import { PipelineStep, PipelineContext } from '../core/pipeline'
-import { errorMessage } from '../core/utils'
+import { errorMessage, parseTextList } from '../core/utils'
 
 const RISKY_USERS_URL =
   'https://raw.githubusercontent.com/malvads/slopper/main/.slopper_risky_users'
-
-function parseRiskyUsers(raw: string): string[] {
-  return raw
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line && !line.startsWith('#'))
-}
 
 export class RiskyUserCheckStep extends PipelineStep {
   readonly name = 'risky-user-check'
@@ -21,7 +14,7 @@ export class RiskyUserCheckStep extends PipelineStep {
     try {
       const res = await fetch(RISKY_USERS_URL)
       if (res.ok) {
-        users = parseRiskyUsers(await res.text())
+        users = parseTextList(await res.text())
       } else {
         this.warn(` Failed to fetch risky users list: ${res.status}`)
       }

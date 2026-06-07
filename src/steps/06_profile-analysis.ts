@@ -1,7 +1,10 @@
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { AuthorProfileAnalyzer } from '../analysis/author-profile'
 import { GitHubClient } from '../clients/github'
-import { errorMessage } from '../core/utils'
+import { errorMessage, parseTextList } from '../core/utils'
+
+const TRUSTED_ORGS_URL =
+  'https://raw.githubusercontent.com/malvads/slopper/main/.slopper_trusted_orgs'
 
 export class ProfileAnalysisStep extends PipelineStep {
   readonly name = 'profile-analysis'
@@ -43,21 +46,45 @@ export class ProfileAnalysisStep extends PipelineStep {
       this.warn(` Failed: ${errorMessage(error)} — continuing without profile data`)
     }
 
-    const trustedOrgs = ctx.config?.trusted_orgs ?? []
-    if (trustedOrgs.length > 0) {
-      for (const org of trustedOrgs) {
-        try {
-          if (await this.github.isOrgPublicMember(org, author)) {
-            ctx.trustedOrg = true
-            this.log(` ${author} is a public member of trusted org: ${org}`)
-            break
-          }
-        } catch {
-          this.warn(` Failed to check org membership for ${org}`)
+    const globalOrgs = await this.fetchGlobalTrustedOrgs()
+    const localOrgs = ctx.config?.trusted_orgs ?? []
+    const allOrgs = this.deduplicateOrgs([...globalOrgs, ...localOrgs])
+
+    for (const org of allOrgs) {
+      try {
+        if (await this.github.isOrgPublicMember(org, author)) {
+          ctx.trustedOrg = true
+          this.log(`${author} is a public member of trusted org: ${org}`)
+          break
         }
+      } catch {
+        this.warn(`Failed to check org membership for ${org}`)
       }
     }
 
     return ctx
+  }
+
+  private async fetchGlobalTrustedOrgs(): Promise<string[]> {
+    try {
+      const res = await fetch(TRUSTED_ORGS_URL)
+      if (res.ok) {
+        return parseTextList(await res.text())
+      }
+      this.warn(`Failed to fetch global trusted orgs list: ${res.status}`)
+    } catch (error: unknown) {
+      this.warn(`Could not reach global trusted orgs list: ${errorMessage(error)}`)
+    }
+    return []
+  }
+
+  private deduplicateOrgs(orgs: string[]): string[] {
+    const seen = new Set<string>()
+    return orgs.filter(org => {
+      const key = org.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   }
 }

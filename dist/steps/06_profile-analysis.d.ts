@@ -6,5 +6,7 @@ export declare class ProfileAnalysisStep extends PipelineStep {
     private readonly github;
     constructor(github: GitHubClient);
     execute(ctx: PipelineContext): Promise<PipelineContext>;
+    private fetchGlobalTrustedOrgs;
+    private deduplicateOrgs;
 }
 //# sourceMappingURL=06_profile-analysis.d.ts.map
