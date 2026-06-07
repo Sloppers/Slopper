@@ -28,7 +28,7 @@ Each entry is its own file — no merge conflicts when the bot adds or removes e
 
 1. **Install the Slopper App** on your repository or organization: [github.com/apps/slopper-bot](https://github.com/apps/slopper-bot)
 
-   Slopper uses a GitHub App to comment, label, and manage PRs under its own identity (`slopper-bot[bot]`). Without the app installed, the action will fail with an install instruction error. There is no fallback to `GITHUB_TOKEN`.
+   Slopper uses a GitHub App to comment, label, and manage PRs under its own identity (`slopper-bot[bot]`).
 
 2. Your workflow must include `id-token: write` permission for OIDC authentication with the Slopper Bot.
 
