@@ -3,6 +3,7 @@ import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { callProvider, AiProvider } from '../ai/providers'
 import { SYSTEM_PROMPT, buildUserPrompt } from '../ai/prompt'
 import { AnalysisResult } from '../core/types'
+import { errorMessage } from '../core/utils'
 
 export interface AiAnalysisConfig {
   provider: AiProvider
@@ -53,7 +54,7 @@ export class AiAnalysisStep extends PipelineStep {
       result.provider = this.config.provider
       ctx.analysisResult = result
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
+      const msg = errorMessage(error)
       core.warning(`AI analysis failed: ${msg}`)
       ctx.analysisResult = this.buildFailureResult(msg)
       ctx.analysisFailed = true
@@ -62,12 +63,12 @@ export class AiAnalysisStep extends PipelineStep {
     return ctx
   }
 
-  private buildFailureResult(errorMessage: string): AnalysisResult {
+  private buildFailureResult(message: string): AnalysisResult {
     return {
       risk_score: -1,
       risk_level: 'unknown',
       confidence: 'low',
-      summary: `AI analysis failed (${this.config.provider}): ${errorMessage}`,
+      summary: `AI analysis failed (${this.config.provider}): ${message}`,
       author_assessment: { trust_level: 'unknown', reasoning: 'Analysis failed' },
       commit_assessment: { quality: 'unknown', reasoning: 'Analysis failed' },
       code_assessment: {
@@ -78,7 +79,7 @@ export class AiAnalysisStep extends PipelineStep {
       behavioral_signals: { flags: [], reasoning: 'Analysis failed' },
       review_suggestions: ['Manual review required — AI analysis failed'],
       provider: this.config.provider,
-      error: errorMessage
+      error: message
     }
   }
 }

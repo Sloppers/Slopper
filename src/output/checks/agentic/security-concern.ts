@@ -1,10 +1,12 @@
-import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
 import { Indicators } from '../../label-factory'
+import { truncateDiff } from '../../../core/utils'
 
 export class SecurityConcernCheck extends AgenticCheck {
   readonly key = 'security-concern'
   readonly label = Indicators.AI_SECURITY_CONCERN
   readonly description = 'Detects security concerns: obfuscated code, credential patterns, suspicious URLs, backdoors'
+  readonly triggerKey = 'has_concerns'
   readonly defaultWeight = 2
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -26,7 +28,7 @@ Do NOT flag:
 
 Err on the side of caution — false positives are better than missed security issues. Call the tool with your assessment.`
 
-    const diff = ctx.prData.diff.length > 10000 ? ctx.prData.diff.slice(0, 10000) + '\n... (truncated)' : ctx.prData.diff
+    const diff = truncateDiff(ctx.prData.diff, 10000)
 
     const user = `## PR: ${ctx.prData.title}
 
@@ -63,13 +65,4 @@ ${diff}
     }
   }
 
-  parseResult(raw: Record<string, unknown>): AgenticCheckResult {
-    return {
-      triggered: raw.has_concerns as boolean,
-      label: this.label,
-      reasoning: raw.reasoning as string,
-      confidence: raw.confidence as 'low' | 'medium' | 'high',
-      evidence: raw.evidence as string[]
-    }
-  }
 }

@@ -271,6 +271,16 @@ export class GitHubClient {
     return data
   }
 
+  async isMaintainer(username: string): Promise<boolean> {
+    const codeownersPaths = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
+    for (const path of codeownersPaths) {
+      const content = await this.getFileContent(path)
+      if (content && content.includes(`@${username}`)) return true
+    }
+    const permission = await this.getPermissionLevel(username)
+    return ['admin', 'maintain'].includes(permission)
+  }
+
   async listDirectory(path: string): Promise<string[]> {
     try {
       const { data } = await this.octokit.rest.repos.getContent({
@@ -285,14 +295,5 @@ export class GitHubClient {
       return []
     }
     return []
-  }
-
-  async createGist(description: string, filename: string, content: string): Promise<string> {
-    const { data } = await this.octokit.rest.gists.create({
-      description,
-      public: true,
-      files: { [filename]: { content } }
-    })
-    return data.html_url ?? ''
   }
 }

@@ -3,6 +3,7 @@ import * as github from '@actions/github'
 import { GitHubClient } from './clients/github'
 import { AnalysisPipeline, PipelineStep } from './core/pipeline'
 import { AiProvider } from './ai/providers'
+import { errorMessage } from './core/utils'
 import {
   LoadConfigStep,
   VouchCheckStep,
@@ -93,5 +94,5 @@ async function run(): Promise<void> {
 }
 
 run().catch((error: unknown) => {
-  core.setFailed(error instanceof Error ? error.message : String(error))
+  core.setFailed(errorMessage(error))
 })

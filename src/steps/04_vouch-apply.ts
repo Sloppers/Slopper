@@ -3,6 +3,7 @@ import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { PrCommentManager } from '../output/commenter'
 import { GitHubClient } from '../clients/github'
 import { Labels, Indicators } from '../output/label-factory'
+import { errorMessage, buildMetadataEntry } from '../core/utils'
 
 export class VouchApplyStep extends PipelineStep {
   readonly name = 'vouch-apply'
@@ -64,21 +65,17 @@ export class VouchApplyStep extends PipelineStep {
       return
     }
 
-    const content = [
-      `voucher: ${meta.voucher}`,
-      `repo: ${meta.repo}`,
-      `pr: #${meta.pr}`,
-      `reason: /slopper vouch`,
-      `date: ${new Date().toISOString()}`,
-      '',
-    ].join('\n')
+    const content = buildMetadataEntry({
+      voucher: meta.voucher, repo: meta.repo,
+      pr: `#${meta.pr}`, reason: '/slopper vouch',
+      date: new Date().toISOString()
+    })
 
     try {
       await this.github.createOrUpdateFile(path, `slopper: vouch ${username}`, content)
       core.info(`[vouch-apply] Created .slopper.d/vouched/${username}`)
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`[vouch-apply] Failed to create vouch entry: ${msg}`)
+      core.warning(`[vouch-apply] Failed to create vouch entry: ${errorMessage(error)}`)
     }
   }
 }

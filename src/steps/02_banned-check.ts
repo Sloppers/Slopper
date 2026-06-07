@@ -3,6 +3,7 @@ import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { PrCommentManager } from '../output/commenter'
 import { GitHubClient } from '../clients/github'
 import { Labels } from '../output/label-factory'
+import { errorMessage, buildMetadataEntry } from '../core/utils'
 
 export class BannedCheckStep extends PipelineStep {
   readonly name = 'banned-check'
@@ -20,7 +21,7 @@ export class BannedCheckStep extends PipelineStep {
 
     const reportedBy = await this.findReportCommand(ctx.prNumber)
     if (reportedBy) {
-      const isAuthorized = await this.isMaintainer(reportedBy)
+      const isAuthorized = await this.github.isMaintainer(reportedBy)
       if (isAuthorized) {
         core.info(`[banned-check] Maintainer "${reportedBy}" reported "${ctx.prAuthor}" via /slopper report`)
         await this.addUserToBannedList(ctx.prAuthor, {
@@ -58,8 +59,7 @@ export class BannedCheckStep extends PipelineStep {
     try {
       await this.github.closePr(ctx.prNumber)
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`[banned-check] Failed to close PR: ${msg}`)
+      core.warning(`[banned-check] Failed to close PR: ${errorMessage(error)}`)
     }
 
     return ctx
@@ -77,20 +77,6 @@ export class BannedCheckStep extends PipelineStep {
     return null
   }
 
-  private async isMaintainer(username: string): Promise<boolean> {
-    const codeownersPaths = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
-
-    for (const path of codeownersPaths) {
-      const content = await this.github.getFileContent(path)
-      if (content && content.includes(`@${username}`)) {
-        return true
-      }
-    }
-
-    const permission = await this.github.getPermissionLevel(username)
-    return ['admin', 'maintain'].includes(permission)
-  }
-
   private async addUserToBannedList(username: string, meta: { reporter: string; pr: number; repo: string }): Promise<void> {
     const path = `.slopper.d/banned/${username}`
     const existing = await this.github.getFileContent(path)
@@ -99,21 +85,17 @@ export class BannedCheckStep extends PipelineStep {
       return
     }
 
-    const content = [
-      `reporter: ${meta.reporter}`,
-      `repo: ${meta.repo}`,
-      `pr: #${meta.pr}`,
-      `reason: /slopper report`,
-      `date: ${new Date().toISOString()}`,
-      '',
-    ].join('\n')
+    const content = buildMetadataEntry({
+      reporter: meta.reporter, repo: meta.repo,
+      pr: `#${meta.pr}`, reason: '/slopper report',
+      date: new Date().toISOString()
+    })
 
     try {
       await this.github.createOrUpdateFile(path, `slopper: ban ${username} (reported)`, content)
       core.info(`[banned-check] Created .slopper.d/banned/${username}`)
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`[banned-check] Failed to create banned entry: ${msg}`)
+      core.warning(`[banned-check] Failed to create banned entry: ${errorMessage(error)}`)
     }
   }
 }

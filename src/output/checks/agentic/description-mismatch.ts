@@ -1,10 +1,12 @@
-import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
 import { Indicators } from '../../label-factory'
+import { truncateDiff } from '../../../core/utils'
 
 export class DescriptionMismatchCheck extends AgenticCheck {
   readonly key = 'description-mismatch'
   readonly label = Indicators.AI_DESCRIPTION_MISMATCH
   readonly description = 'Detects when PR description does not match what the diff actually does'
+  readonly triggerKey = 'has_mismatch'
   readonly defaultWeight = 1
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -23,7 +25,7 @@ Do NOT flag when:
 
 Call the tool with your assessment.`
 
-    const diff = ctx.prData.diff.length > 8000 ? ctx.prData.diff.slice(0, 8000) + '\n... (truncated)' : ctx.prData.diff
+    const diff = truncateDiff(ctx.prData.diff, 8000)
 
     const user = `## PR: ${ctx.prData.title}
 
@@ -62,13 +64,4 @@ ${diff}
     }
   }
 
-  parseResult(raw: Record<string, unknown>): AgenticCheckResult {
-    return {
-      triggered: raw.has_mismatch as boolean,
-      label: this.label,
-      reasoning: raw.reasoning as string,
-      confidence: raw.confidence as 'low' | 'medium' | 'high',
-      evidence: raw.evidence as string[]
-    }
-  }
 }

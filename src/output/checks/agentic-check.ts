@@ -23,9 +23,19 @@ export abstract class AgenticCheck {
   abstract readonly key: string
   abstract readonly label: string
   abstract readonly description: string
+  abstract readonly triggerKey: string
   readonly defaultWeight: number = 0
 
   abstract buildPrompt(ctx: AgenticCheckContext): { system: string; user: string }
   abstract buildToolSchema(): AgenticToolSchema
-  abstract parseResult(raw: Record<string, unknown>): AgenticCheckResult
+
+  parseResult(raw: Record<string, unknown>): AgenticCheckResult {
+    return {
+      triggered: raw[this.triggerKey] as boolean,
+      label: this.label,
+      reasoning: raw.reasoning as string,
+      confidence: raw.confidence as 'low' | 'medium' | 'high',
+      evidence: raw.evidence as string[]
+    }
+  }
 }

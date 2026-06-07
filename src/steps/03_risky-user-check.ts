@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
+import { errorMessage } from '../core/utils'
 
 const RISKY_USERS_URL =
   'https://raw.githubusercontent.com/malvads/slopper/main/.slopper_risky_users'
@@ -26,8 +27,7 @@ export class RiskyUserCheckStep extends PipelineStep {
         core.warning(`[risky-user-check] Failed to fetch risky users list: ${res.status}`)
       }
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`[risky-user-check] Could not reach risky users list: ${msg}`)
+      core.warning(`[risky-user-check] Could not reach risky users list: ${errorMessage(error)}`)
       return ctx
     }
 

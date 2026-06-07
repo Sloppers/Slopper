@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { AuthorProfileAnalyzer } from '../analysis/author-profile'
 import { GitHubClient } from '../clients/github'
+import { errorMessage } from '../core/utils'
 
 export class ProfileAnalysisStep extends PipelineStep {
   readonly name = 'profile-analysis'
@@ -40,8 +41,7 @@ export class ProfileAnalysisStep extends PipelineStep {
         `repos_30d=${ctx.authorProfile.distinct_repos_30d}`
       )
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`[profile-analysis] Failed: ${msg} — continuing without profile data`)
+      core.warning(`[profile-analysis] Failed: ${errorMessage(error)} — continuing without profile data`)
     }
 
     const trustedOrgs = ctx.config?.trusted_orgs ?? []

@@ -29,7 +29,7 @@ export class VouchCheckStep extends PipelineStep {
 
     const vouchComment = await this.findVouchCommand(ctx.prNumber)
     if (vouchComment) {
-      const isCodeOwner = await this.isCodeOwner(vouchComment.author)
+      const isCodeOwner = await this.github.isMaintainer(vouchComment.author)
       if (isCodeOwner) {
         core.info(`Code owner "${vouchComment.author}" vouched for "${prAuthor}"`)
         ctx.vouched = true
@@ -58,19 +58,5 @@ export class VouchCheckStep extends PipelineStep {
       }
     }
     return null
-  }
-
-  private async isCodeOwner(username: string): Promise<boolean> {
-    const codeownersPaths = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
-
-    for (const path of codeownersPaths) {
-      const content = await this.github.getFileContent(path)
-      if (content && content.includes(`@${username}`)) {
-        return true
-      }
-    }
-
-    const permission = await this.github.getPermissionLevel(username)
-    return ['admin', 'maintain'].includes(permission)
   }
 }

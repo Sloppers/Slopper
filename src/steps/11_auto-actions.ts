@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { GitHubClient } from '../clients/github'
 import { SlopperConfig } from '../core/config'
+import { errorMessage } from '../core/utils'
 
 export class AutoActionsStep extends PipelineStep {
   readonly name = 'auto-actions'
@@ -79,8 +80,7 @@ export class AutoActionsStep extends PipelineStep {
     try {
       await fn()
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      core.warning(`[auto-actions] Failed to ${action}: ${msg}`)
+      core.warning(`[auto-actions] Failed to ${action}: ${errorMessage(error)}`)
     }
   }
 }

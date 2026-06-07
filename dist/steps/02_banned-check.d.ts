@@ -8,7 +8,6 @@ export declare class BannedCheckStep extends PipelineStep {
     execute(ctx: PipelineContext): Promise<PipelineContext>;
     private banAndClose;
     private findReportCommand;
-    private isMaintainer;
     private addUserToBannedList;
 }
 //# sourceMappingURL=02_banned-check.d.ts.map

@@ -1,10 +1,12 @@
-import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
 import { Indicators } from '../../label-factory'
+import { truncateDiff } from '../../../core/utils'
 
 export class CodeQualityCheck extends AgenticCheck {
   readonly key = 'code-quality'
   readonly label = Indicators.AI_CODE_QUALITY
   readonly description = 'Detects subtle code quality issues: missing edge cases, unnecessary complexity, duplicate functionality'
+  readonly triggerKey = 'has_issues'
   readonly defaultWeight = 1
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -24,7 +26,7 @@ Do NOT flag:
 
 Be specific. Vague concerns are not useful. Call the tool with your assessment.`
 
-    const diff = ctx.prData.diff.length > 10000 ? ctx.prData.diff.slice(0, 10000) + '\n... (truncated)' : ctx.prData.diff
+    const diff = truncateDiff(ctx.prData.diff, 10000)
 
     const user = `## PR: ${ctx.prData.title}
 
@@ -61,13 +63,4 @@ ${diff}
     }
   }
 
-  parseResult(raw: Record<string, unknown>): AgenticCheckResult {
-    return {
-      triggered: raw.has_issues as boolean,
-      label: this.label,
-      reasoning: raw.reasoning as string,
-      confidence: raw.confidence as 'low' | 'medium' | 'high',
-      evidence: raw.evidence as string[]
-    }
-  }
 }

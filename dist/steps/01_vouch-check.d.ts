@@ -6,6 +6,5 @@ export declare class VouchCheckStep extends PipelineStep {
     constructor(github: GitHubClient);
     execute(ctx: PipelineContext): Promise<PipelineContext>;
     private findVouchCommand;
-    private isCodeOwner;
 }
 //# sourceMappingURL=01_vouch-check.d.ts.map

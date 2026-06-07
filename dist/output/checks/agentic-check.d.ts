@@ -19,12 +19,13 @@ export declare abstract class AgenticCheck {
     abstract readonly key: string;
     abstract readonly label: string;
     abstract readonly description: string;
+    abstract readonly triggerKey: string;
     readonly defaultWeight: number;
     abstract buildPrompt(ctx: AgenticCheckContext): {
         system: string;
         user: string;
     };
     abstract buildToolSchema(): AgenticToolSchema;
-    abstract parseResult(raw: Record<string, unknown>): AgenticCheckResult;
+    parseResult(raw: Record<string, unknown>): AgenticCheckResult;
 }
 //# sourceMappingURL=agentic-check.d.ts.map

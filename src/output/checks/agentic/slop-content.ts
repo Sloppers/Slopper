@@ -1,10 +1,12 @@
-import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
 import { Indicators } from '../../label-factory'
+import { truncateDiff } from '../../../core/utils'
 
 export class SlopContentCheck extends AgenticCheck {
   readonly key = 'slop-content'
   readonly label = Indicators.AI_SLOP_CONTENT
   readonly description = 'Detects generic AI-generated slop: phantom fixes, boilerplate inflation, templated descriptions'
+  readonly triggerKey = 'is_slop'
   readonly defaultWeight = 2
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -24,7 +26,7 @@ Signs it's NOT slop:
 
 Be skeptical but fair. Call the tool with your assessment.`
 
-    const diff = ctx.prData.diff.length > 8000 ? ctx.prData.diff.slice(0, 8000) + '\n... (truncated)' : ctx.prData.diff
+    const diff = truncateDiff(ctx.prData.diff, 8000)
 
     const user = `## PR: ${ctx.prData.title}
 
@@ -67,13 +69,4 @@ ${diff}
     }
   }
 
-  parseResult(raw: Record<string, unknown>): AgenticCheckResult {
-    return {
-      triggered: raw.is_slop as boolean,
-      label: this.label,
-      reasoning: raw.reasoning as string,
-      confidence: raw.confidence as 'low' | 'medium' | 'high',
-      evidence: raw.evidence as string[]
-    }
-  }
 }

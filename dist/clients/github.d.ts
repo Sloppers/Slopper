@@ -1237,7 +1237,7 @@ export declare class GitHubClient {
             rocket: number;
         };
     }[]>;
+    isMaintainer(username: string): Promise<boolean>;
     listDirectory(path: string): Promise<string[]>;
-    createGist(description: string, filename: string, content: string): Promise<string>;
 }
 //# sourceMappingURL=github.d.ts.map

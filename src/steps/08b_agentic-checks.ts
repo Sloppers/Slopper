@@ -4,6 +4,7 @@ import { AiProvider } from '../ai/providers'
 import { ProviderConfig, callAgenticCheck } from '../ai/check-caller'
 import { AgenticCheckContext } from '../output/checks/agentic-check'
 import { allAgenticChecks } from '../output/checks/agentic'
+import { errorMessage } from '../core/utils'
 
 export interface AgenticChecksConfig {
   provider: AiProvider
@@ -66,8 +67,7 @@ export class AgenticChecksStep extends PipelineStep {
           }
           return result
         } catch (error: unknown) {
-          const msg = error instanceof Error ? error.message : String(error)
-          core.warning(`[agentic-checks] ${check.key} failed: ${msg}`)
+          core.warning(`[agentic-checks] ${check.key} failed: ${errorMessage(error)}`)
           return null
         }
       })

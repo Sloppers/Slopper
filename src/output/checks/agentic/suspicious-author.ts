@@ -1,10 +1,11 @@
-import { AgenticCheck, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
+import { AgenticCheck, AgenticCheckContext, AgenticToolSchema } from '../agentic-check'
 import { Indicators } from '../../label-factory'
 
 export class SuspiciousAuthorCheck extends AgenticCheck {
   readonly key = 'suspicious-author'
   readonly label = Indicators.AI_SUSPICIOUS_AUTHOR
   readonly description = 'Evaluates the PR author profile for patterns common in slop accounts'
+  readonly triggerKey = 'is_suspicious'
   readonly defaultWeight = 2
 
   buildPrompt(ctx: AgenticCheckContext): { system: string; user: string } {
@@ -88,13 +89,4 @@ Be fair. New accounts are not automatically suspicious — look for the combinat
     }
   }
 
-  parseResult(raw: Record<string, unknown>): AgenticCheckResult {
-    return {
-      triggered: raw.is_suspicious as boolean,
-      label: this.label,
-      reasoning: raw.reasoning as string,
-      confidence: raw.confidence as 'low' | 'medium' | 'high',
-      evidence: raw.evidence as string[]
-    }
-  }
 }
