@@ -34,6 +34,8 @@ export interface PipelineContext {
 export declare abstract class PipelineStep {
     abstract readonly name: string;
     abstract execute(ctx: PipelineContext): Promise<PipelineContext>;
+    protected log(msg: string): void;
+    protected warn(msg: string): void;
 }
 export declare class AnalysisPipeline {
     private readonly steps;

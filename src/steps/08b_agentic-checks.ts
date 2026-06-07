@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { AiProvider } from '../ai/providers'
 import { ProviderConfig, callAgenticCheck } from '../ai/check-caller'
@@ -24,7 +23,7 @@ export class AgenticChecksStep extends PipelineStep {
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     if (!ctx.prData) {
-      core.warning('[agentic-checks] No PR data — skipping agentic checks')
+      this.warn('No PR data — skipping agentic checks')
       return ctx
     }
 
@@ -54,20 +53,20 @@ export class AgenticChecksStep extends PipelineStep {
       }
     }
 
-    core.info(`[agentic-checks] Running ${checks.length} agentic checks in parallel...`)
+    this.log(` Running ${checks.length} agentic checks in parallel...`)
 
     const results = await Promise.allSettled(
       checks.map(async check => {
         try {
           const result = await callAgenticCheck(check, checkCtx, this.provider, this.providerConfig)
           if (result.triggered) {
-            core.info(`[agentic-checks] ⚠ ${check.key}: ${result.reasoning}`)
+            this.log(` ⚠ ${check.key}: ${result.reasoning}`)
           } else {
-            core.info(`[agentic-checks] ✓ ${check.key}: passed`)
+            this.log(` ✓ ${check.key}: passed`)
           }
           return result
         } catch (error: unknown) {
-          core.warning(`[agentic-checks] ${check.key} failed: ${errorMessage(error)}`)
+          this.warn(` ${check.key} failed: ${errorMessage(error)}`)
           return null
         }
       })
@@ -78,7 +77,7 @@ export class AgenticChecksStep extends PipelineStep {
       .filter((r): r is NonNullable<typeof r> => r !== null)
 
     const triggered = ctx.agenticResults.filter(r => r.triggered)
-    core.info(`[agentic-checks] ${triggered.length}/${checks.length} checks triggered`)
+    this.log(` ${triggered.length}/${checks.length} checks triggered`)
 
     return ctx
   }

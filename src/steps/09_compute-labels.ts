@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { LabelComputer } from '../output/labels'
 
@@ -30,7 +29,7 @@ export class ComputeLabelsStep extends PipelineStep {
     ctx.deterministicScore = result.score
     ctx.signalBreakdown = result.breakdown
     const active = result.breakdown.filter(s => s.points !== 0).map(s => `${s.key}=${s.points > 0 ? '+' : ''}${s.points}`).join(', ')
-    core.info(`[compute-labels] Deterministic score: ${ctx.deterministicScore}/10 [${active}]`)
+    this.log(`Deterministic score: ${ctx.deterministicScore}/10 [${active}]`)
 
     ctx.labels = computer.compute(opts)
 

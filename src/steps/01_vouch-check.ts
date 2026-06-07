@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { GitHubClient } from '../clients/github'
 
@@ -21,7 +20,7 @@ export class VouchCheckStep extends PipelineStep {
     const vouchedUsers = ctx.config?.vouched ?? []
 
     if (vouchedUsers.includes(prAuthor)) {
-      core.info(`Author "${prAuthor}" is in .slopper vouched users — skipping analysis`)
+      this.log(`Author "${prAuthor}" is in .slopper vouched users — skipping analysis`)
       ctx.vouched = true
       ctx.vouchedBy = '.slopper'
       return ctx
@@ -31,12 +30,12 @@ export class VouchCheckStep extends PipelineStep {
     if (vouchComment) {
       const isCodeOwner = await this.github.isMaintainer(vouchComment.author)
       if (isCodeOwner) {
-        core.info(`Code owner "${vouchComment.author}" vouched for "${prAuthor}"`)
+        this.log(`Code owner "${vouchComment.author}" vouched for "${prAuthor}"`)
         ctx.vouched = true
         ctx.vouchedBy = vouchComment.author
         ctx.addToSlopperFile = prAuthor
       } else {
-        core.info(`"${vouchComment.author}" used /slopper vouch but is not a code owner — ignoring`)
+        this.log(`"${vouchComment.author}" used /slopper vouch but is not a code owner — ignoring`)
       }
     }
 

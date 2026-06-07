@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { GitHubClient } from '../clients/github'
 import { SlopperConfig } from '../core/config'
@@ -44,7 +43,7 @@ export class AutoActionsStep extends PipelineStep {
     const { auto_close } = config.actions
     if (!auto_close.enabled || score < auto_close.threshold) return
 
-    core.info(`[auto-actions] Closing PR — risk score ${score} >= threshold ${auto_close.threshold}`)
+    this.log(` Closing PR — risk score ${score} >= threshold ${auto_close.threshold}`)
     await this.closeWithComment(prNumber, auto_close.comment)
   }
 
@@ -52,7 +51,7 @@ export class AutoActionsStep extends PipelineStep {
     const { auto_approve } = config.actions
     if (!auto_approve.enabled || score > auto_approve.threshold || confidence !== 'high') return
 
-    core.info(`[auto-actions] Approving PR — risk score ${score} <= threshold ${auto_approve.threshold}`)
+    this.log(` Approving PR — risk score ${score} <= threshold ${auto_approve.threshold}`)
     await this.safeCall('approve PR',
       () => this.github.approvePr(prNumber, 'Automatically approved by Slopper — low risk score with high confidence.'))
   }
@@ -64,7 +63,7 @@ export class AutoActionsStep extends PipelineStep {
     const { reviewers } = auto_request_review
     if (reviewers.length === 0) return
 
-    core.info(`[auto-actions] Requesting review from: ${reviewers.join(', ')}`)
+    this.log(` Requesting review from: ${reviewers.join(', ')}`)
     await this.safeCall('request reviewers',
       () => this.github.requestReviewers(prNumber, reviewers))
   }
@@ -80,7 +79,7 @@ export class AutoActionsStep extends PipelineStep {
     try {
       await fn()
     } catch (error: unknown) {
-      core.warning(`[auto-actions] Failed to ${action}: ${errorMessage(error)}`)
+      this.warn(` Failed to ${action}: ${errorMessage(error)}`)
     }
   }
 }

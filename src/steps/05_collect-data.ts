@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { minimatch } from 'minimatch'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { PrDataCollector } from '../analysis/collector'
@@ -27,7 +26,7 @@ export class CollectDataStep extends PipelineStep {
       }
       const filtered = before - ctx.prData.files.length
       if (filtered > 0) {
-        core.info(`[collect-data] Filtered ${filtered} files matching ignore_paths`)
+        this.log(`Filtered ${filtered} files matching ignore_paths`)
       }
     }
 

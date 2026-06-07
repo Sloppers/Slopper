@@ -60,7 +60,7 @@ export class PostResultsStep extends PipelineStep {
     await this.commentManager.upsertComment(prNumber, commentBody)
 
     if (labels.length > 0) {
-      core.info(`Applying labels: ${labels.join(', ')}`)
+      this.log(`Applying labels: ${labels.join(', ')}`)
       await this.commentManager.applyLabels(prNumber, labels)
     }
 

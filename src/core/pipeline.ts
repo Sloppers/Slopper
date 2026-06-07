@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import { AnalysisResult, PrData, AuthorProfileAnalysis, AiFingerprintResult } from './types'
+import { errorMessage } from './utils'
 import { SlopperConfig } from './config'
 import { ScoreResult } from '../output/checks/check'
 import { AgenticCheckResult } from '../output/checks/agentic-check'
@@ -38,6 +39,14 @@ export interface PipelineContext {
 export abstract class PipelineStep {
   abstract readonly name: string
   abstract execute(ctx: PipelineContext): Promise<PipelineContext>
+
+  protected log(msg: string): void {
+    core.info(`[${this.name}] ${msg}`)
+  }
+
+  protected warn(msg: string): void {
+    core.warning(`[${this.name}] ${msg}`)
+  }
 }
 
 export class AnalysisPipeline {
@@ -63,7 +72,7 @@ export class AnalysisPipeline {
         core.info(`[pipeline] Step "${step.name}" completed in ${durationMs}ms`)
       } catch (err) {
         const durationMs = Date.now() - startMs
-        const message = err instanceof Error ? err.message : String(err)
+        const message = errorMessage(err)
         ctx.stepResults!.push({ name: step.name, status: 'failure', startTime, durationMs, error: message })
         core.error(`[pipeline] Step "${step.name}" failed after ${durationMs}ms: ${message}`)
         throw err

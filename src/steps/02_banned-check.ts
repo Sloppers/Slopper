@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { PrCommentManager } from '../output/commenter'
 import { GitHubClient } from '../clients/github'
@@ -23,7 +22,7 @@ export class BannedCheckStep extends PipelineStep {
     if (reportedBy) {
       const isAuthorized = await this.github.isMaintainer(reportedBy)
       if (isAuthorized) {
-        core.info(`[banned-check] Maintainer "${reportedBy}" reported "${ctx.prAuthor}" via /slopper report`)
+        this.log(` Maintainer "${reportedBy}" reported "${ctx.prAuthor}" via /slopper report`)
         await this.addUserToBannedList(ctx.prAuthor, {
           reporter: reportedBy,
           pr: ctx.prNumber,
@@ -31,7 +30,7 @@ export class BannedCheckStep extends PipelineStep {
         })
         return this.banAndClose(ctx, `reported by maintainer **@${reportedBy}** via \`/slopper report\``)
       } else {
-        core.info(`[banned-check] "${reportedBy}" used /slopper report but is not a maintainer — ignoring`)
+        this.log(` "${reportedBy}" used /slopper report but is not a maintainer — ignoring`)
       }
     }
 
@@ -39,7 +38,7 @@ export class BannedCheckStep extends PipelineStep {
     if (bannedUsers.length === 0) return ctx
     if (!bannedUsers.includes(ctx.prAuthor)) return ctx
 
-    core.info(`[banned-check] Author "${ctx.prAuthor}" is on the banned list — closing PR`)
+    this.log(` Author "${ctx.prAuthor}" is on the banned list — closing PR`)
     return this.banAndClose(ctx, 'the author is on the banned list')
   }
 
@@ -59,7 +58,7 @@ export class BannedCheckStep extends PipelineStep {
     try {
       await this.github.closePr(ctx.prNumber)
     } catch (error: unknown) {
-      core.warning(`[banned-check] Failed to close PR: ${errorMessage(error)}`)
+      this.warn(` Failed to close PR: ${errorMessage(error)}`)
     }
 
     return ctx
@@ -81,7 +80,7 @@ export class BannedCheckStep extends PipelineStep {
     const path = `.slopper.d/banned/${username}`
     const existing = await this.github.getFileContent(path)
     if (existing !== null) {
-      core.info(`[banned-check] ${username} already in .slopper.d/banned/`)
+      this.log(` ${username} already in .slopper.d/banned/`)
       return
     }
 
@@ -93,9 +92,9 @@ export class BannedCheckStep extends PipelineStep {
 
     try {
       await this.github.createOrUpdateFile(path, `slopper: ban ${username} (reported)`, content)
-      core.info(`[banned-check] Created .slopper.d/banned/${username}`)
+      this.log(` Created .slopper.d/banned/${username}`)
     } catch (error: unknown) {
-      core.warning(`[banned-check] Failed to create banned entry: ${errorMessage(error)}`)
+      this.warn(` Failed to create banned entry: ${errorMessage(error)}`)
     }
   }
 }

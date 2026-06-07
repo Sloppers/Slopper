@@ -61,7 +61,7 @@ export class VouchApplyStep extends PipelineStep {
     const path = `.slopper.d/vouched/${username}`
     const existing = await this.github.getFileContent(path)
     if (existing !== null) {
-      core.info(`[vouch-apply] ${username} already in .slopper.d/vouched/`)
+      this.log(` ${username} already in .slopper.d/vouched/`)
       return
     }
 
@@ -73,9 +73,9 @@ export class VouchApplyStep extends PipelineStep {
 
     try {
       await this.github.createOrUpdateFile(path, `slopper: vouch ${username}`, content)
-      core.info(`[vouch-apply] Created .slopper.d/vouched/${username}`)
+      this.log(` Created .slopper.d/vouched/${username}`)
     } catch (error: unknown) {
-      core.warning(`[vouch-apply] Failed to create vouch entry: ${errorMessage(error)}`)
+      this.warn(` Failed to create vouch entry: ${errorMessage(error)}`)
     }
   }
 }

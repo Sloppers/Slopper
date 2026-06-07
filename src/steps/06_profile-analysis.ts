@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { AuthorProfileAnalyzer } from '../analysis/author-profile'
 import { GitHubClient } from '../clients/github'
@@ -17,13 +16,13 @@ export class ProfileAnalysisStep extends PipelineStep {
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     if (!ctx.prData) {
-      core.warning('[profile-analysis] No prData — skipping profile analysis')
+      this.warn('No prData — skipping profile analysis')
       return ctx
     }
 
     const author = ctx.prData.author.login
     if (ctx.prData.author.is_bot) {
-      core.info(`[profile-analysis] Skipping profile analysis for bot: ${author}`)
+      this.log(` Skipping profile analysis for bot: ${author}`)
       return ctx
     }
 
@@ -34,14 +33,14 @@ export class ProfileAnalysisStep extends PipelineStep {
         lt?.activity_burst_days ?? 7,
         lt?.spray_weights
       )
-      core.info(
-        `[profile-analysis] ${author}: spray=${ctx.authorProfile.spray_score}, ` +
+      this.log(
+        `${author}: spray=${ctx.authorProfile.spray_score}, ` +
         `age=${ctx.authorProfile.account_age_days}d, ` +
         `merge=${Math.round(ctx.authorProfile.merge_ratio * 100)}%, ` +
         `repos_30d=${ctx.authorProfile.distinct_repos_30d}`
       )
     } catch (error: unknown) {
-      core.warning(`[profile-analysis] Failed: ${errorMessage(error)} — continuing without profile data`)
+      this.warn(` Failed: ${errorMessage(error)} — continuing without profile data`)
     }
 
     const trustedOrgs = ctx.config?.trusted_orgs ?? []
@@ -50,11 +49,11 @@ export class ProfileAnalysisStep extends PipelineStep {
         try {
           if (await this.github.isOrgPublicMember(org, author)) {
             ctx.trustedOrg = true
-            core.info(`[profile-analysis] ${author} is a public member of trusted org: ${org}`)
+            this.log(` ${author} is a public member of trusted org: ${org}`)
             break
           }
         } catch {
-          core.warning(`[profile-analysis] Failed to check org membership for ${org}`)
+          this.warn(` Failed to check org membership for ${org}`)
         }
       }
     }

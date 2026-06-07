@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { ConfigLoader } from '../core/config'
 import { GitHubClient } from '../clients/github'
@@ -14,7 +13,7 @@ export class LoadConfigStep extends PipelineStep {
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     ctx.config = await this.loader.load()
-    core.info(`[config] Loaded: ${ctx.config.vouched.length} vouched, ${ctx.config.banned.length} banned, ignore_paths=${ctx.config.ignore_paths.length}`)
+    this.log(`Loaded: ${ctx.config.vouched.length} vouched, ${ctx.config.banned.length} banned, ignore_paths=${ctx.config.ignore_paths.length}`)
     return ctx
   }
 }

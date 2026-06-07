@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { errorMessage } from '../core/utils'
 
@@ -24,10 +23,10 @@ export class RiskyUserCheckStep extends PipelineStep {
       if (res.ok) {
         users = parseRiskyUsers(await res.text())
       } else {
-        core.warning(`[risky-user-check] Failed to fetch risky users list: ${res.status}`)
+        this.warn(` Failed to fetch risky users list: ${res.status}`)
       }
     } catch (error: unknown) {
-      core.warning(`[risky-user-check] Could not reach risky users list: ${errorMessage(error)}`)
+      this.warn(` Could not reach risky users list: ${errorMessage(error)}`)
       return ctx
     }
 
@@ -38,7 +37,7 @@ export class RiskyUserCheckStep extends PipelineStep {
     )
 
     if (isRisky) {
-      core.warning(`[risky-user-check] Author "${ctx.prAuthor}" is on the community risky users list`)
+      this.warn(` Author "${ctx.prAuthor}" is on the community risky users list`)
       ctx.riskyUser = true
     }
 

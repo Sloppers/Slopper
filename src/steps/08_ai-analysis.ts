@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { callProvider, AiProvider } from '../ai/providers'
 import { SYSTEM_PROMPT, buildUserPrompt } from '../ai/prompt'
@@ -55,7 +54,7 @@ export class AiAnalysisStep extends PipelineStep {
       ctx.analysisResult = result
     } catch (error: unknown) {
       const msg = errorMessage(error)
-      core.warning(`AI analysis failed: ${msg}`)
+      this.warn(`AI analysis failed: ${msg}`)
       ctx.analysisResult = this.buildFailureResult(msg)
       ctx.analysisFailed = true
     }
