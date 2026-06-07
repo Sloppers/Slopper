@@ -35,7 +35,7 @@ export class AiAnalysisStep extends PipelineStep {
     })
 
     try {
-      const result = await callProvider(
+      const raw = await callProvider(
         this.config.provider,
         userPrompt,
         SYSTEM_PROMPT,
@@ -49,6 +49,7 @@ export class AiAnalysisStep extends PipelineStep {
           model: this.config.model
         }
       )
+      const result = raw as unknown as AnalysisResult
       result.provider = this.config.provider
       ctx.analysisResult = result
     } catch (error: unknown) {

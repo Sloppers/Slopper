@@ -1,11 +1,10 @@
-import { AnalysisResult } from '../core/types';
 export type AiProvider = 'openai' | 'anthropic' | 'vertex' | 'groq' | 'gemini';
-export declare function callOpenAI(prompt: string, system: string, apiKey: string, model?: string): Promise<AnalysisResult>;
-export declare function callAnthropic(prompt: string, system: string, apiKey: string, model?: string): Promise<AnalysisResult>;
-export declare function callVertex(prompt: string, system: string, projectId: string, region: string, model?: string): Promise<AnalysisResult>;
-export declare function callGroq(prompt: string, system: string, apiKey: string, model?: string): Promise<AnalysisResult>;
-export declare function callGemini(prompt: string, system: string, apiKey: string, model?: string): Promise<AnalysisResult>;
-export declare function callProvider(provider: AiProvider, prompt: string, system: string, config: {
+export interface ToolDef {
+    name: string;
+    description: string;
+    schema: Record<string, unknown>;
+}
+export interface ProviderConfig {
     openaiApiKey?: string;
     anthropicApiKey?: string;
     vertexProjectId?: string;
@@ -13,5 +12,11 @@ export declare function callProvider(provider: AiProvider, prompt: string, syste
     groqApiKey?: string;
     geminiApiKey?: string;
     model?: string;
-}): Promise<AnalysisResult>;
+}
+export interface AiProviderStrategy {
+    readonly defaultModel: string;
+    call(system: string, user: string, tool: ToolDef, maxTokens: number): Promise<Record<string, unknown>>;
+}
+export declare function createProvider(provider: AiProvider, config: ProviderConfig): AiProviderStrategy;
+export declare function callProvider(provider: AiProvider, prompt: string, system: string, config: ProviderConfig): Promise<Record<string, unknown>>;
 //# sourceMappingURL=providers.d.ts.map

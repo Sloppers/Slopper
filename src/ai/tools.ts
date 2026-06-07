@@ -1,20 +1,9 @@
-/**
- * Tool schema definitions for structured AI output via MCP tool calling.
- *
- * Instead of parsing raw JSON from the AI, we define a `submit_analysis` tool
- * with a strict JSON Schema. The AI is forced to call this tool, ensuring
- * deterministic, validated output structure across all providers.
- */
-
-/** Name of the MCP tool the AI must call. */
 export const ANALYSIS_TOOL_NAME = 'submit_analysis'
 
-/** Description shown to the AI model for the tool. */
 export const ANALYSIS_TOOL_DESCRIPTION =
   'Submit the structured quality and trust analysis results for a pull request. ' +
   'You MUST call this tool exactly once with your complete analysis.'
 
-/** JSON Schema for the submit_analysis tool input. */
 export const ANALYSIS_JSON_SCHEMA = {
   type: 'object' as const,
   additionalProperties: false,
@@ -141,43 +130,3 @@ export const ANALYSIS_JSON_SCHEMA = {
     }
   }
 } as const
-
-/**
- * Builds the tool definition for OpenAI function calling.
- * @returns OpenAI-compatible tool object with strict mode enabled.
- */
-export function buildOpenAITool() {
-  return {
-    type: 'function' as const,
-    function: {
-      name: ANALYSIS_TOOL_NAME,
-      description: ANALYSIS_TOOL_DESCRIPTION,
-      strict: true,
-      parameters: ANALYSIS_JSON_SCHEMA
-    }
-  }
-}
-
-/**
- * Builds the tool definition for Anthropic/Vertex AI tool use.
- * @returns Anthropic-compatible tool object.
- */
-export function buildAnthropicTool() {
-  return {
-    name: ANALYSIS_TOOL_NAME,
-    description: ANALYSIS_TOOL_DESCRIPTION,
-    input_schema: ANALYSIS_JSON_SCHEMA
-  }
-}
-
-/**
- * Builds the function declaration for Google Gemini function calling.
- * @returns Gemini-compatible function declaration.
- */
-export function buildGeminiFunctionDeclaration() {
-  return {
-    name: ANALYSIS_TOOL_NAME,
-    description: ANALYSIS_TOOL_DESCRIPTION,
-    parametersJsonSchema: ANALYSIS_JSON_SCHEMA
-  }
-}
