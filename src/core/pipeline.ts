@@ -3,7 +3,7 @@ import { AnalysisResult, PrData, AuthorProfileAnalysis } from './types'
 import { errorMessage } from './utils'
 import { SlopperConfig } from './config'
 import { ScoreResult } from '../output/checks/check'
-import { AgenticCheckResult } from '../output/checks/agentic-check'
+import { AgenticCheckResult } from '../output/checks/check'
 
 export interface StepResult {
   name: string

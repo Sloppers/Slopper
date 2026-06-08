@@ -1,7 +1,6 @@
-import { CheckDef, CheckContext } from './check'
+import { CheckDef, CheckContext, AgenticCheckDef, AgenticCheckContext, prHeader, prDescription, commitMessages, prStats, diffBlock, filesList, authorSection } from './check'
 import { Indicators } from '../label-factory'
 
-// --- helpers for complex checks ---
 
 function basename(filepath: string): string {
   return filepath.split('/').pop() ?? ''
@@ -77,7 +76,6 @@ function extractAddedBlocks(diff: string, minLines: number): string[] {
   return blocks
 }
 
-// --- registry ---
 
 export const ALL_CHECKS: CheckDef[] = [
   {
@@ -208,3 +206,152 @@ export const ALL_CHECKS: CheckDef[] = [
     evaluate: ctx => !!ctx.verifiedOrg
   }
 ]
+
+
+export const ALL_AGENTIC_CHECKS: AgenticCheckDef[] = [
+  {
+    key: 'slop-content',
+    label: Indicators.AI_SLOP_CONTENT,
+    description: 'Detects generic AI-generated slop: phantom fixes, boilerplate inflation, templated descriptions',
+    triggerKey: 'is_slop',
+    toolName: 'submit_slop_check',
+    triggerDescription: 'Whether this PR appears to be AI-generated slop',
+    weight: 2,
+    buildPrompt: (ctx: AgenticCheckContext) => ({
+      system: `You are a slop detector for open source pull requests. Your job is to determine if a PR is generic AI-generated noise that wastes maintainer time.
+
+Signs of slop:
+- Phantom fixes: claims to fix a problem that doesn't exist or nobody reported
+- Boilerplate inflation: generic commit messages, templated PR descriptions, verbose comments that restate obvious code
+- Well-formed noise: syntactically clean code that adds no real value — duplicate functionality, unnecessary abstractions, cosmetic refactors
+- Generic descriptions: "Improve robustness", "Enhance maintainability", "Refactor for clarity" with no specific context
+
+Signs it's NOT slop:
+- References a specific issue or bug report
+- Addresses a real, documented need
+- Author has engaged in discussion before submitting
+- Changes are specific and targeted, not sweeping
+
+Be skeptical but fair. Call the tool with your assessment.`,
+      user: [prHeader(ctx), prDescription(ctx), commitMessages(ctx), prStats(ctx), diffBlock(ctx, 8000)].join('\n\n')
+    })
+  },
+  {
+    key: 'description-mismatch',
+    label: Indicators.AI_DESCRIPTION_MISMATCH,
+    description: 'Detects when PR description does not match what the diff actually does',
+    triggerKey: 'has_mismatch',
+    toolName: 'submit_mismatch_check',
+    triggerDescription: 'Whether the description misrepresents the actual changes',
+    weight: 1,
+    buildPrompt: (ctx: AgenticCheckContext) => ({
+      system: `You are a PR description auditor. Your job is to determine if a pull request's title and description accurately reflect what the code diff actually does.
+
+Flag a mismatch when:
+- The description claims to fix something but the diff doesn't address it
+- The description is vague/generic while the changes are specific (or vice versa)
+- The description mentions features or changes not present in the diff
+- The diff contains significant changes not mentioned in the description
+
+Do NOT flag when:
+- The description is simply brief but accurate
+- Minor omissions of trivial details
+- The PR has no description (that's a different check)
+
+Call the tool with your assessment.`,
+      user: [prHeader(ctx), prDescription(ctx), filesList(ctx), diffBlock(ctx, 8000)].join('\n\n')
+    })
+  },
+  {
+    key: 'code-quality',
+    label: Indicators.AI_CODE_QUALITY,
+    description: 'Detects subtle code quality issues: missing edge cases, unnecessary complexity, duplicate functionality',
+    triggerKey: 'has_issues',
+    toolName: 'submit_quality_check',
+    triggerDescription: 'Whether significant quality issues were found',
+    weight: 1,
+    buildPrompt: (ctx: AgenticCheckContext) => ({
+      system: `You are a code quality reviewer focused on detecting "well-formed noise" — code that looks clean on the surface but has real problems underneath.
+
+Flag quality issues when you find:
+- Missing edge cases: error handling absent, boundary conditions ignored, null/undefined not considered
+- Unnecessary complexity: abstraction layers that add no value, over-engineered solutions for simple problems
+- Duplicate functionality: code that reimplements something already available in the project or standard library
+- Logic errors: subtle bugs that would pass CI but fail in production
+- Performance anti-patterns: O(n²) when O(n) is trivial, unnecessary allocations in hot paths
+
+Do NOT flag:
+- Style preferences (naming, formatting)
+- Minor improvements that are debatable
+- Code that follows the project's existing patterns even if you'd do it differently
+
+Be specific. Vague concerns are not useful. Call the tool with your assessment.`,
+      user: [prHeader(ctx), filesList(ctx), diffBlock(ctx, 10000)].join('\n\n')
+    })
+  },
+  {
+    key: 'security-concern',
+    label: Indicators.AI_SECURITY_CONCERN,
+    description: 'Detects security concerns: obfuscated code, credential patterns, suspicious URLs, backdoors',
+    triggerKey: 'has_concerns',
+    toolName: 'submit_security_check',
+    triggerDescription: 'Whether security concerns were found',
+    weight: 2,
+    buildPrompt: (ctx: AgenticCheckContext) => ({
+      system: `You are a security reviewer for open source pull requests. Your job is to detect potentially malicious or dangerous code changes.
+
+Flag security concerns when you find:
+- Obfuscated code: base64 blobs, hex-encoded strings, minified code in non-minified contexts
+- Dynamic code execution: eval(), exec(), Function constructor, import() with variable arguments
+- Credential/secret patterns: hardcoded API keys, tokens, passwords, connection strings
+- Suspicious URLs: raw IPs, unusual domains, data exfiltration endpoints
+- CI/CD tampering: changes to workflows that add code execution, modify permissions, or disable checks
+- Dependency manipulation: adding unexpected packages, changing registries, typosquatting names
+- Backdoor patterns: hidden functionality, conditional execution based on environment, network calls to external services
+
+Do NOT flag:
+- Standard use of environment variables for configuration
+- Normal CI/CD pipeline changes (adding tests, updating versions)
+- Dependencies that are well-known and appropriate for the project
+
+Err on the side of caution — false positives are better than missed security issues. Call the tool with your assessment.`,
+      user: [prHeader(ctx), filesList(ctx, { showBinary: true }), diffBlock(ctx, 10000)].join('\n\n')
+    })
+  },
+  {
+    key: 'suspicious-author',
+    label: Indicators.AI_SUSPICIOUS_AUTHOR,
+    description: 'Evaluates the PR author profile for patterns common in slop accounts',
+    triggerKey: 'is_suspicious',
+    toolName: 'submit_author_check',
+    triggerDescription: 'Whether this author profile shows suspicious patterns',
+    weight: 2,
+    buildPrompt: (ctx: AgenticCheckContext) => ({
+      system: `You are an investigator analyzing GitHub user profiles to detect accounts likely used for AI slop spam, reputation farming, or supply-chain attacks.
+
+Suspicious patterns:
+- Very new account with high PR volume across many unrelated repos
+- Low or zero merge ratio despite many PRs (contributions get rejected or ignored)
+- No meaningful activity besides opening PRs (no issues, no discussions, no stars)
+- Bot-like behavior: burst activity patterns, PRs submitted at regular intervals
+- Username follows common bot/throwaway patterns (random characters, sequential numbers)
+- Bio or profile is empty or contains generic AI-generated text
+- Account follows many users but has very few followers (follow-farming)
+- PRs target unrelated repos with no domain focus (spray-and-pray)
+
+Signs of a legitimate contributor:
+- Consistent history in a specific domain or ecosystem
+- Healthy merge ratio (most PRs get accepted)
+- Engages in issues and discussions, not just PRs
+- Account age proportional to activity level
+- Has starred repos related to their contributions
+
+Be fair. New accounts are not automatically suspicious — look for the combination of signals. Call the tool with your assessment.`,
+      user: authorSection(ctx)
+    })
+  }
+]
+
+export function allAgenticChecks(): AgenticCheckDef[] {
+  return [...ALL_AGENTIC_CHECKS]
+}

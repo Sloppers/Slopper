@@ -1,17 +1,17 @@
 import { AiProvider, ProviderConfig, createProvider } from './providers'
-import { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from '../output/checks/agentic-check'
+import { AgenticCheckDef, AgenticCheckResult, AgenticCheckContext, agenticToolSchema, parseAgenticResult } from '../output/checks/check'
 
 export type { ProviderConfig }
 
 export async function callAgenticCheck(
-  check: AgenticCheck,
+  check: AgenticCheckDef,
   ctx: AgenticCheckContext,
   provider: AiProvider,
   config: ProviderConfig
 ): Promise<AgenticCheckResult> {
   const { system, user } = check.buildPrompt(ctx)
-  const tool = check.buildToolSchema()
+  const tool = agenticToolSchema(check)
   const strategy = createProvider(provider, config)
   const raw = await strategy.call(system, user, tool, 2048)
-  return check.parseResult(raw)
+  return parseAgenticResult(check, raw)
 }

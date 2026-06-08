@@ -1,8 +1,11 @@
-export { CheckDef, Check, CheckContext, ScoreResult, CheckContextOptions, buildCheckContext } from './check'
-export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic-check'
+export {
+  CheckDef, Check, CheckContext, ScoreResult, CheckContextOptions, buildCheckContext,
+  AgenticCheck, AgenticCheckDef, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema,
+  agenticToolSchema, parseAgenticResult,
+  prHeader, prDescription, filesList, diffBlock, commitMessages, prStats, authorSection
+} from './check'
 export { DerivedIndicator, allDerivedIndicators } from './derived-indicator'
-export { allAgenticChecks } from './agentic'
-export { ALL_CHECKS } from './registry'
+export { ALL_CHECKS, ALL_AGENTIC_CHECKS, allAgenticChecks } from './registry'
 
 import { CheckDef, CheckContext, ScoreResult } from './check'
 import { ALL_CHECKS } from './registry'

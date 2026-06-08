@@ -1,7 +1,7 @@
 import { GitHubClient } from '../clients/github'
 import { AnalysisResult } from '../core/types'
 import { ScoreResult } from './checks/check'
-import { AgenticCheckResult } from './checks/agentic-check'
+import { AgenticCheckResult } from './checks/check'
 import { StepResult } from '../core/pipeline'
 import { colorMap } from './label-factory'
 

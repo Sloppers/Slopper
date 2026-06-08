@@ -1,9 +1,8 @@
 import { PipelineStep, PipelineContext } from '../core/pipeline'
 import { AiProvider } from '../ai/providers'
 import { ProviderConfig, callAgenticCheck } from '../ai/check-caller'
-import { AgenticCheckContext } from '../output/checks/agentic-check'
-import { allAgenticChecks } from '../output/checks/agentic'
-import { buildCheckContext } from '../output/checks/check'
+import { AgenticCheckContext, buildCheckContext } from '../output/checks/check'
+import { allAgenticChecks } from '../output/checks/registry'
 import { errorMessage } from '../core/utils'
 
 export interface AgenticChecksConfig {
