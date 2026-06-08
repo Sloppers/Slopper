@@ -3,6 +3,7 @@ import { AiProvider } from '../ai/providers'
 import { ProviderConfig, callAgenticCheck } from '../ai/check-caller'
 import { AgenticCheckContext } from '../output/checks/agentic-check'
 import { allAgenticChecks } from '../output/checks/agentic'
+import { buildCheckContext } from '../output/checks/check'
 import { errorMessage } from '../core/utils'
 
 export interface AgenticChecksConfig {
@@ -28,7 +29,7 @@ export class AgenticChecksStep extends PipelineStep {
     }
 
     const checks = allAgenticChecks()
-    const checkCtx: AgenticCheckContext = {
+    const baseCtx = buildCheckContext({
       score: ctx.deterministicScore ?? ctx.analysisResult?.risk_score ?? 0,
       analysis: ctx.analysisResult,
       files: ctx.prData.files,
@@ -36,21 +37,10 @@ export class AgenticChecksStep extends PipelineStep {
       prData: ctx.prData,
       authorProfile: ctx.authorProfile,
       riskyUser: ctx.riskyUser,
-      trustedOrg: ctx.trustedOrg,
-      thresholds: ctx.config?.thresholds ?? { low: 2, medium: 5, high: 8 },
-      labelThresholds: ctx.config?.label_thresholds ?? {
-        spray_score: 60, new_account_days: 30,
-        activity_burst_prs: 10, activity_burst_days: 7,
-        spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
-        merge_ratio_suspect: 0.4, security_review_score: 6, suspicious_score: 8,
-        score_weights: { spray: 3, new_account: 1, low_merge_ratio: 1, risky_user: 1, trusted_org: -2 }
-      },
-      rules: ctx.config?.rules ?? {
-        require_description: false, require_linked_issue: false,
-        max_files_changed: 0, max_total_changes: 1500, max_file_changes: 800,
-        block_first_time_contributors: false
-      }
-    }
+      trustedOrg: ctx.trustedOrg
+    }, ctx.config)
+
+    const checkCtx: AgenticCheckContext = { ...baseCtx, prData: ctx.prData }
 
     this.log(` Running ${checks.length} agentic checks in parallel...`)
 

@@ -1,33 +1,24 @@
-export { Check, StaticCheck, CheckContext, ScoreResult } from './check'
+export { CheckDef, Check, CheckContext, ScoreResult, CheckContextOptions, buildCheckContext } from './check'
 export { AgenticCheck, AgenticCheckResult, AgenticCheckContext } from './agentic-check'
 export { DerivedIndicator, allDerivedIndicators } from './derived-indicator'
 export { allAgenticChecks } from './agentic'
-export { allStaticChecks } from './static'
-export {
-  FirstTimeContributorCheck, CiModifiedCheck, DependenciesModifiedCheck,
-  SprayAndPrayCheck, ActivityBurstCheck, NewAccountCheck,
-  MissingDescriptionCheck, NoLinkedIssueCheck, TooManyFilesCheck,
-  RiskyUserCheck, TrustedOrgCheck, HeavyChangesCheck,
-  LargeFileCheck, LowMergeRatioCheck, SupplyChainCheck,
-  UnsignedCommitsCheck, NoTestsCheck, CodeDuplicationCheck,
-  VerifiedOrgCheck
-} from './static'
+export { ALL_CHECKS } from './registry'
 
-import { Check, ScoreResult } from './check'
-import { allStaticChecks } from './static'
+import { CheckDef, CheckContext, ScoreResult } from './check'
+import { ALL_CHECKS } from './registry'
 
-export function allChecks(): Check[] {
-  return allStaticChecks()
+export function allChecks(): CheckDef[] {
+  return [...ALL_CHECKS]
 }
 
-export function computeScore(checks: Check[], ctx: import('./check').CheckContext, weights?: Record<string, number>): { score: number; breakdown: ScoreResult[] } {
+export function computeScore(checks: CheckDef[], ctx: CheckContext, weights?: Record<string, number>): { score: number; breakdown: ScoreResult[] } {
   const breakdown: ScoreResult[] = []
   let total = 0
 
   for (const check of checks) {
     const key = check.label.replace('slopper/', '').replace(/[-/]/g, '_')
-    const weight = weights?.[key] ?? check.defaultWeight
-    const factor = check.scoreFactor(ctx)
+    const weight = weights?.[key] ?? check.weight
+    const factor = check.scoreFactor ? check.scoreFactor(ctx) : (check.evaluate(ctx) ? 1 : 0)
     const points = factor * weight
     total += points
     breakdown.push({ key, factor, weight, points })

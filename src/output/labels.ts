@@ -1,56 +1,20 @@
-import { AnalysisResult, AuthorProfile, FileInfo, PrData, AuthorProfileAnalysis } from '../core/types'
-import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, ScoreWeightsConfig } from '../core/config'
-import { Check, CheckContext, ScoreResult, allChecks, computeScore, DerivedIndicator, allDerivedIndicators } from './checks'
+import { AnalysisResult, AuthorProfile, AuthorProfileAnalysis } from '../core/types'
+import { SlopperConfig, ScoreWeightsConfig } from '../core/config'
+import { CheckDef, CheckContext, CheckContextOptions, ScoreResult, buildCheckContext, allChecks, computeScore, DerivedIndicator, allDerivedIndicators } from './checks'
 import { Labels, confidenceLabel, riskLabel } from './label-factory'
 
+export type Check = CheckDef
 export type { CheckContext, ScoreResult }
-export { Check }
-
-export interface ComputeLabelsOptions {
-  analysis?: AnalysisResult
-  files: FileInfo[]
-  firstTimeContributor: boolean
-  prData?: PrData
-  authorProfile?: AuthorProfileAnalysis
-  riskyUser?: boolean
-  trustedOrg?: boolean
-  verifiedOrg?: boolean
-}
+export type ComputeLabelsOptions = CheckContextOptions
 
 export class LabelComputer {
-  private readonly thresholds: ThresholdsConfig
-  private readonly labelThresholds: LabelThresholdsConfig
-  private readonly rules: RulesConfig
-  private readonly checks: Check[]
+  private readonly config: Partial<SlopperConfig>
+  private readonly checks: CheckDef[]
   private readonly derivedIndicators: DerivedIndicator[]
 
-  constructor(
-    thresholds?: ThresholdsConfig,
-    rules?: RulesConfig,
-    labelThresholds?: LabelThresholdsConfig,
-    checks?: Check[]
-  ) {
-    this.thresholds = thresholds ?? { low: 2, medium: 5, high: 8 }
-    this.labelThresholds = labelThresholds ?? {
-      spray_score: 60,
-      new_account_days: 30,
-      activity_burst_prs: 10,
-      activity_burst_days: 7,
-      spray_weights: { repos: 40, volume: 30, merge_ratio: 20, account_age: 10 },
-      merge_ratio_suspect: 0.4,
-      security_review_score: 6,
-      suspicious_score: 8,
-      score_weights: {}
-    }
-    this.rules = rules ?? {
-      require_description: false,
-      require_linked_issue: false,
-      max_files_changed: 0,
-      max_total_changes: 1500,
-      max_file_changes: 800,
-      block_first_time_contributors: false
-    }
-    this.checks = checks ?? allChecks()
+  constructor(config?: Partial<SlopperConfig>) {
+    this.config = config ?? {}
+    this.checks = allChecks()
     this.derivedIndicators = allDerivedIndicators()
   }
 
@@ -59,7 +23,8 @@ export class LabelComputer {
       ? opts.analysis.risk_score
       : this.computeScoreFromChecks(opts).score
 
-    if (score >= this.thresholds.medium) {
+    const thresholds = this.config.thresholds ?? { low: 2, medium: 5, high: 8 }
+    if (score >= thresholds.medium) {
       return [Labels.SLOP.name]
     }
     return [Labels.LEGIT.name]
@@ -70,17 +35,11 @@ export class LabelComputer {
       ? opts.analysis.risk_score
       : this.computeScoreFromChecks(opts).score
 
-    const ctx: CheckContext = {
-      score,
-      ...opts,
-      thresholds: this.thresholds,
-      labelThresholds: this.labelThresholds,
-      rules: this.rules
-    }
+    const ctx = buildCheckContext({ ...opts, score }, this.config)
 
     const indicators: string[] = []
 
-    indicators.push(riskLabel(score, this.thresholds))
+    indicators.push(riskLabel(score, ctx.thresholds))
 
     if (opts.analysis) {
       indicators.push(confidenceLabel(opts.analysis.confidence))
@@ -115,14 +74,8 @@ export class LabelComputer {
   }
 
   computeScoreFromChecks(opts: ComputeLabelsOptions): { score: number; breakdown: ScoreResult[] } {
-    const ctx: CheckContext = {
-      score: 0,
-      ...opts,
-      thresholds: this.thresholds,
-      labelThresholds: this.labelThresholds,
-      rules: this.rules
-    }
-    const weights = this.labelThresholds.score_weights as unknown as Record<string, number>
+    const ctx = buildCheckContext(opts, this.config)
+    const weights = ctx.labelThresholds.score_weights as unknown as Record<string, number>
     return computeScore(this.checks, ctx, weights)
   }
 

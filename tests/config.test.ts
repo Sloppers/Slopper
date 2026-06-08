@@ -64,6 +64,17 @@ ignore_paths:
   - "*.md"
   - "docs/**"
 
+ignore_folders:
+  - vendor
+  - test/fixtures
+
+patterns:
+  lockfiles:
+    - custom.lock
+  ci_paths:
+    - .buildkite/
+  min_duplicate_lines: 10
+
 rules:
   require_description: true
   require_linked_issue: true
@@ -84,6 +95,14 @@ rules:
       expect(config.actions.auto_request_review.reviewers).toEqual(['reviewer1'])
       expect(config.thresholds).toEqual({ low: 3, medium: 6, high: 9 })
       expect(config.ignore_paths).toEqual(['*.md', 'docs/**'])
+      expect(config.ignore_folders).toEqual(['vendor', 'test/fixtures'])
+      expect(config.patterns.lockfiles).toEqual(['custom.lock'])
+      expect(config.patterns.ci_paths).toEqual(['.buildkite/'])
+      expect(config.patterns.min_duplicate_lines).toBe(10)
+      expect(config.patterns.manifest_files).toEqual([
+        'package.json', 'requirements.txt', 'Pipfile', 'pyproject.toml',
+        'go.mod', 'Cargo.toml', 'Gemfile', 'composer.json', 'pubspec.yaml'
+      ])
       expect(config.rules.require_description).toBe(true)
       expect(config.rules.max_files_changed).toBe(50)
       expect(config.rules.block_first_time_contributors).toBe(true)
@@ -164,6 +183,11 @@ actions:
       expect(config.actions.auto_approve.enabled).toBe(false)
       expect(config.thresholds).toEqual({ low: 2, medium: 5, high: 8 })
       expect(config.ignore_paths).toEqual([])
+      expect(config.ignore_folders).toEqual([])
+      expect(config.patterns.lockfiles).toContain('package-lock.json')
+      expect(config.patterns.ci_paths).toContain('.github/workflows/')
+      expect(config.patterns.min_duplicate_lines).toBe(6)
+      expect(config.patterns.min_duplicate_blocks).toBe(2)
       expect(config.rules.require_description).toBe(false)
       expect(config.label_thresholds.spray_score).toBe(60)
     })
@@ -180,6 +204,12 @@ actions:
       expect(config.actions.auto_close.enabled).toBe(false)
       expect(config.thresholds).toEqual({ low: 2, medium: 5, high: 8 })
       expect(config.ignore_paths).toEqual([])
+      expect(config.ignore_folders).toEqual([])
+      expect(config.patterns.lockfiles).toHaveLength(10)
+      expect(config.patterns.ci_paths).toHaveLength(7)
+      expect(config.patterns.test_patterns).toHaveLength(8)
+      expect(config.patterns.source_extensions).toHaveLength(14)
+      expect(config.patterns.min_duplicate_lines).toBe(6)
       expect(config.rules.block_first_time_contributors).toBe(false)
       expect(config.label_thresholds).toEqual({
         spray_score: 60,

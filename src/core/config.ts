@@ -52,6 +52,19 @@ export interface LabelThresholdsConfig {
   score_weights: ScoreWeightsConfig
 }
 
+export interface PatternsConfig {
+  lockfiles: string[]
+  manifest_files: string[]
+  ci_paths: string[]
+  dependency_files: string[]
+  test_patterns: string[]
+  source_extensions: string[]
+  supply_chain_patterns: string[]
+  linked_issue_patterns: string[]
+  min_duplicate_lines: number
+  min_duplicate_blocks: number
+}
+
 export interface RulesConfig {
   require_description: boolean
   require_linked_issue: boolean
@@ -69,6 +82,8 @@ export interface SlopperConfig {
   thresholds: ThresholdsConfig
   label_thresholds: LabelThresholdsConfig
   ignore_paths: string[]
+  ignore_folders: string[]
+  patterns: PatternsConfig
   rules: RulesConfig
 }
 
@@ -134,6 +149,46 @@ const DEFAULT_CONFIG: SlopperConfig = {
     }
   },
   ignore_paths: [],
+  ignore_folders: [],
+  patterns: {
+    lockfiles: [
+      'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+      'Pipfile.lock', 'poetry.lock', 'go.sum',
+      'Cargo.lock', 'Gemfile.lock', 'composer.lock', 'pubspec.lock'
+    ],
+    manifest_files: [
+      'package.json', 'requirements.txt', 'Pipfile', 'pyproject.toml',
+      'go.mod', 'Cargo.toml', 'Gemfile', 'composer.json', 'pubspec.yaml'
+    ],
+    ci_paths: [
+      '.github/workflows/', '.github/actions/', '.gitlab-ci',
+      '.circleci/', '.travis.yml', 'Jenkinsfile', 'azure-pipelines'
+    ],
+    dependency_files: [
+      'package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+      'requirements.txt', 'Pipfile.lock', 'poetry.lock', 'go.sum', 'go.mod',
+      'Cargo.lock', 'Gemfile.lock', 'composer.lock', 'pubspec.lock'
+    ],
+    test_patterns: [
+      '/__tests__/', '\\.test\\.[jt]sx?$', '\\.spec\\.[jt]sx?$',
+      '_test\\.go$', 'test_.*\\.py$', '.*_test\\.py$',
+      '/tests?/', '\\.tests?\\.[jt]sx?$'
+    ],
+    source_extensions: [
+      'ts', 'tsx', 'js', 'jsx', 'py', 'go', 'rb', 'java', 'rs', 'cs', 'cpp', 'c', 'swift', 'kt'
+    ],
+    supply_chain_patterns: [
+      '(-\\s*"version":\\s*"\\d+\\.\\d+\\.\\d+".*\\n\\+\\s*"version":\\s*"\\d+\\.\\d+\\.\\d+")',
+      '\\+.*install_requires.*\\n.*(?:http|ftp|git\\+)',
+      '\\+.*"resolved":\\s*"https?:\\/\\/(?!registry\\.npmjs\\.org|registry\\.yarnpkg\\.com)'
+    ],
+    linked_issue_patterns: [
+      '(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\s+#\\d+',
+      '#\\d+'
+    ],
+    min_duplicate_lines: 6,
+    min_duplicate_blocks: 2
+  },
   rules: {
     require_description: false,
     require_linked_issue: false,
@@ -196,7 +251,7 @@ export class ConfigLoader {
   }
 
   private isYaml(content: string): boolean {
-    return /^\s*(vouched|banned|trusted_orgs|actions|thresholds|label_thresholds|ignore_paths|rules)\s*:/m.test(content)
+    return /^\s*(vouched|banned|trusted_orgs|actions|thresholds|label_thresholds|ignore_paths|ignore_folders|patterns|rules)\s*:/m.test(content)
   }
 
   private parseYamlConfig(content: string): SlopperConfig {
@@ -290,6 +345,33 @@ export class ConfigLoader {
       ? (parsed.ignore_paths as string[])
       : DEFAULT_CONFIG.ignore_paths
 
+    const ignore_folders = Array.isArray(parsed.ignore_folders)
+      ? (parsed.ignore_folders as string[])
+      : DEFAULT_CONFIG.ignore_folders
+
+    const parsedPatterns = (parsed.patterns ?? {}) as Record<string, unknown>
+    const dp = DEFAULT_CONFIG.patterns
+    const patterns: PatternsConfig = {
+      lockfiles: Array.isArray(parsedPatterns.lockfiles)
+        ? (parsedPatterns.lockfiles as string[]) : dp.lockfiles,
+      manifest_files: Array.isArray(parsedPatterns.manifest_files)
+        ? (parsedPatterns.manifest_files as string[]) : dp.manifest_files,
+      ci_paths: Array.isArray(parsedPatterns.ci_paths)
+        ? (parsedPatterns.ci_paths as string[]) : dp.ci_paths,
+      dependency_files: Array.isArray(parsedPatterns.dependency_files)
+        ? (parsedPatterns.dependency_files as string[]) : dp.dependency_files,
+      test_patterns: Array.isArray(parsedPatterns.test_patterns)
+        ? (parsedPatterns.test_patterns as string[]) : dp.test_patterns,
+      source_extensions: Array.isArray(parsedPatterns.source_extensions)
+        ? (parsedPatterns.source_extensions as string[]) : dp.source_extensions,
+      supply_chain_patterns: Array.isArray(parsedPatterns.supply_chain_patterns)
+        ? (parsedPatterns.supply_chain_patterns as string[]) : dp.supply_chain_patterns,
+      linked_issue_patterns: Array.isArray(parsedPatterns.linked_issue_patterns)
+        ? (parsedPatterns.linked_issue_patterns as string[]) : dp.linked_issue_patterns,
+      min_duplicate_lines: Number(parsedPatterns.min_duplicate_lines ?? dp.min_duplicate_lines),
+      min_duplicate_blocks: Number(parsedPatterns.min_duplicate_blocks ?? dp.min_duplicate_blocks)
+    }
+
     const parsedRules = (parsed.rules ?? {}) as Record<string, unknown>
     const rules: RulesConfig = {
       require_description: Boolean(parsedRules.require_description ?? DEFAULT_CONFIG.rules.require_description),
@@ -300,6 +382,6 @@ export class ConfigLoader {
       block_first_time_contributors: Boolean(parsedRules.block_first_time_contributors ?? DEFAULT_CONFIG.rules.block_first_time_contributors)
     }
 
-    return { vouched, banned, trusted_orgs, actions, thresholds, label_thresholds, ignore_paths, rules }
+    return { vouched, banned, trusted_orgs, actions, thresholds, label_thresholds, ignore_paths, ignore_folders, patterns, rules }
   }
 }

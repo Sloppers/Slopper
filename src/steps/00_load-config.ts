@@ -13,7 +13,7 @@ export class LoadConfigStep extends PipelineStep {
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
     ctx.config = await this.loader.load()
-    this.log(`Loaded: ${ctx.config.vouched.length} vouched, ${ctx.config.banned.length} banned, ignore_paths=${ctx.config.ignore_paths.length}`)
+    this.log(`Loaded: ${ctx.config.vouched.length} vouched, ${ctx.config.banned.length} banned, ignore_paths=${ctx.config.ignore_paths.length}, ignore_folders=${ctx.config.ignore_folders.length}`)
     return ctx
   }
 }

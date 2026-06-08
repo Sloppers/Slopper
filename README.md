@@ -140,6 +140,45 @@ ignore_paths:
   - "docs/**"
   - "*.lock"
 
+ignore_folders:
+  - vendor
+  - test/fixtures
+  - generated
+
+patterns:
+  lockfiles:
+    - package-lock.json
+    - yarn.lock
+    - pnpm-lock.yaml
+  manifest_files:
+    - package.json
+    - requirements.txt
+  ci_paths:
+    - ".github/workflows/"
+    - ".buildkite/"
+  dependency_files:
+    - package.json
+    - package-lock.json
+    - yarn.lock
+  test_patterns:
+    - "/__tests__/"
+    - "\\.test\\.[jt]sx?$"
+    - "\\.spec\\.[jt]sx?$"
+  source_extensions:
+    - ts
+    - tsx
+    - js
+    - jsx
+    - py
+    - go
+  supply_chain_patterns:
+    - '(-\s*"version":\s*"\d+\.\d+\.\d+".*\n\+\s*"version":\s*"\d+\.\d+\.\d+")'
+  linked_issue_patterns:
+    - '(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+'
+    - '#\d+'
+  min_duplicate_lines: 6
+  min_duplicate_blocks: 2
+
 rules:
   require_description: true
   require_linked_issue: false

@@ -5,7 +5,7 @@ export class ComputeLabelsStep extends PipelineStep {
   readonly name = 'compute-labels'
 
   async execute(ctx: PipelineContext): Promise<PipelineContext> {
-    const computer = new LabelComputer(ctx.config?.thresholds, ctx.config?.rules, ctx.config?.label_thresholds)
+    const computer = new LabelComputer(ctx.config)
 
     if (!ctx.prData) {
       ctx.labels = computer.computeFailedLabels()

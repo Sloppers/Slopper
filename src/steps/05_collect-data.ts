@@ -16,17 +16,22 @@ export class CollectDataStep extends PipelineStep {
     ctx.prData = await this.collector.collect(ctx.prNumber)
 
     const ignorePaths = ctx.config?.ignore_paths ?? []
-    if (ignorePaths.length > 0 && ctx.prData) {
+    const ignoreFolders = (ctx.config?.ignore_folders ?? []).map(
+      f => f.replace(/\/+$/, '') + '/'
+    )
+    if ((ignorePaths.length > 0 || ignoreFolders.length > 0) && ctx.prData) {
       const before = ctx.prData.files.length
       ctx.prData = {
         ...ctx.prData,
         files: ctx.prData.files.filter(
-          f => !ignorePaths.some(pattern => minimatch(f.filename, pattern))
+          f =>
+            !ignorePaths.some(pattern => minimatch(f.filename, pattern)) &&
+            !ignoreFolders.some(folder => f.filename.startsWith(folder))
         )
       }
       const filtered = before - ctx.prData.files.length
       if (filtered > 0) {
-        this.log(`Filtered ${filtered} files matching ignore_paths`)
+        this.log(`Filtered ${filtered} files matching ignore_paths/ignore_folders`)
       }
     }
 

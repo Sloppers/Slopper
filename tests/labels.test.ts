@@ -297,7 +297,7 @@ describe('LabelComputer', () => {
   })
 
   describe('custom thresholds', () => {
-    const custom = new LabelComputer({ low: 3, medium: 6, high: 9 })
+    const custom = new LabelComputer({ thresholds: { low: 3, medium: 6, high: 9 } })
 
     it('uses custom medium threshold for slop/legit', () => {
       expect(computeLabels(custom, makeResult({ risk_score: 5 }))).toEqual(['slopper/legit'])
@@ -335,13 +335,15 @@ describe('LabelComputer', () => {
       }
     }
 
-    const withRules = new LabelComputer(undefined, {
-      require_description: true,
-      require_linked_issue: true,
-      max_files_changed: 10,
-      max_total_changes: 1500,
-      max_file_changes: 800,
-      block_first_time_contributors: false
+    const withRules = new LabelComputer({
+      rules: {
+        require_description: true,
+        require_linked_issue: true,
+        max_files_changed: 10,
+        max_total_changes: 1500,
+        max_file_changes: 800,
+        block_first_time_contributors: false
+      }
     })
 
     it('includes missing-description indicator when body is empty', () => {
