@@ -1,8 +1,7 @@
 export {
   CheckDef, Check, CheckContext, ScoreResult, CheckContextOptions, buildCheckContext,
   AgenticCheck, AgenticCheckDef, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema,
-  agenticToolSchema, parseAgenticResult,
-  prHeader, prDescription, filesList, diffBlock, commitMessages, prStats, authorSection
+  agenticToolSchema, parseAgenticResult
 } from './check'
 export { DerivedIndicator, allDerivedIndicators } from './derived-indicator'
 export { ALL_CHECKS, ALL_AGENTIC_CHECKS, allAgenticChecks } from './registry'

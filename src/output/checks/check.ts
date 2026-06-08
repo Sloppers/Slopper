@@ -2,7 +2,6 @@ import { AnalysisResult, FileInfo, PrData, AuthorProfileAnalysis } from '../../c
 import { ThresholdsConfig, LabelThresholdsConfig, RulesConfig, PatternsConfig, SlopperConfig } from '../../core/config'
 import { truncateDiff } from '../../core/utils'
 
-
 export interface CheckContext {
   score: number
   analysis?: AnalysisResult
@@ -34,7 +33,6 @@ export interface CheckDef {
 }
 
 export type Check = CheckDef
-
 
 export interface AgenticCheckResult {
   triggered: boolean
@@ -68,11 +66,25 @@ export interface AgenticCheckDef {
 export type AgenticCheck = AgenticCheckDef
 
 export function agenticToolSchema(check: AgenticCheckDef): AgenticToolSchema {
-  return buildCheckSchema({
-    toolName: check.toolName,
-    triggerKey: check.triggerKey,
-    triggerDescription: check.triggerDescription,
-  })
+  return {
+    name: check.toolName,
+    description: `Submit ${check.toolName.replace(/^submit_/, '').replace(/_/g, ' ')}`,
+    schema: {
+      type: 'object' as const,
+      additionalProperties: false,
+      required: [check.triggerKey, 'confidence', 'reasoning', 'evidence'],
+      properties: {
+        [check.triggerKey]: { type: 'boolean' as const, description: check.triggerDescription },
+        confidence: { type: 'string' as const, enum: ['low', 'medium', 'high'] },
+        reasoning: { type: 'string' as const, description: '2-3 sentence summary of findings' },
+        evidence: {
+          type: 'array' as const,
+          items: { type: 'string' as const },
+          description: 'Specific findings with context'
+        }
+      }
+    }
+  }
 }
 
 export function parseAgenticResult(check: AgenticCheckDef, raw: Record<string, unknown>): AgenticCheckResult {
@@ -85,31 +97,8 @@ export function parseAgenticResult(check: AgenticCheckDef, raw: Record<string, u
   }
 }
 
-
-function buildCheckSchema(opts: {
-  toolName: string
-  triggerKey: string
-  triggerDescription: string
-}): AgenticToolSchema {
-  return {
-    name: opts.toolName,
-    description: `Submit ${opts.toolName.replace(/^submit_/, '').replace(/_/g, ' ')}`,
-    schema: {
-      type: 'object' as const,
-      additionalProperties: false,
-      required: [opts.triggerKey, 'confidence', 'reasoning', 'evidence'],
-      properties: {
-        [opts.triggerKey]: { type: 'boolean' as const, description: opts.triggerDescription },
-        confidence: { type: 'string' as const, enum: ['low', 'medium', 'high'] },
-        reasoning: { type: 'string' as const, description: '2-3 sentence summary of findings' },
-        evidence: {
-          type: 'array' as const,
-          items: { type: 'string' as const },
-          description: 'Specific findings with context'
-        }
-      }
-    }
-  }
+export function basename(filepath: string): string {
+  return filepath.split('/').pop() ?? ''
 }
 
 export function prHeader(ctx: AgenticCheckContext): string {
