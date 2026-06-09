@@ -1,6 +1,6 @@
 export {
   CheckDef, Check, CheckContext, ScoreResult, CheckContextOptions, buildCheckContext,
-  AgenticCheck, AgenticCheckDef, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema,
+  AgenticCheck, AgenticCheckBase, AgenticCheckDef, AgenticCheckResult, AgenticCheckContext, AgenticToolSchema,
   agenticToolSchema, parseAgenticResult
 } from './check'
 export { DerivedIndicator, allDerivedIndicators } from './derived-indicator'

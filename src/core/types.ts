@@ -79,6 +79,18 @@ export interface AnalysisResult {
   error?: string
 }
 
+export interface IssueData {
+  repo: string
+  issue_number: number
+  title: string
+  body: string
+  author: AuthorProfile
+  labels: string[]
+  comments_count: number
+  created_at: string
+  is_pull_request: boolean
+}
+
 export interface AuthorProfileAnalysis {
   account_age_days: number
   is_new_account: boolean

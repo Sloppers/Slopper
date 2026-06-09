@@ -55,6 +55,11 @@ export const Indicators = {
   AI_CODE_QUALITY: 'slopper/ai/code-quality',
   AI_SECURITY_CONCERN: 'slopper/ai/security-concern',
   AI_SUSPICIOUS_AUTHOR: 'slopper/ai/suspicious-author',
+
+  ISSUE_LOW_EFFORT: 'slopper/issue/low-effort',
+  ISSUE_DUPLICATE: 'slopper/issue/duplicate',
+  ISSUE_SLOP_CONTENT: 'slopper/issue/ai-slop',
+  ISSUE_MISSING_DESCRIPTION: 'slopper/issue/missing-description',
 } as const
 
 export type LabelKey = keyof typeof Labels

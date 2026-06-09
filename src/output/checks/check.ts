@@ -52,7 +52,7 @@ export interface AgenticToolSchema {
   schema: Record<string, unknown>
 }
 
-export interface AgenticCheckDef {
+export interface AgenticCheckBase {
   key: string
   label: string
   description: string
@@ -60,12 +60,15 @@ export interface AgenticCheckDef {
   toolName: string
   triggerDescription: string
   weight: number
+}
+
+export interface AgenticCheckDef extends AgenticCheckBase {
   buildPrompt: (ctx: AgenticCheckContext) => { system: string; user: string }
 }
 
 export type AgenticCheck = AgenticCheckDef
 
-export function agenticToolSchema(check: AgenticCheckDef): AgenticToolSchema {
+export function agenticToolSchema(check: AgenticCheckBase): AgenticToolSchema {
   return {
     name: check.toolName,
     description: `Submit ${check.toolName.replace(/^submit_/, '').replace(/_/g, ' ')}`,
@@ -87,7 +90,7 @@ export function agenticToolSchema(check: AgenticCheckDef): AgenticToolSchema {
   }
 }
 
-export function parseAgenticResult(check: AgenticCheckDef, raw: Record<string, unknown>): AgenticCheckResult {
+export function parseAgenticResult(check: AgenticCheckBase, raw: Record<string, unknown>): AgenticCheckResult {
   return {
     triggered: raw[check.triggerKey] as boolean,
     label: check.label,

@@ -359,6 +359,45 @@ export class GitHubClient {
     return data.default_branch
   }
 
+  async getIssue(issueNumber: number) {
+    const { data } = await this.octokit.rest.issues.get({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: issueNumber
+    })
+    return data
+  }
+
+  async listRecentIssues(limit: number) {
+    const { data } = await this.octokit.rest.issues.listForRepo({
+      owner: this.owner,
+      repo: this.repo,
+      state: 'open',
+      per_page: limit,
+      sort: 'created',
+      direction: 'desc'
+    })
+    return data.filter(i => !i.pull_request)
+  }
+
+  async closeIssue(issueNumber: number): Promise<void> {
+    await this.octokit.rest.issues.update({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: issueNumber,
+      state: 'closed'
+    })
+  }
+
+  async lockIssue(issueNumber: number, reason?: 'off-topic' | 'too heated' | 'resolved' | 'spam'): Promise<void> {
+    await this.octokit.rest.issues.lock({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: issueNumber,
+      lock_reason: reason
+    })
+  }
+
   async reportUser(_username: string, _reporter: string, _pr: number): Promise<void> {
     // no-op in base client — only BotGitHubClient reports globally
   }

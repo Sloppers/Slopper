@@ -74,6 +74,15 @@ export interface RulesConfig {
   block_first_time_contributors: boolean
 }
 
+export interface IssueRulesConfig {
+  min_body_length: number
+  duplicate_threshold: number
+  duplicate_lookback: number
+  auto_close_threshold: number
+  auto_lock: boolean
+  auto_lock_threshold: number
+}
+
 export interface SlopperConfig {
   vouched: string[]
   banned: string[]
@@ -85,6 +94,7 @@ export interface SlopperConfig {
   ignore_folders: string[]
   patterns: PatternsConfig
   rules: RulesConfig
+  issue_rules: IssueRulesConfig
 }
 
 const DEFAULT_CONFIG: SlopperConfig = {
@@ -196,6 +206,14 @@ const DEFAULT_CONFIG: SlopperConfig = {
     max_total_changes: 1500,
     max_file_changes: 800,
     block_first_time_contributors: false
+  },
+  issue_rules: {
+    min_body_length: 30,
+    duplicate_threshold: 0.7,
+    duplicate_lookback: 50,
+    auto_close_threshold: 8,
+    auto_lock: false,
+    auto_lock_threshold: 9
   }
 }
 
@@ -251,7 +269,7 @@ export class ConfigLoader {
   }
 
   private isYaml(content: string): boolean {
-    return /^\s*(vouched|banned|trusted_orgs|actions|thresholds|label_thresholds|ignore_paths|ignore_folders|patterns|rules)\s*:/m.test(content)
+    return /^\s*(vouched|banned|trusted_orgs|actions|thresholds|label_thresholds|ignore_paths|ignore_folders|patterns|rules|issue_rules)\s*:/m.test(content)
   }
 
   private parseYamlConfig(content: string): SlopperConfig {
@@ -382,6 +400,17 @@ export class ConfigLoader {
       block_first_time_contributors: Boolean(parsedRules.block_first_time_contributors ?? DEFAULT_CONFIG.rules.block_first_time_contributors)
     }
 
-    return { vouched, banned, trusted_orgs, actions, thresholds, label_thresholds, ignore_paths, ignore_folders, patterns, rules }
+    const parsedIssueRules = (parsed.issue_rules ?? {}) as Record<string, unknown>
+    const dir = DEFAULT_CONFIG.issue_rules
+    const issue_rules: IssueRulesConfig = {
+      min_body_length: Number(parsedIssueRules.min_body_length ?? dir.min_body_length),
+      duplicate_threshold: Number(parsedIssueRules.duplicate_threshold ?? dir.duplicate_threshold),
+      duplicate_lookback: Number(parsedIssueRules.duplicate_lookback ?? dir.duplicate_lookback),
+      auto_close_threshold: Number(parsedIssueRules.auto_close_threshold ?? dir.auto_close_threshold),
+      auto_lock: Boolean(parsedIssueRules.auto_lock ?? dir.auto_lock),
+      auto_lock_threshold: Number(parsedIssueRules.auto_lock_threshold ?? dir.auto_lock_threshold)
+    }
+
+    return { vouched, banned, trusted_orgs, actions, thresholds, label_thresholds, ignore_paths, ignore_folders, patterns, rules, issue_rules }
   }
 }

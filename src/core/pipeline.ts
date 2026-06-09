@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { AnalysisResult, PrData, AuthorProfileAnalysis } from './types'
+import { AnalysisResult, PrData, IssueData, AuthorProfileAnalysis } from './types'
 import { errorMessage } from './utils'
 import { SlopperConfig } from './config'
 import { ScoreResult } from '../output/checks/check'
@@ -15,9 +15,12 @@ export interface StepResult {
 
 export interface PipelineContext {
   prNumber: number
+  eventType?: 'pr' | 'issue'
   config?: SlopperConfig
   prAuthor?: string
   prData?: PrData
+  issueData?: IssueData
+  recentIssues?: IssueData[]
   authorProfile?: AuthorProfileAnalysis
   analysisResult?: AnalysisResult
   analysisFailed?: boolean

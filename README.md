@@ -10,7 +10,17 @@
 
 ---
 
-Slopper is an open source initiative to fight back against low-quality contributions flooding GitHub. Maintainers are drowning in AI-generated pull requests that look clean but add nothing — Slopper scores every PR using deterministic heuristics to answer one question: **does this PR actually add value?**
+Slopper is an open source initiative to fight back against low-quality contributions flooding GitHub. Maintainers are drowning in AI-generated pull requests and issues that look polished but add nothing — Slopper analyzes the **full contribution pipeline**, not just the code itself, to answer one question: **is this contribution genuine?**
+
+Instead of reviewing diffs in isolation, Slopper evaluates the entire context around a contribution:
+
+- **Reputation** — account age, merge history, past contributions to the repo
+- **Behavioral signals** — spray-and-pray patterns across repos, activity bursts, unsigned commits
+- **Effort** — missing descriptions, no linked issues, no tests, low-effort issue bodies
+- **Content quality** — code duplication, supply chain risks, AI-generated slop detection
+- **Duplication** — Jaccard similarity matching to catch copied or recycled issues
+
+This applies across the SDLC — pull requests, issues, and issue comments are all analyzed through dedicated pipelines sharing the same signal framework.
 
 
 ## Community Lists
@@ -39,6 +49,8 @@ name: Slopper
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  issues:
+    types: [opened, edited]
   issue_comment:
     types: [created]
 
@@ -48,6 +60,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      issues: write
       id-token: write
     steps:
       - uses: Sloppers/Slopper@main
@@ -69,12 +82,20 @@ See [`examples/`](examples/) for more setups (strict mode, merge gating, multi-p
 
 ## What it does
 
-- **Scores PRs 0-10** from 22 deterministic checks and 5 optional AI-powered agentic checks
+### Pull requests
+- **Scores PRs 0-10** from 19 deterministic checks and 5 optional AI-powered agentic checks
 - **Profiles contributors** across GitHub — account age, PR volume, merge ratio, spray score
 - **Labels PRs** as `slopper/slop` or `slopper/legit`
 - **Auto-closes, auto-approves, or requests review** based on configurable thresholds
 - `/slopper vouch` — maintainers permanently whitelist a contributor
 - `/slopper report` — maintainers ban an account and close the PR
+
+### Issues
+- **Scores issues 0-10** from 10 deterministic checks and 2 optional AI-powered agentic checks
+- **Detects low-effort issues** — missing descriptions, one-liners, "please fix" patterns
+- **Finds duplicates** — Jaccard similarity matching against recent issues
+- **Labels issues** with `slopper/issue/low-effort`, `slopper/issue/duplicate`, `slopper/issue/ai-slop`
+- **Auto-closes and auto-locks** issues exceeding configurable score thresholds
 
 For the full list of checks, scoring details, and indicators, see **[docs/checks.md](docs/checks.md)**.
 
@@ -185,6 +206,14 @@ rules:
   max_files_changed: 0
   max_total_changes: 1500
   max_file_changes: 800
+
+issue_rules:
+  min_body_length: 30
+  duplicate_threshold: 0.7
+  duplicate_lookback: 50
+  auto_close_threshold: 8
+  auto_lock: false
+  auto_lock_threshold: 9
 ```
 
 ## Development
